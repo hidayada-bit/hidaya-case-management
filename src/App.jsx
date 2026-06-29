@@ -95,7 +95,46 @@ function Lightbox({ src, alt, onClose }) {
     </div>
   )
 }
-ffunction DocViewer({ doc, onClose }) {
+function DocViewer({ doc, onClose }) {
+  useEffect(() => {
+    const handler = e => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
+  if (!doc) return null
+
+  const isPdf = doc.file_url?.toLowerCase().includes('.pdf') || doc.file_name?.toLowerCase().endsWith('.pdf')
+
+  return (
+    <div onClick={onClose} style={{
+      position: 'fixed', inset: 0, zIndex: 99999,
+      background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(6px)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 20,
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 860, maxHeight: '92vh', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {/* Toolbar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: B.sidebar, borderRadius: 12, padding: '10px 16px', border: `1px solid rgba(245,168,0,0.3)` }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: B.gold }}>{doc.document_type}</div>
+            <div style={{ fontSize: 11, color: '#81c784' }}>{doc.file_name} · {doc.file_size_kb}KB</div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <a href={doc.file_url} download target="_blank" rel="noreferrer" style={{ background: B.green, color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', textDecoration: 'none' }}>⬇ Download</a>
+            <button onClick={onClose} style={{ background: '#dc2626', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>✕ Close</button>
+          </div>
+        </div>
+        {/* Viewer */}
+        <div style={{ flex: 1, borderRadius: 12, overflow: 'hidden', background: '#1a1a1a', minHeight: 400, maxHeight: '78vh' }}>
+          {isPdf
+            ? <iframe src={doc.file_url} style={{ width: '100%', height: '100%', minHeight: 500, border: 'none' }} title={doc.document_type} />
+            : <img src={doc.file_url} alt={doc.document_type} style={{ width: '100%', height: '100%', objectFit: 'contain', maxHeight: '78vh' }} />
+          }
+        </div>
+      </div>
+    </div>
+  )
+}
+function DocViewer({ doc, onClose }) {
   const [zoom, setZoom] = useState(1)
 
   useEffect(() => {
@@ -117,7 +156,6 @@ ffunction DocViewer({ doc, onClose }) {
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 20,
     }}>
       <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 860, maxHeight: '92vh', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        
         {/* Toolbar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: B.sidebar, borderRadius: 12, padding: '10px 16px', border: `1px solid rgba(245,168,0,0.3)` }}>
           <div>
@@ -125,7 +163,6 @@ ffunction DocViewer({ doc, onClose }) {
             <div style={{ fontSize: 11, color: '#81c784' }}>{doc.file_name} · {doc.file_size_kb}KB</div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            {/* Zoom buttons — only for images */}
             {!isPdf && (
               <>
                 <button onClick={() => setZoom(z => Math.max(0.5, z - 0.25))}
@@ -143,25 +180,36 @@ ffunction DocViewer({ doc, onClose }) {
               style={{ background: '#dc2626', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>✕ Close</button>
           </div>
         </div>
-
         {/* Viewer */}
         <div style={{ flex: 1, borderRadius: 12, overflow: 'auto', background: '#1a1a1a', minHeight: 400, maxHeight: '78vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {isPdf
             ? <iframe src={doc.file_url} style={{ width: '100%', height: '100%', minHeight: 500, border: 'none' }} title={doc.document_type} />
-            : <img src={doc.file_url} alt={doc.document_type} style={{
-                width: `${zoom * 100}%`,
-                maxWidth: 'none',
-                objectFit: 'contain',
-                transition: 'width 0.2s ease',
-                cursor: zoom > 1 ? 'grab' : 'zoom-in',
-              }} onClick={() => setZoom(z => z < 4 ? z + 0.5 : 1)} />
+            : <img src={doc.file_url} alt={doc.document_type}
+                onClick={() => setZoom(z => z < 4 ? z + 0.5 : 1)}
+                style={{ width: `${zoom * 100}%`, maxWidth: 'none', objectFit: 'contain', transition: 'width 0.2s ease', cursor: zoom > 1 ? 'grab' : 'zoom-in' }} />
           }
         </div>
-        <div style={{ textAlign: 'center', fontSize: 11, color: '#555' }}>
-          {!isPdf && 'Click image to zoom · Use + − buttons · Scroll to pan'}
-        </div>
+        {!isPdf && (
+          <div style={{ textAlign: 'center', fontSize: 11, color: '#666' }}>
+            Click image to zoom · Use + − buttons · Scroll to pan
+          </div>
+        )}
       </div>
     </div>
+  )
+}
+// ─── REUSABLE UI ──────────────────────────────────────────────────────────────
+const StatusBadge = ({ s }) => {
+  const st = statusStyle(s)
+  return (
+    <span style={{
+      background: st.bg, color: st.color,
+      padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700,
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+    }}>
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: st.dot }} />
+      {s.charAt(0).toUpperCase() + s.slice(1)}
+    </span>
   )
 }
 
