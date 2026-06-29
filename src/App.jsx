@@ -468,7 +468,7 @@ function Sidebar({ page, setPage, collapsed, setCollapsed, user, onSignOut }) {
           justifyContent: 'center', flexShrink: 0, overflow: 'hidden',
           boxShadow: `0 2px 10px rgba(245,168,0,0.4), 0 0 0 2px ${B.gold}`,
         }}>
-          <img src="/HDA_LOGO.png" alt="HDA"
+          <img src="/HDA_LOGO.jpg" alt="HDA"
             style={{ width: 38, height: 38, objectFit: 'contain' }}
             onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex' }} />
           <div style={{ display: 'none', width: 38, height: 38, alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>🌟</div>
