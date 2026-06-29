@@ -468,7 +468,7 @@ function Sidebar({ page, setPage, collapsed, setCollapsed, user, onSignOut }) {
           justifyContent: 'center', flexShrink: 0, overflow: 'hidden',
           boxShadow: `0 2px 10px rgba(245,168,0,0.4), 0 0 0 2px ${B.gold}`,
         }}>
-          <img src="/HDA_LOGO.jpg" alt="HDA"
+          <img src="/HDA_LOGO.png" alt="HDA"
             style={{ width: 38, height: 38, objectFit: 'contain' }}
             onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex' }} />
           <div style={{ display: 'none', width: 38, height: 38, alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>🌟</div>
@@ -1435,7 +1435,7 @@ function LoginPage({ onLogin }) {
             margin: '0 auto 16px', overflow: 'hidden',
             boxShadow: `0 4px 24px rgba(245,168,0,0.25), 0 0 0 4px ${B.greenLight}`,
           }}>
-            <img src="/HDA_LOGO.jpg" alt="HDA" style={{ width: 78, height: 78, objectFit: 'contain' }}
+            <img src="/HDA_LOGO.png" alt="HDA" style={{ width: 78, height: 78, objectFit: 'contain' }}
               onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex' }} />
             <div style={{ display: 'none', width: 78, height: 78, alignItems: 'center', justifyContent: 'center', fontSize: 38 }}>🌟</div>
           </div>
@@ -1653,7 +1653,7 @@ export default function App() {
   // ── RENDER ──────────────────────────────────────────────────
   if (authLoading) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: B.sidebar, gap: 16 }}>
-      <img src="/HDA_LOGO.jpg" alt="HDA" style={{ width: 72, height: 72, objectFit: 'contain', animation: 'spin 2s linear infinite' }}
+      <img src="/HDA_LOGO.png" alt="HDA" style={{ width: 72, height: 72, objectFit: 'contain', animation: 'spin 2s linear infinite' }}
         onError={e => { e.target.style.display = 'none' }} />
       <div style={{ color: B.gold, fontSize: 16, fontWeight: 700 }}>Loading HDA System…</div>
     </div>
