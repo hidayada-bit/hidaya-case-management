@@ -95,7 +95,45 @@ function Lightbox({ src, alt, onClose }) {
     </div>
   )
 }
+function DocViewer({ doc, onClose }) {
+  useEffect(() => {
+    const handler = e => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
+  if (!doc) return null
 
+  const isPdf = doc.file_url?.toLowerCase().includes('.pdf') || doc.file_name?.toLowerCase().endsWith('.pdf')
+
+  return (
+    <div onClick={onClose} style={{
+      position: 'fixed', inset: 0, zIndex: 99999,
+      background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(6px)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 20,
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 860, maxHeight: '92vh', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {/* Toolbar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: B.sidebar, borderRadius: 12, padding: '10px 16px', border: `1px solid rgba(245,168,0,0.3)` }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: B.gold }}>{doc.document_type}</div>
+            <div style={{ fontSize: 11, color: '#81c784' }}>{doc.file_name} · {doc.file_size_kb}KB</div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <a href={doc.file_url} download target="_blank" rel="noreferrer" style={{ background: B.green, color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', textDecoration: 'none' }}>⬇ Download</a>
+            <button onClick={onClose} style={{ background: '#dc2626', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>✕ Close</button>
+          </div>
+        </div>
+        {/* Viewer */}
+        <div style={{ flex: 1, borderRadius: 12, overflow: 'hidden', background: '#1a1a1a', minHeight: 400, maxHeight: '78vh' }}>
+          {isPdf
+            ? <iframe src={doc.file_url} style={{ width: '100%', height: '100%', minHeight: 500, border: 'none' }} title={doc.document_type} />
+            : <img src={doc.file_url} alt={doc.document_type} style={{ width: '100%', height: '100%', objectFit: 'contain', maxHeight: '78vh' }} />
+          }
+        </div>
+      </div>
+    </div>
+  )
+}
 // ─── REUSABLE UI ──────────────────────────────────────────────────────────────
 const StatusBadge = ({ s }) => {
   const st = statusStyle(s)
@@ -840,6 +878,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
   const famDocs = allDocs.filter(d => d.family_id === family.id)
   const [tab, setTab] = useState('overview')
   const [uploading, setUploading] = useState(null)
+  const [viewingDoc, setViewingDoc] = useState(null)
 
   const handleMotherDocUpload = async (file, docType) => {
     setUploading(docType)
@@ -860,6 +899,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
 
   return (
     <div style={{ padding: isMobile ? '12px 12px' : '22px 26px', maxWidth: 1040, margin: '0 auto' }}>
+      <DocViewer doc={viewingDoc} onClose={() => setViewingDoc(null)} />
       {/* Top bar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
         <button
@@ -1069,8 +1109,8 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
                               ? <div style={{ background: '#fff', border: `1px solid ${B.border}`, borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
                                   <span style={{ fontSize: 16 }}>📄</span>
                                   <span style={{ fontSize: 11, color: B.green, fontWeight: 600, flex: 1 }}>Uploaded ✓</span>
-                                  <a href={existing.file_url} target="_blank" rel="noreferrer"
-                                    style={{ background: B.greenLight, border: 'none', borderRadius: 6, padding: '3px 9px', cursor: 'pointer', fontSize: 11, color: B.green, fontWeight: 700, textDecoration: 'none' }}>View</a>
+                                  <button onClick={() => setViewingDoc(existing)}
+                                    style={{ background: B.greenLight, border: 'none', borderRadius: 6, padding: '3px 9px', cursor: 'pointer', fontSize: 11, color: B.green, fontWeight: 700 }}>View</button>
                                 </div>
                               : <label style={{ border: `1.5px dashed ${B.green}`, borderRadius: 8, padding: '8px 12px', fontSize: 11, color: B.green, background: '#fafff9', cursor: 'pointer', textAlign: 'center', display: 'block', fontWeight: 600 }}>
                                   + Upload
@@ -1125,8 +1165,8 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
                   {existing
                     ? <div>
                         <div style={{ fontSize: 11, color: B.green, fontWeight: 700, marginBottom: 6 }}>✓ Uploaded</div>
-                        <a href={existing.file_url} target="_blank" rel="noreferrer"
-                          style={{ display: 'block', background: B.greenLight, borderRadius: 7, padding: '7px', cursor: 'pointer', fontSize: 12, color: B.green, fontWeight: 700, textAlign: 'center', textDecoration: 'none' }}>View / Download</a>
+                        <button onClick={() => setViewingDoc(existing)}
+                          style={{ display: 'block', width: '100%', background: B.greenLight, borderRadius: 7, padding: '7px', cursor: 'pointer', fontSize: 12, color: B.green, fontWeight: 700, textAlign: 'center', border: 'none' }}>View / Download</button>
                       </div>
                     : <label style={{ border: `1.5px dashed ${B.green}`, borderRadius: 8, padding: '12px', textAlign: 'center', cursor: 'pointer', background: '#fafff9', display: 'block' }}>
                         <div style={{ fontSize: 18, marginBottom: 4 }}>📤</div>
@@ -1150,8 +1190,8 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
                     <div style={{ fontSize: 13, fontWeight: 650, color: B.text }}>{d.document_type}</div>
                     <div style={{ fontSize: 11, color: B.textLight, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.file_name} · {d.file_size_kb}KB · {d.uploaded_at?.slice(0, 10)}</div>
                   </div>
-                  <a href={d.file_url} target="_blank" rel="noreferrer"
-                    style={{ background: B.greenLight, borderRadius: 7, padding: '5px 12px', fontSize: 12, color: B.green, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}>View</a>
+                  <button onClick={() => setViewingDoc(d)}
+                    style={{ background: B.greenLight, borderRadius: 7, padding: '5px 12px', fontSize: 12, color: B.green, fontWeight: 700, whiteSpace: 'nowrap', border: 'none', cursor: 'pointer' }}>View</button>
                 </div>
               ))}
             </div>
