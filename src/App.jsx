@@ -1605,7 +1605,8 @@ export default function App() {
       const fam = families.find(f => f.id === famId)
       let child_photo_url = form.child_photo_url
       if (photoFile) {
-       const path = `${fam?.family_code}/child-${form.child_name.replace(/\s+/g, '-')}-${Date.now()}.jpg`        child_photo_url = await uploadFile({ supabase, file: photoFile, bucket: BUCKETS.CHILD_PHOTOS, path, type: 'photo' })
+        const path = `${fam?.family_code}/child-${form.child_name.replace(/\s+/g, '-')}-photo.jpg`
+        child_photo_url = await uploadFile({ supabase, file: photoFile, bucket: BUCKETS.CHILD_PHOTOS, path, type: 'photo' })
       }
       const payload = { family_id: famId, child_name: form.child_name, gender: form.gender, date_of_birth: form.date_of_birth || null, grade: form.grade, school_name: form.school_name, medical_notes: form.medical_notes, child_photo_url }
       let childId = editingChild?.id
@@ -1750,8 +1751,7 @@ export default function App() {
       </Modal>
 
       <Modal open={showChildForm} onClose={() => !saving && setShowChildForm(false)} title={editingChild ? 'Edit Child' : 'Add Child'} width={560}>
-        <ChildForm initial={editingChild} familyId={childFamilyId} onSave={saveChild} onCancel={() => setShowChildForm(false)} saving={saving} />
-      </Modal>
+      <ChildForm key={editingChild?.id || 'new-' + showChildForm} initial={editingChild} familyId={childFamilyId} onSave={saveChild} onCancel={() => setShowChildForm(false)} saving={saving} />        </Modal>
 
       <Modal open={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Confirm Deletion" width={400}>
         <div style={{ textAlign: 'center', padding: '8px 0' }}>
