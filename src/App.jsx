@@ -746,7 +746,7 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
           background: `linear-gradient(to right, ${B.greenLight}, #fff)`,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           flexWrap: 'wrap', gap: 10,
-          position: 'sticky', top: isMobile ? 58 : 0, zIndex: 10,
+          position: isMobile ? 'static' : 'sticky', top: 0, zIndex: 10,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 3, height: 18, borderRadius: 2, background: `linear-gradient(to bottom, ${B.gold}, ${B.green})` }} />
