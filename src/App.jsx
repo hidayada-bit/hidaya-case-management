@@ -442,13 +442,138 @@ const DonutChart = ({ active, inactive, pending }) => {
 // ─── MOBILE BOTTOM NAV ────────────────────────────────────────────────────────
 const NAV = [
   { id: 'dashboard', label: 'Home',    d: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10' },
+  { id: 'projects',  label: 'Projects', d: 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z' },
   { id: 'families',  label: 'Families', d: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75' },
   { id: 'analytics', label: 'Stats',   d: 'M18 20V10 M12 20V4 M6 20v-6' },
   { id: 'settings',  label: 'Settings', d: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6 M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z' },
 ]
 
+// ─── PROJECTS ─────────────────────────────────────────────────────────────────
+const HF_BRANCHES = ['Addis Ababa', 'Bishoftu', 'Dangla', 'Bure', 'Dire Dawa', 'Nekemte', 'Chagni']
+
+function ProjectsPage({ families, onOpenOVC, onOpenHF, isMobile }) {
+  const ovcCount = families.filter(f => f.project === 'OVC').length
+  const hfCount = families.filter(f => f.project === 'HF').length
+  const cardStyle = {
+    background: '#fff', borderRadius: 18, border: `1px solid ${B.border}`,
+    padding: isMobile ? '22px 18px' : '32px 28px', cursor: 'pointer',
+    boxShadow: `0 4px 20px rgba(30,125,34,0.08)`, transition: 'all 0.18s',
+    display: 'flex', flexDirection: 'column', gap: 10,
+  }
+  return (
+    <div style={{ padding: isMobile ? '14px 12px 28px' : '22px 26px', maxWidth: 900, margin: '0 auto' }}>
+      <div style={{
+        background: `linear-gradient(135deg, ${B.sidebar}, ${B.sidebarMid})`,
+        borderRadius: 14, padding: '16px 20px', marginBottom: 20,
+        display: 'flex', alignItems: 'center', gap: 14,
+        border: `1px solid rgba(245,168,0,0.3)`, position: 'relative', overflow: 'hidden',
+      }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, ${B.gold}, ${B.green})` }} />
+        <div style={{ fontSize: 28 }}>📁</div>
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>Projects</div>
+          <div style={{ fontSize: 12, color: '#a5d6a7' }}>Choose a project to view its beneficiaries</div>
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
+        <div
+          style={cardStyle}
+          onClick={onOpenOVC}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = `0 10px 28px rgba(30,125,34,0.16)` }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = `0 4px 20px rgba(30,125,34,0.08)` }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ width: 54, height: 54, borderRadius: 14, background: B.greenLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26 }}>👨‍👩‍👧</div>
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: B.text }}>OVC</div>
+              <div style={{ fontSize: 12, color: B.textLight }}>Orphans & Vulnerable Children — Addis Ababa</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 6 }}>
+            <span style={{ fontSize: 30, fontWeight: 800, color: B.green }}>{ovcCount}</span>
+            <span style={{ fontSize: 12, color: B.textLight, fontWeight: 600 }}>beneficiary families</span>
+          </div>
+          <div style={{ fontSize: 12, color: B.green, fontWeight: 700, marginTop: 4 }}>View beneficiaries →</div>
+        </div>
+
+        <div
+          style={cardStyle}
+          onClick={onOpenHF}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = `0 10px 28px rgba(245,168,0,0.18)` }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = `0 4px 20px rgba(30,125,34,0.08)` }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ width: 54, height: 54, borderRadius: 14, background: B.goldLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26 }}>🌍</div>
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: B.text }}>HF</div>
+              <div style={{ fontSize: 12, color: B.textLight }}>Hidaya Foundation — {HF_BRANCHES.length} branches</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 6 }}>
+            <span style={{ fontSize: 30, fontWeight: 800, color: B.goldDark }}>{hfCount}</span>
+            <span style={{ fontSize: 12, color: B.textLight, fontWeight: 600 }}>beneficiary families</span>
+          </div>
+          <div style={{ fontSize: 12, color: B.goldDark, fontWeight: 700, marginTop: 4 }}>View branches →</div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function BranchesPage({ families, onOpenBranch, onBack, isMobile }) {
+  const hfFamilies = families.filter(f => f.project === 'HF')
+  return (
+    <div style={{ padding: isMobile ? '14px 12px 28px' : '22px 26px', maxWidth: 1000, margin: '0 auto' }}>
+      <button
+        onClick={onBack}
+        style={{
+          background: B.greenLight, border: `1px solid ${B.border}`,
+          borderRadius: 8, padding: '9px 14px', cursor: 'pointer',
+          fontSize: 13, color: B.green, fontWeight: 700, minHeight: 38, marginBottom: 16,
+        }}
+      >← Back to Projects</button>
+      <div style={{
+        background: `linear-gradient(135deg, ${B.sidebar}, ${B.sidebarMid})`,
+        borderRadius: 14, padding: '16px 20px', marginBottom: 20,
+        display: 'flex', alignItems: 'center', gap: 14,
+        border: `1px solid rgba(245,168,0,0.3)`, position: 'relative', overflow: 'hidden',
+      }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, ${B.gold}, ${B.green})` }} />
+        <div style={{ fontSize: 28 }}>🌍</div>
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>HF — Branches</div>
+          <div style={{ fontSize: 12, color: '#a5d6a7' }}>Choose a branch to view its beneficiaries</div>
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 14 }}>
+        {HF_BRANCHES.map(branch => {
+          const count = hfFamilies.filter(f => f.branch === branch).length
+          return (
+            <div
+              key={branch}
+              onClick={() => onOpenBranch(branch)}
+              style={{
+                background: '#fff', borderRadius: 14, border: `1px solid ${B.border}`,
+                padding: '18px 16px', cursor: 'pointer',
+                boxShadow: `0 2px 12px rgba(30,125,34,0.06)`, transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 8px 22px rgba(30,125,34,0.14)` }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = `0 2px 12px rgba(30,125,34,0.06)` }}
+            >
+              <div style={{ fontSize: 22, marginBottom: 8 }}>📍</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: B.text, marginBottom: 6 }}>{branch}</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: B.green }}>{count}</div>
+              <div style={{ fontSize: 11, color: B.textLight }}>families</div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function MobileBottomNav({ page, setPage }) {
-  const activePage = page === 'detail' ? 'families' : page
+  const activePage = page === 'detail' ? 'families' : ['projects', 'branches', 'project-detail'].includes(page) ? 'projects' : page
   return (
     <nav style={{
       position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200,
@@ -488,7 +613,7 @@ function MobileBottomNav({ page, setPage }) {
 
 // ─── SIDEBAR ─────────────────────────────────────────────────────────────────
 function Sidebar({ page, setPage, collapsed, setCollapsed, user, onSignOut }) {
-  const activePage = page === 'detail' ? 'families' : page
+  const activePage = page === 'detail' ? 'families' : ['projects', 'branches', 'project-detail'].includes(page) ? 'projects' : page
   return (
     <aside style={{
       width: collapsed ? 66 : 220, flexShrink: 0,
@@ -1114,6 +1239,8 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
           gap: isMobile ? 8 : 12,
         }}>
           {[
+            { l: 'Project', v: family.project || '—' },
+            { l: 'Branch', v: family.branch || (family.project === 'OVC' ? 'Addis Ababa' : '—') },
             { l: 'Family Code', v: family.family_code },
             { l: 'Roll Number', v: family.roll_number },
             { l: 'National ID', v: family.mother_id_number },
@@ -1299,8 +1426,8 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
 }
 
 // ─── FAMILY FORM ─────────────────────────────────────────────────────────────
-function FamilyForm({ initial, onSave, onCancel, saving }) {
-  const [f, setF] = useState(initial || { family_code: '', roll_number: '', mother_name: '', mother_id_number: '', phone_number: '', alternate_phone: '', address: '', city: 'Addis Ababa', district: '', notes: '', status: 'active', mother_photo_url: null })
+function FamilyForm({ initial, defaultProject, defaultBranch, onSave, onCancel, saving }) {
+  const [f, setF] = useState(initial || { family_code: '', roll_number: '', mother_name: '', mother_id_number: '', phone_number: '', alternate_phone: '', address: '', city: 'Addis Ababa', district: '', notes: '', status: 'active', mother_photo_url: null, project: defaultProject || 'HF', branch: defaultBranch || '' })
   const [photoFile, setPhotoFile] = useState(null)
   const s = k => v => setF(x => ({ ...x, [k]: v }))
   const bp = useBreakpoint()
@@ -1316,6 +1443,10 @@ function FamilyForm({ initial, onSave, onCancel, saving }) {
         </div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '0 16px' }}>
+        <FS label="Project" value={f.project} onChange={v => setF(x => ({ ...x, project: v, branch: v === 'OVC' ? '' : x.branch }))} options={[{ value: 'OVC', label: 'OVC' }, { value: 'HF', label: 'HF' }]} />
+        {f.project === 'HF' && (
+          <FS label="Branch" value={f.branch} onChange={s('branch')} options={[{ value: '', label: 'Select branch…' }, ...HF_BRANCHES.map(b => ({ value: b, label: b }))]} />
+        )}
         <FI label="Family Code" value={f.family_code} onChange={s('family_code')} placeholder="FM007" req />
         <FI label="Roll Number" value={f.roll_number} onChange={s('roll_number')} placeholder="1007" req />
         <FI label="Mother Full Name" value={f.mother_name} onChange={s('mother_name')} placeholder="Full name" req />
@@ -1597,6 +1728,8 @@ export default function App() {
   const [collapsed, setCollapsed] = useState(isTablet)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [selectedFamily, setSelectedFamily] = useState(null)
+  const [selectedProject, setSelectedProject] = useState(null) // 'OVC' | 'HF' | null
+  const [selectedBranch, setSelectedBranch] = useState(null)
 
   const [families, setFamilies] = useState([])
   const [children, setChildren] = useState([])
@@ -1616,6 +1749,8 @@ export default function App() {
   const handleSetPage = useCallback((p) => {
     setPage(p)
     setSelectedFamily(null)
+    setSelectedProject(null)
+    setSelectedBranch(null)
   }, [])
 
   // Collapse sidebar on tablet automatically
@@ -1678,7 +1813,7 @@ export default function App() {
         const path = `${form.family_code}/mother.jpg`
         mother_photo_url = await uploadFile({ supabase, file: photoFile, bucket: BUCKETS.MOTHER_PHOTOS, path, type: 'photo' })
       }
-      const payload = { family_code: form.family_code, roll_number: form.roll_number, mother_name: form.mother_name, mother_id_number: form.mother_id_number, phone_number: form.phone_number, alternate_phone: form.alternate_phone, address: form.address, city: form.city, district: form.district, notes: form.notes, status: form.status, mother_photo_url }
+      const payload = { family_code: form.family_code, roll_number: form.roll_number, mother_name: form.mother_name, mother_id_number: form.mother_id_number, phone_number: form.phone_number, alternate_phone: form.alternate_phone, address: form.address, city: form.city, district: form.district, notes: form.notes, status: form.status, mother_photo_url, project: form.project, branch: form.project === 'HF' ? form.branch : null }
       if (editingFamily) {
         const { error } = await supabase.from('families').update(payload).eq('id', editingFamily.id)
         if (error) throw error
@@ -1758,8 +1893,12 @@ export default function App() {
 
   if (!session) return <LoginPage onLogin={() => {}} />
 
-  const breadcrumb = page === 'detail' && selectedFamily ? ['Families', selectedFamily.mother_name] : null
-  const pageTitle = { dashboard: 'Dashboard', detail: 'Family Details', analytics: 'Statistics', settings: 'Settings' }[page]
+  const breadcrumb = page === 'detail' && selectedFamily
+    ? ['Families', selectedFamily.mother_name]
+    : page === 'project-detail'
+      ? selectedProject === 'HF' ? ['Projects', 'HF', selectedBranch] : ['Projects', 'OVC']
+      : page === 'branches' ? ['Projects', 'HF'] : null
+  const pageTitle = { dashboard: 'Dashboard', detail: 'Family Details', analytics: 'Statistics', settings: 'Settings', projects: 'Projects', branches: 'HF Branches', 'project-detail': 'Beneficiaries' }[page]
 
   return (
     <div style={{
@@ -1818,6 +1957,29 @@ export default function App() {
               isMobile={isMobile} isTablet={isTablet}
             />
           )}
+          {page === 'projects' && (
+            <ProjectsPage
+              families={families} isMobile={isMobile}
+              onOpenOVC={() => { setSelectedProject('OVC'); setSelectedBranch(null); setPage('project-detail') }}
+              onOpenHF={() => setPage('branches')}
+            />
+          )}
+          {page === 'branches' && (
+            <BranchesPage
+              families={families} isMobile={isMobile}
+              onBack={() => setPage('projects')}
+              onOpenBranch={branch => { setSelectedProject('HF'); setSelectedBranch(branch); setPage('project-detail') }}
+            />
+          )}
+          {page === 'project-detail' && (
+            <DashboardPage
+              families={families.filter(f => f.project === selectedProject && (selectedProject === 'OVC' || f.branch === selectedBranch))}
+              children={children} loading={dataLoading}
+              onView={f => { setSelectedFamily(f); setPage('detail') }}
+              onAdd={() => { setEditingFamily(null); setShowFamilyForm(true) }}
+              isMobile={isMobile} isTablet={isTablet}
+            />
+          )}
           {page === 'detail' && selectedFamily && (
             <FamilyDetailPage
               family={selectedFamily} allChildren={children} allDocs={docs}
@@ -1851,7 +2013,7 @@ export default function App() {
 
       {/* Modals */}
       <Modal open={showFamilyForm} onClose={() => !saving && setShowFamilyForm(false)} title={editingFamily ? 'Edit Family' : 'Register New Family'} width={640}>
-        <FamilyForm initial={editingFamily} onSave={saveFamily} onCancel={() => setShowFamilyForm(false)} saving={saving} />
+        <FamilyForm initial={editingFamily} defaultProject={selectedProject} defaultBranch={selectedBranch} onSave={saveFamily} onCancel={() => setShowFamilyForm(false)} saving={saving} />
       </Modal>
 
       <Modal open={showChildForm} onClose={() => !saving && setShowChildForm(false)} title={editingChild ? 'Edit Child' : 'Add Child'} width={560}>
