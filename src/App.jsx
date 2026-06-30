@@ -1605,8 +1605,7 @@ export default function App() {
       const fam = families.find(f => f.id === famId)
       let child_photo_url = form.child_photo_url
       if (photoFile) {
-        const path = `${fam?.family_code}/child-${form.child_name.replace(/\s+/g, '-')}-photo.jpg`
-        child_photo_url = await uploadFile({ supabase, file: photoFile, bucket: BUCKETS.CHILD_PHOTOS, path, type: 'photo' })
+       const path = `${fam?.family_code}/child-${form.child_name.replace(/\s+/g, '-')}-${Date.now()}.jpg`        child_photo_url = await uploadFile({ supabase, file: photoFile, bucket: BUCKETS.CHILD_PHOTOS, path, type: 'photo' })
       }
       const payload = { family_id: famId, child_name: form.child_name, gender: form.gender, date_of_birth: form.date_of_birth || null, grade: form.grade, school_name: form.school_name, medical_notes: form.medical_notes, child_photo_url }
       let childId = editingChild?.id
