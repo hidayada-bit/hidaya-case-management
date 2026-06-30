@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { compressImage, formatBytes } from '../lib/imageUtils'
 
 /**
@@ -27,6 +27,13 @@ export default function ImageUpload({
   const [info, setInfo] = useState(null)
   const [error, setError] = useState(null)
   const inputRef = useRef()
+
+  useEffect(() => {
+    setPreview(currentUrl)
+    setStatus('idle')
+    setInfo(null)
+    setError(null)
+  }, [currentUrl])
 
   const borderRadius = shape === 'circle' ? '50%' : 12
 
