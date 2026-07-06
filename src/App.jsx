@@ -897,7 +897,7 @@ function Sidebar({ page, setPage, collapsed, setCollapsed, user, onSignOut }) {
 }
 
 // ─── HEADER ───────────────────────────────────────────────────────────────────
-function Header({ title, breadcrumb, isMobile }) {
+function Header({ title, breadcrumb, isMobile, user }) {
   return (
     <div style={{
       background: '#fff', borderBottom: `2px solid ${B.greenLight}`,
@@ -925,14 +925,9 @@ function Header({ title, breadcrumb, isMobile }) {
           : <span style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, color: B.text }}>{title}</span>
         }
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        {/* HDA Gold accent dot */}
-        <div style={{
-          width: 8, height: 8, borderRadius: '50%',
-          background: `radial-gradient(circle, ${B.gold}, ${B.goldDark})`,
-          boxShadow: `0 0 6px ${B.gold}`,
-        }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         {!isMobile && <span style={{ fontSize: 12, color: B.textMid, fontWeight: 600 }}>HDA Staff Portal</span>}
+        {user && <Avatar name={user.full_name || user.email} photoUrl={user.profile_photo_url} size={34} radius={10} clickable={true} />}
       </div>
     </div>
   )
@@ -1010,6 +1005,31 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
             {loading ? <Skeleton h={60} /> : <DonutChart active={active} inactive={inactive} pending={pending} />}
           </div>
         )}
+      </div>
+
+      {/* Academic status summary strip */}
+      <div style={{
+        display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: isMobile ? 14 : 20,
+        background: '#fff', borderRadius: 14, border: `1px solid ${B.border}`,
+        padding: isMobile ? '12px 14px' : '14px 18px', boxShadow: `0 2px 12px rgba(30,125,34,0.06)`,
+      }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: 4, alignSelf: 'center' }}>
+          Academic Status
+        </div>
+        {[
+          { label: 'Excellent', color: B.green, bg: B.greenLight },
+          { label: 'Good', color: '#0891b2', bg: '#e0f2fe' },
+          { label: 'Average', color: B.goldDark, bg: B.goldLight },
+          { label: 'Needs Support', color: '#dc2626', bg: '#fef2f2' },
+        ].map(s => {
+          const count = children.filter(c => c.academic_status === s.label).length
+          return (
+            <div key={s.label} style={{ background: s.bg, color: s.color, borderRadius: 20, padding: '5px 14px', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: s.color }} />
+              {s.label}: {count}
+            </div>
+          )
+        })}
       </div>
 
       {/* Table card */}
@@ -1231,25 +1251,10 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
 
 // ─── CHILDREN TAB (proper component so hooks are legal) ───────────────────────
 function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteChild, toast, onDocUploaded, setViewingDoc, setUploading, uploading, isMobile }) {
-  const [sortBy, setSortBy] = useState('name')
-  const [filterGender, setFilterGender] = useState('All')
-  const [filterStatus, setFilterStatus] = useState('All')
-
   const statusColor = s => ({ 'Excellent': B.green, 'Good': '#0891b2', 'Average': B.goldDark, 'Needs Support': '#dc2626' }[s] || B.textLight)
   const statusBg   = s => ({ 'Excellent': B.greenLight, 'Good': '#e0f2fe', 'Average': B.goldLight, 'Needs Support': '#fef2f2' }[s] || '#f3f4f6')
 
-  const sorted = [...kids]
-    .filter(c => filterGender === 'All' || c.gender === filterGender.toLowerCase())
-    .filter(c => filterStatus === 'All' || c.academic_status === filterStatus)
-    .sort((a, b) => {
-      if (sortBy === 'name') return a.child_name.localeCompare(b.child_name)
-      if (sortBy === 'age-asc') return new Date(b.date_of_birth) - new Date(a.date_of_birth)
-      if (sortBy === 'age-desc') return new Date(a.date_of_birth) - new Date(b.date_of_birth)
-      if (sortBy === 'grade') return (a.grade || '').localeCompare(b.grade || '')
-      if (sortBy === 'average-desc') return (b.academic_average || 0) - (a.academic_average || 0)
-      if (sortBy === 'average-asc') return (a.academic_average || 0) - (b.academic_average || 0)
-      return 0
-    })
+  const sorted = [...kids].sort((a, b) => a.child_name.localeCompare(b.child_name))
 
   return (
     <div>
@@ -1266,34 +1271,6 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
         </div>
       ) : (
         <>
-          {/* Sort + Filter bar */}
-          <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${B.border}`, padding: '12px 14px', marginBottom: 14, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sort:</div>
-            <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-              style={{ padding: '6px 10px', border: `1.5px solid ${B.border}`, borderRadius: 8, fontSize: 13, color: B.text, fontFamily: 'inherit', background: '#fafff9' }}>
-              <option value="name">Name A–Z</option>
-              <option value="age-desc">Oldest first</option>
-              <option value="age-asc">Youngest first</option>
-              <option value="grade">Grade</option>
-              <option value="average-desc">Average (High→Low)</option>
-              <option value="average-asc">Average (Low→High)</option>
-            </select>
-            <div style={{ fontSize: 11, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gender:</div>
-            {['All', 'Female', 'Male'].map(g => (
-              <button key={g} onClick={() => setFilterGender(g)}
-                style={{ padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1.5px solid ${filterGender === g ? B.green : B.border}`, background: filterGender === g ? B.green : '#fff', color: filterGender === g ? '#fff' : B.textMid }}>
-                {g}
-              </button>
-            ))}
-            <div style={{ fontSize: 11, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status:</div>
-            {['All', 'Excellent', 'Good', 'Average', 'Needs Support'].map(s => (
-              <button key={s} onClick={() => setFilterStatus(s)}
-                style={{ padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1.5px solid ${filterStatus === s ? B.green : B.border}`, background: filterStatus === s ? B.green : '#fff', color: filterStatus === s ? '#fff' : B.textMid, whiteSpace: 'nowrap' }}>
-                {s}
-              </button>
-            ))}
-          </div>
-
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {sorted.length === 0 && (
               <div style={{ background: B.greenLight, borderRadius: 13, padding: '30px', textAlign: 'center', color: B.textLight }}>
@@ -1856,7 +1833,77 @@ function AnalyticsPage({ families, children, isMobile }) {
 }
 
 // ─── LOGIN PAGE ───────────────────────────────────────────────────────────────
-function LoginPage({ onLogin }) {
+
+
+function SignupPage({ onSwitchToLogin }) {
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
+  const [pass, setPass] = useState('')
+  const [photoFile, setPhotoFile] = useState(null)
+  const [photoPreview, setPhotoPreview] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [done, setDone] = useState(false)
+
+  const handleSignup = async () => {
+    if (!fullName || !email || !pass) { setError('Please fill in all required fields.'); return }
+    setLoading(true); setError('')
+    try {
+      const { data, error: signUpError } = await supabase.auth.signUp({ email, password: pass })
+      if (signUpError) throw signUpError
+      let profile_photo_url = null
+      if (photoFile && data.user) {
+        const path = `${data.user.id}/profile.jpg`
+        profile_photo_url = await uploadFile({ supabase, file: photoFile, bucket: BUCKETS.STAFF_PHOTOS, path, type: 'photo' })
+      }
+      if (data.user) {
+        await supabase.from('users').insert({ id: data.user.id, email, full_name: fullName, role: 'staff', profile_photo_url })
+      }
+      setDone(true)
+    } catch (e) { setError(e.message) }
+    finally { setLoading(false) }
+  }
+
+  if (done) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: B.sidebar, padding: 20 }}>
+        <div style={{ background: '#fff', borderRadius: 18, padding: 32, maxWidth: 380, textAlign: 'center' }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
+          <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 8, color: B.text }}>Account created</div>
+          <div style={{ fontSize: 13, color: B.textMid, marginBottom: 20 }}>Check your email to confirm your account, then sign in.</div>
+          <Btn onClick={onSwitchToLogin} variant="primary" full>Go to Sign In</Btn>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: `linear-gradient(160deg, ${B.sidebar} 0%, ${B.sidebarMid} 50%, ${B.green} 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: 'rgba(255,255,255,0.98)', borderRadius: 22, padding: '36px 32px', width: '100%', maxWidth: 400 }}>
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+          <div style={{ fontSize: 20, fontWeight: 800, color: B.sidebar }}>Create Staff Account</div>
+        </div>
+        {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', padding: '10px 14px', borderRadius: 9, fontSize: 13, marginBottom: 16 }}>{error}</div>}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+          <ImageUpload label="Profile Photo" type="photo" currentUrl={photoPreview}
+            onFileReady={file => { setPhotoFile(file); setPhotoPreview(URL.createObjectURL(file)) }}
+            shape="circle" previewSize={72} />
+        </div>
+        <FI label="Full Name" value={fullName} onChange={setFullName} placeholder="Your full name" req />
+        <FI label="Email Address" value={email} onChange={setEmail} type="email" placeholder="you@hidaya.org.et" req />
+        <FI label="Password" value={pass} onChange={setPass} type="password" req />
+        <button onClick={handleSignup} disabled={loading} style={{ width: '100%', padding: '14px', background: `linear-gradient(135deg, ${B.sidebar}, ${B.green})`, color: '#fff', border: 'none', borderRadius: 11, fontSize: 15, fontWeight: 800, cursor: loading ? 'not-allowed' : 'pointer', marginTop: 6, minHeight: 50 }}>
+          {loading ? 'Creating…' : 'Create Account'}
+        </button>
+        <div style={{ textAlign: 'center', marginTop: 14 }}>
+          <button onClick={onSwitchToLogin} style={{ background: 'none', border: 'none', color: B.green, fontSize: 12, cursor: 'pointer', fontWeight: 700 }}>Already have an account? Sign In</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function LoginPage({ onLogin, onSwitchToSignup }) {
   const [email, setEmail] = useState('')
   const [pass, setPass] = useState('')
   const [loading, setLoading] = useState(false)
@@ -1941,7 +1988,7 @@ function LoginPage({ onLogin }) {
         >
           {loading ? 'Signing in…' : '🔐 Sign In'}
         </button>
-        <div style={{ textAlign: 'center', marginTop: 14 }}>
+        <div style={{ textAlign: 'center', marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
           <button
             onClick={async () => {
               const e = prompt('Enter your email:')
@@ -1949,6 +1996,10 @@ function LoginPage({ onLogin }) {
             }}
             style={{ background: 'none', border: 'none', color: B.green, fontSize: 12, cursor: 'pointer', fontWeight: 700, minHeight: 38 }}
           >Forgot password?</button>
+          <button
+            onClick={onSwitchToSignup}
+            style={{ background: 'none', border: 'none', color: B.textMid, fontSize: 12, cursor: 'pointer', fontWeight: 700, minHeight: 38 }}
+          >Need an account? Sign Up</button>
         </div>
       </div>
     </div>
@@ -1964,6 +2015,7 @@ export default function App() {
   const [session, setSession] = useState(null)
   const [user, setUser] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
+  const [authView, setAuthView] = useState('login')
 
   const [page, setPage] = useState('dashboard')
   const [collapsed, setCollapsed] = useState(isTablet)
@@ -1999,18 +2051,35 @@ export default function App() {
 
   // ── AUTH ───────────────────────────────────────────────────
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    setSession(session)
+    if (session) loadUserProfile(session.user.id)
+    else setAuthLoading(false)
+  })
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_OUT') {
+      setSession(null); setUser(null); setAuthLoading(false)
+      return
+    }
+    if (session) {
       setSession(session)
-      if (session) loadUserProfile(session.user.id)
-      else setAuthLoading(false)
-    })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_evt, session) => {
-      setSession(session)
-      if (session) loadUserProfile(session.user.id)
-      else { setUser(null); setAuthLoading(false) }
-    })
-    return () => subscription.unsubscribe()
-  }, [])
+      loadUserProfile(session.user.id)
+    }
+  })
+  const onStorageChange = (e) => {
+    if (e.key === 'hda-case-mgmt-auth') {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setSession(session)
+        if (session) loadUserProfile(session.user.id)
+      })
+    }
+  }
+  window.addEventListener('storage', onStorageChange)
+  return () => {
+    subscription.unsubscribe()
+    window.removeEventListener('storage', onStorageChange)
+  }
+}, [])
 
   const loadUserProfile = async (uid) => {
     const { data } = await supabase.from('users').select('*').eq('id', uid).single()
@@ -2023,11 +2092,9 @@ export default function App() {
   const loadAll = async () => {
     setDataLoading(true)
     try {
-      const [{ data: fams }, { data: kids }, { data: docData }] = await Promise.all([
-        supabase.from('families').select('*, children_count:children(count)').order('created_at', { ascending: false }),
-        supabase.from('children').select('*').order('created_at', { ascending: false }),
-        supabase.from('documents').select('*').order('uploaded_at', { ascending: false }),
-      ])
+      const { data: fams } = await supabase.from('families').select('*, children_count:children(count)').order('created_at', { ascending: false })
+      const { data: kids } = await supabase.from('children').select('*').order('created_at', { ascending: false })
+      const { data: docData } = await supabase.from('documents').select('*').order('uploaded_at', { ascending: false })
       setFamilies(fams || [])
       setChildren(kids || [])
       setDocs(docData || [])
@@ -2132,7 +2199,11 @@ export default function App() {
     </div>
   )
 
-  if (!session) return <LoginPage onLogin={() => {}} />
+  if (!session) {
+    return authView === 'signup'
+      ? <SignupPage onSwitchToLogin={() => setAuthView('login')} />
+      : <LoginPage onLogin={() => {}} onSwitchToSignup={() => setAuthView('signup')} />
+  }
 
   const breadcrumb = page === 'detail' && selectedFamily
     ? ['Families', selectedFamily.mother_name]
@@ -2188,7 +2259,7 @@ export default function App() {
 
       {/* Main content */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, paddingBottom: isMobile ? 'calc(60px + env(safe-area-inset-bottom))' : 0 }}>
-        <Header title={pageTitle} breadcrumb={breadcrumb} isMobile={isMobile} />
+        <Header title={pageTitle} breadcrumb={breadcrumb} isMobile={isMobile} user={user} />
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {(page === 'dashboard' || page === 'families') && (
             <DashboardPage
