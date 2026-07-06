@@ -1336,7 +1336,7 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
 }
 
 // ─── FAMILY DETAIL PAGE ───────────────────────────────────────────────────────
-function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, onAddChild, onEditChild, onDeleteChild, toast, onDocUploaded, isMobile }) {
+function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, onDeleteFamily, onAddChild, onEditChild, onDeleteChild, toast, onDocUploaded, isMobile }) {
   const kids = allChildren.filter(c => c.family_id === family.id)
   const famDocs = allDocs.filter(d => d.family_id === family.id)
   const [tab, setTab] = useState('overview')
@@ -1375,6 +1375,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
         >← Back</button>
         <div style={{ flex: 1 }} />
         <Btn onClick={() => onEditFamily(family)} variant="secondary" size="sm">✏ Edit</Btn>
+        <Btn onClick={() => onDeleteFamily(family)} variant="danger" size="sm">🗑 Delete</Btn>
         <StatusBadge s={family.status} />
       </div>
 
@@ -2364,6 +2365,7 @@ export default function App() {
               family={selectedFamily} allChildren={children} allDocs={docs}
               onBack={() => setPage('dashboard')}
               onEditFamily={f => { setEditingFamily(f); setShowFamilyForm(true) }}
+              onDeleteFamily={f => setConfirmDelete({ type: 'family', item: f })}
               onAddChild={fid => { setEditingChild(null); setChildFamilyId(fid); setShowChildForm(true) }}
               onEditChild={c => { setEditingChild(c); setChildFamilyId(c.family_id); setShowChildForm(true) }}
               onDeleteChild={c => setConfirmDelete({ type: 'child', item: c })}
