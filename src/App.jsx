@@ -1007,31 +1007,6 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
         )}
       </div>
 
-      {/* Academic status summary strip */}
-      <div style={{
-        display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: isMobile ? 14 : 20,
-        background: '#fff', borderRadius: 14, border: `1px solid ${B.border}`,
-        padding: isMobile ? '12px 14px' : '14px 18px', boxShadow: `0 2px 12px rgba(30,125,34,0.06)`,
-      }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: 4, alignSelf: 'center' }}>
-          Academic Status
-        </div>
-        {[
-          { label: 'Excellent', color: B.green, bg: B.greenLight },
-          { label: 'Good', color: '#0891b2', bg: '#e0f2fe' },
-          { label: 'Average', color: B.goldDark, bg: B.goldLight },
-          { label: 'Needs Support', color: '#dc2626', bg: '#fef2f2' },
-        ].map(s => {
-          const count = children.filter(c => c.academic_status === s.label).length
-          return (
-            <div key={s.label} style={{ background: s.bg, color: s.color, borderRadius: 20, padding: '5px 14px', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: s.color }} />
-              {s.label}: {count}
-            </div>
-          )
-        })}
-      </div>
-
       {/* Table card */}
       <div style={{
         background: '#fff', borderRadius: 16,
@@ -1828,11 +1803,103 @@ function AnalyticsPage({ families, children, isMobile }) {
           ))}
         </div>
       </div>
+
+      {/* Academic status summary strip */}
+      <div style={{
+        display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 16,
+        background: '#fff', borderRadius: 14, border: `1px solid ${B.border}`,
+        padding: isMobile ? '12px 14px' : '14px 18px', boxShadow: `0 2px 12px rgba(30,125,34,0.06)`,
+      }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: 4, alignSelf: 'center' }}>
+          Academic Status
+        </div>
+        {[
+          { label: 'Excellent', color: B.green, bg: B.greenLight },
+          { label: 'Good', color: '#0891b2', bg: '#e0f2fe' },
+          { label: 'Average', color: B.goldDark, bg: B.goldLight },
+          { label: 'Needs Support', color: '#dc2626', bg: '#fef2f2' },
+        ].map(s => {
+          const count = children.filter(c => c.academic_status === s.label).length
+          return (
+            <div key={s.label} style={{ background: s.bg, color: s.color, borderRadius: 20, padding: '5px 14px', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: s.color }} />
+              {s.label}: {count}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Student breakdown: gender & grade */}
+      <div style={{
+        background: '#fff', borderRadius: 14, border: `1px solid ${B.border}`,
+        padding: isMobile ? '14px' : '16px 20px', marginTop: 16,
+        boxShadow: `0 2px 12px rgba(30,125,34,0.06)`,
+      }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+          Student Breakdown
+        </div>
+
+        {/* Gender totals */}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+          {[
+            { label: 'Male', key: 'male', color: '#0891b2', bg: '#e0f2fe' },
+            { label: 'Female', key: 'female', color: B.goldDark, bg: B.goldLight },
+          ].map(g => {
+            const count = children.filter(c => (c.gender || '').toLowerCase() === g.key).length
+            return (
+              <div key={g.key} style={{ background: g.bg, color: g.color, borderRadius: 20, padding: '5px 14px', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: g.color }} />
+                {g.label}: {count}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Grade breakdown table */}
+        {(() => {
+          const gradeMap = {}
+          children.forEach(c => {
+            const g = c.grade || 'Unspecified'
+            if (!gradeMap[g]) gradeMap[g] = { total: 0, male: 0, female: 0 }
+            gradeMap[g].total++
+            const gen = (c.gender || '').toLowerCase()
+            if (gen === 'male') gradeMap[g].male++
+            else if (gen === 'female') gradeMap[g].female++
+          })
+          const grades = Object.keys(gradeMap).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+          if (grades.length === 0) return null
+          return (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                <thead>
+                  <tr style={{ borderBottom: `1.5px solid ${B.border}` }}>
+                    <th style={{ textAlign: 'left', padding: '6px 8px', color: B.textLight, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em' }}>Grade</th>
+                    <th style={{ textAlign: 'right', padding: '6px 8px', color: B.textLight, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em' }}>Total</th>
+                    <th style={{ textAlign: 'right', padding: '6px 8px', color: '#0891b2', fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em' }}>Male</th>
+                    <th style={{ textAlign: 'right', padding: '6px 8px', color: B.goldDark, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em' }}>Female</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {grades.map(g => {
+                    const row = gradeMap[g]
+                    return (
+                      <tr key={g} style={{ borderBottom: `1px solid ${B.greenLight}` }}>
+                        <td style={{ padding: '7px 8px', fontWeight: 600, color: B.text }}>{g}</td>
+                        <td style={{ padding: '7px 8px', textAlign: 'right', fontWeight: 700, color: B.text }}>{row.total}</td>
+                        <td style={{ padding: '7px 8px', textAlign: 'right', color: '#0891b2' }}>{row.male}</td>
+                        <td style={{ padding: '7px 8px', textAlign: 'right', color: B.goldDark }}>{row.female}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )
+        })()}
+      </div>
     </div>
   )
 }
-
-// ─── LOGIN PAGE ───────────────────────────────────────────────────────────────
 
 
 function SignupPage({ onSwitchToLogin }) {
