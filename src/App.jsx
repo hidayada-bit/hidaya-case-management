@@ -446,6 +446,7 @@ const NAV = [
   { id: 'families',  label: 'Families',  d: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75' },
   { id: 'messaging', label: 'Messages',  d: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
   { id: 'analytics', label: 'Stats',     d: 'M18 20V10 M12 20V4 M6 20v-6' },
+  { id: 'academics', label: 'Academics', d: 'M22 10L12 5 2 10l10 5 10-5z M6 12v5c0 1 3 3 6 3s6-2 6-3v-5' },
   { id: 'settings',  label: 'Settings',  d: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6 M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z' },
 ]
 
@@ -1805,9 +1806,109 @@ function AnalyticsPage({ families, children, isMobile }) {
         </div>
       </div>
 
+      {/* Children by Age & Gender */}
+      <div style={{
+        background: '#fff', borderRadius: 14, border: `1px solid ${B.border}`,
+        padding: isMobile ? '14px' : '16px 20px', marginTop: 16,
+        boxShadow: `0 2px 12px rgba(30,125,34,0.06)`,
+      }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+          Children by Age &amp; Gender
+        </div>
+
+        {/* Gender totals */}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+          {[
+            { label: 'Male', key: 'male', color: '#0891b2', bg: '#e0f2fe' },
+            { label: 'Female', key: 'female', color: B.goldDark, bg: B.goldLight },
+          ].map(g => {
+            const count = children.filter(c => (c.gender || '').toLowerCase() === g.key).length
+            return (
+              <div key={g.key} style={{ background: g.bg, color: g.color, borderRadius: 20, padding: '5px 14px', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: g.color }} />
+                {g.label}: {count}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Age band breakdown table */}
+        {(() => {
+          const bands = [
+            { label: '0–5',   test: a => a <= 5 },
+            { label: '6–11',  test: a => a >= 6 && a <= 11 },
+            { label: '12–14', test: a => a >= 12 && a <= 14 },
+            { label: '15–17', test: a => a >= 15 && a <= 17 },
+            { label: '18+',   test: a => a >= 18 },
+          ]
+          const rows = bands.map(b => {
+            const inBand = children.filter(c => c.date_of_birth && b.test(calcAge(c.date_of_birth)))
+            const male = inBand.filter(c => (c.gender || '').toLowerCase() === 'male').length
+            const female = inBand.filter(c => (c.gender || '').toLowerCase() === 'female').length
+            return { label: b.label, total: inBand.length, male, female }
+          })
+          const unknown = children.filter(c => !c.date_of_birth).length
+          return (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                <thead>
+                  <tr style={{ borderBottom: `1.5px solid ${B.border}` }}>
+                    <th style={{ textAlign: 'left', padding: '6px 8px', color: B.textLight, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em' }}>Age</th>
+                    <th style={{ textAlign: 'right', padding: '6px 8px', color: B.textLight, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em' }}>Total</th>
+                    <th style={{ textAlign: 'right', padding: '6px 8px', color: '#0891b2', fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em' }}>Male</th>
+                    <th style={{ textAlign: 'right', padding: '6px 8px', color: B.goldDark, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em' }}>Female</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map(row => (
+                    <tr key={row.label} style={{ borderBottom: `1px solid ${B.greenLight}` }}>
+                      <td style={{ padding: '7px 8px', fontWeight: 600, color: B.text }}>{row.label}</td>
+                      <td style={{ padding: '7px 8px', textAlign: 'right', fontWeight: 700, color: B.text }}>{row.total}</td>
+                      <td style={{ padding: '7px 8px', textAlign: 'right', color: '#0891b2' }}>{row.male}</td>
+                      <td style={{ padding: '7px 8px', textAlign: 'right', color: B.goldDark }}>{row.female}</td>
+                    </tr>
+                  ))}
+                  {unknown > 0 && (
+                    <tr>
+                      <td colSpan={4} style={{ padding: '7px 8px', color: B.textLight, fontStyle: 'italic' }}>
+                        {unknown} {unknown === 1 ? 'child has' : 'children have'} no birth date on file
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )
+        })()}
+      </div>
+
+    </div>
+  )
+}
+
+// ─── ACADEMICS PAGE ───────────────────────────────────────────────────────────
+function AcademicsPage({ children, isMobile }) {
+  return (
+    <div style={{ padding: isMobile ? '14px 12px' : '22px 26px', maxWidth: 900, margin: '0 auto' }}>
+      {/* Gold accent banner */}
+      <div style={{
+        background: `linear-gradient(135deg, ${B.sidebar}, ${B.sidebarMid})`,
+        borderRadius: 14, padding: '16px 20px', marginBottom: 18,
+        display: 'flex', alignItems: 'center', gap: 14,
+        border: `1px solid rgba(245,168,0,0.3)`,
+        position: 'relative', overflow: 'hidden',
+      }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, ${B.gold}, ${B.green})` }} />
+        <div style={{ fontSize: 28 }}>🎓</div>
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>Academic Overview</div>
+          <div style={{ fontSize: 12, color: '#a5d6a7' }}>Academic status and student breakdown</div>
+        </div>
+      </div>
+
       {/* Academic status summary strip */}
       <div style={{
-        display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 16,
+        display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16,
         background: '#fff', borderRadius: 14, border: `1px solid ${B.border}`,
         padding: isMobile ? '12px 14px' : '14px 18px', boxShadow: `0 2px 12px rgba(30,125,34,0.06)`,
       }}>
@@ -1833,7 +1934,7 @@ function AnalyticsPage({ families, children, isMobile }) {
       {/* Student breakdown: gender & grade */}
       <div style={{
         background: '#fff', borderRadius: 14, border: `1px solid ${B.border}`,
-        padding: isMobile ? '14px' : '16px 20px', marginTop: 16,
+        padding: isMobile ? '14px' : '16px 20px',
         boxShadow: `0 2px 12px rgba(30,125,34,0.06)`,
       }}>
         <div style={{ fontSize: 10, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
@@ -1901,7 +2002,6 @@ function AnalyticsPage({ families, children, isMobile }) {
     </div>
   )
 }
-
 
 function SignupPage({ onSwitchToLogin }) {
   const [fullName, setFullName] = useState('')
@@ -2278,7 +2378,7 @@ export default function App() {
     : page === 'project-detail'
       ? selectedProject === 'HF' ? ['Projects', 'HF', selectedBranch] : ['Projects', 'OVC']
       : page === 'branches' ? ['Projects', 'HF'] : null
-  const pageTitle = { dashboard: 'Dashboard', detail: 'Family Details', analytics: 'Statistics', settings: 'Settings', projects: 'Projects', branches: 'HF Branches', 'project-detail': 'Beneficiaries', messaging: 'Send Message' }[page]
+  const pageTitle = { dashboard: 'Dashboard', detail: 'Family Details', analytics: 'Statistics', academics: 'Academics', settings: 'Settings', projects: 'Projects', branches: 'HF Branches', 'project-detail': 'Beneficiaries', messaging: 'Send Message' }[page]
 
   return (
     <div style={{
@@ -2374,6 +2474,7 @@ export default function App() {
             />
           )}
           {page === 'analytics' && <AnalyticsPage families={families} children={children} isMobile={isMobile} />}
+          {page === 'academics' && <AcademicsPage children={children} isMobile={isMobile} />}
           {page === 'messaging' && <MessagingPage families={families} isMobile={isMobile} />}
           {page === 'settings' && (
             <div style={{ padding: '60px 20px', textAlign: 'center', color: B.textLight }}>
