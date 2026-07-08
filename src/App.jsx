@@ -2181,6 +2181,72 @@ function LoginPage({ onLogin, onSwitchToSignup }) {
   )
 }
 
+// ─── SETTINGS PAGE ────────────────────────────────────────────────────────────
+function SettingsPage({ user, onUpdateUser, toast, isMobile }) {
+  const [fullName, setFullName] = useState(user?.full_name || '')
+  const [photoFile, setPhotoFile] = useState(null)
+  const [photoPreview, setPhotoPreview] = useState(user?.profile_photo_url || null)
+  const [newPass, setNewPass] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const handleSave = async () => {
+    if (!fullName) { toast('Full name is required', 'error'); return }
+    setSaving(true)
+    try {
+      let profile_photo_url = user?.profile_photo_url || null
+      if (photoFile) {
+        const path = `${user.id}/profile.jpg`
+        profile_photo_url = await uploadFile({ supabase, file: photoFile, bucket: BUCKETS.STAFF_PHOTOS, path, type: 'photo' })
+      }
+      const { error } = await supabase.from('users').update({ full_name: fullName, profile_photo_url }).eq('id', user.id)
+      if (error) throw error
+      if (newPass) {
+        const { error: passErr } = await supabase.auth.updateUser({ password: newPass })
+        if (passErr) throw passErr
+        setNewPass('')
+      }
+      onUpdateUser({ ...user, full_name: fullName, profile_photo_url })
+      toast('Settings saved', 'success')
+    } catch (e) { toast('Failed to save: ' + e.message, 'error') }
+    finally { setSaving(false) }
+  }
+
+  return (
+    <div style={{ maxWidth: 480, margin: '0 auto', padding: isMobile ? '16px 4px' : '24px 0' }}>
+      <div style={{ background: '#fff', borderRadius: 16, border: `1px solid ${B.border}`, padding: isMobile ? 20 : 28, boxShadow: `0 2px 12px rgba(30,125,34,0.06)` }}>
+        <div style={{ fontWeight: 800, fontSize: 16, color: B.text, marginBottom: 20 }}>My Profile</div>
+
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+          <ImageUpload label="Profile Photo" type="photo" currentUrl={photoPreview}
+            onFileReady={file => { setPhotoFile(file); setPhotoPreview(URL.createObjectURL(file)) }}
+            shape="circle" previewSize={88} />
+        </div>
+
+        <FI label="Full Name" value={fullName} onChange={setFullName} placeholder="Your full name" req />
+
+        <div style={{ marginBottom: 16 }}>
+          <FL>Email Address</FL>
+          <input value={user?.email || ''} disabled style={{ ...inputBase, background: B.bg, color: B.textLight, cursor: 'not-allowed' }} />
+        </div>
+
+        <div style={{ marginBottom: 4 }}>
+          <FL>Role</FL>
+          <input value={(user?.role || 'staff').replace(/^\w/, c => c.toUpperCase())} disabled style={{ ...inputBase, background: B.bg, color: B.textLight, cursor: 'not-allowed' }} />
+        </div>
+
+        <div style={{ height: 1, background: B.border, margin: '20px 0' }} />
+
+        <div style={{ fontWeight: 700, fontSize: 13, color: B.text, marginBottom: 12 }}>Change Password</div>
+        <FI label="New Password" value={newPass} onChange={setNewPass} type="password" placeholder="Leave blank to keep current password" />
+
+        <Btn onClick={handleSave} variant="primary" full disabled={saving}>
+          {saving ? 'Saving…' : 'Save Changes'}
+        </Btn>
+      </div>
+    </div>
+  )
+}
+
 // ─── ROOT APP ─────────────────────────────────────────────────────────────────
 export default function App() {
   const bp = useBreakpoint()
@@ -2485,11 +2551,7 @@ export default function App() {
           {page === 'academics' && <AcademicsPage children={children} isMobile={isMobile} />}
           {page === 'messaging' && <MessagingPage families={families} isMobile={isMobile} />}
           {page === 'settings' && (
-            <div style={{ padding: '60px 20px', textAlign: 'center', color: B.textLight }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>⚙️</div>
-              <div style={{ fontWeight: 700, fontSize: 16, color: B.text, marginBottom: 6 }}>Settings</div>
-              <div style={{ fontSize: 13 }}>User management coming soon.</div>
-            </div>
+            <SettingsPage user={user} onUpdateUser={setUser} toast={toast} isMobile={isMobile} />
           )}
         </div>
       </main>
