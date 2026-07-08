@@ -730,12 +730,14 @@ function BranchesPage({ families, onOpenBranch, onBack, isMobile }) {
 function MobileBottomNav({ page, setPage }) {
   const activePage = page === 'detail' ? 'families' : ['projects', 'branches', 'project-detail'].includes(page) ? 'projects' : page
   return (
-    <nav style={{
+    <nav className="mobile-nav-scroll" style={{
       position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200,
       background: B.sidebar, borderTop: `2px solid ${B.sidebarMid}`,
-      display: 'flex', height: 'calc(60px + env(safe-area-inset-bottom))',
+      display: 'flex', height: 'calc(54px + env(safe-area-inset-bottom))',
       paddingBottom: 'env(safe-area-inset-bottom)',
       boxShadow: '0 -4px 20px rgba(0,0,0,0.3)',
+      overflowX: 'auto', overflowY: 'hidden',
+      WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',
     }}>
       {NAV.map(item => {
         const active = activePage === item.id
@@ -744,19 +746,24 @@ function MobileBottomNav({ page, setPage }) {
             key={item.id}
             onClick={() => setPage(item.id)}
             style={{
-              flex: 1, display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center', gap: 3,
+              flex: '0 0 auto', minWidth: 60, maxWidth: 74,
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center', gap: 2,
               border: 'none', background: 'transparent', cursor: 'pointer',
+              padding: '4px 2px',
               borderTop: active ? `3px solid ${B.gold}` : '3px solid transparent',
               transition: 'all 0.15s', touchAction: 'manipulation',
             }}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
               stroke={active ? B.gold : '#6b9c6b'} strokeWidth="2"
               strokeLinecap="round" strokeLinejoin="round">
               <path d={item.d} />
             </svg>
-            <span style={{ fontSize: 10, fontWeight: active ? 700 : 500, color: active ? B.gold : '#6b9c6b' }}>
+            <span style={{
+              fontSize: 9, fontWeight: active ? 700 : 500, color: active ? B.gold : '#6b9c6b',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%',
+            }}>
               {item.label}
             </span>
           </button>
@@ -2390,6 +2397,7 @@ export default function App() {
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: ${B.greenLight}; }
         ::-webkit-scrollbar-thumb { background: ${B.border}; border-radius: 3px; }
+        .mobile-nav-scroll::-webkit-scrollbar { display: none; height: 0; }
         button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
           outline: 2px solid ${B.gold}; outline-offset: 2px;
         }
@@ -2426,7 +2434,7 @@ export default function App() {
       )}
 
       {/* Main content */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, paddingBottom: isMobile ? 'calc(60px + env(safe-area-inset-bottom))' : 0 }}>
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, paddingBottom: isMobile ? 'calc(54px + env(safe-area-inset-bottom))' : 0 }}>
         <Header title={pageTitle} breadcrumb={breadcrumb} isMobile={isMobile} user={user} />
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {(page === 'dashboard' || page === 'families') && (
