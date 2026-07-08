@@ -2034,7 +2034,7 @@ function SignupPage({ onSwitchToLogin }) {
       if (data.user) {
         const { error: profileError } = await supabase
           .from('users')
-          .upsert({ id: data.user.id, email, full_name: fullName, role: 'staff', profile_photo_url })
+          .upsert({ id: data.user.id, full_name: fullName, role: 'staff', profile_photo_url })
         if (profileError) throw profileError
       }
       setDone(true)
@@ -2327,7 +2327,8 @@ export default function App() {
 
   const loadUserProfile = async (uid) => {
     const { data } = await supabase.from('users').select('*').eq('id', uid).single()
-    setUser(data)
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    setUser(data ? { ...data, email: authUser?.email } : null)
     setAuthLoading(false)
   }
 
