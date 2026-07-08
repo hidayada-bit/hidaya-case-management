@@ -1229,6 +1229,160 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
   )
 }
 
+// ─── CHILDREN TAB (proper component so hooks are legal) ───────────────────────
+function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteChild, toast, onDocUploaded, setViewingDoc, setUploading, uploading, isMobile }) {
+  const [sortBy, setSortBy] = useState('name')
+  const [filterGender, setFilterGender] = useState('All')
+  const [filterStatus, setFilterStatus] = useState('All')
+
+  const statusColor = s => ({ 'Excellent': B.green, 'Good': '#0891b2', 'Average': B.goldDark, 'Needs Support': '#dc2626' }[s] || B.textLight)
+  const statusBg   = s => ({ 'Excellent': B.greenLight, 'Good': '#e0f2fe', 'Average': B.goldLight, 'Needs Support': '#fef2f2' }[s] || '#f3f4f6')
+
+  const sorted = [...kids]
+    .filter(c => filterGender === 'All' || c.gender === filterGender.toLowerCase())
+    .filter(c => filterStatus === 'All' || c.academic_status === filterStatus)
+    .sort((a, b) => {
+      if (sortBy === 'name') return a.child_name.localeCompare(b.child_name)
+      if (sortBy === 'age-asc') return new Date(b.date_of_birth) - new Date(a.date_of_birth)
+      if (sortBy === 'age-desc') return new Date(a.date_of_birth) - new Date(b.date_of_birth)
+      if (sortBy === 'grade') return (a.grade || '').localeCompare(b.grade || '')
+      if (sortBy === 'average-desc') return (b.academic_average || 0) - (a.academic_average || 0)
+      if (sortBy === 'average-asc') return (a.academic_average || 0) - (b.academic_average || 0)
+      return 0
+    })
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+        <span style={{ fontSize: 14, color: B.textMid }}>{kids.length} children registered</span>
+        <Btn onClick={() => onAddChild(family.id)} size="sm" variant="gold">＋ Add Child</Btn>
+      </div>
+
+      {kids.length === 0 ? (
+        <div style={{ background: B.greenLight, borderRadius: 13, padding: '40px', textAlign: 'center', color: B.textLight }}>
+          <div style={{ fontSize: 38, marginBottom: 8 }}>👶</div>
+          <div style={{ fontWeight: 600, marginBottom: 10 }}>No children added yet</div>
+          <Btn onClick={() => onAddChild(family.id)} size="sm" variant="gold">Add First Child</Btn>
+        </div>
+      ) : (
+        <>
+          {/* Sort + Filter bar */}
+          <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${B.border}`, padding: '12px 14px', marginBottom: 14, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sort:</div>
+            <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+              style={{ padding: '6px 10px', border: `1.5px solid ${B.border}`, borderRadius: 8, fontSize: 13, color: B.text, fontFamily: 'inherit', background: '#fafff9' }}>
+              <option value="name">Name A–Z</option>
+              <option value="age-desc">Oldest first</option>
+              <option value="age-asc">Youngest first</option>
+              <option value="grade">Grade</option>
+              <option value="average-desc">Average (High→Low)</option>
+              <option value="average-asc">Average (Low→High)</option>
+            </select>
+            <div style={{ fontSize: 11, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gender:</div>
+            {['All', 'Female', 'Male'].map(g => (
+              <button key={g} onClick={() => setFilterGender(g)}
+                style={{ padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1.5px solid ${filterGender === g ? B.green : B.border}`, background: filterGender === g ? B.green : '#fff', color: filterGender === g ? '#fff' : B.textMid }}>
+                {g}
+              </button>
+            ))}
+            <div style={{ fontSize: 11, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status:</div>
+            {['All', 'Excellent', 'Good', 'Average', 'Needs Support'].map(s => (
+              <button key={s} onClick={() => setFilterStatus(s)}
+                style={{ padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1.5px solid ${filterStatus === s ? B.green : B.border}`, background: filterStatus === s ? B.green : '#fff', color: filterStatus === s ? '#fff' : B.textMid, whiteSpace: 'nowrap' }}>
+                {s}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {sorted.length === 0 && (
+              <div style={{ background: B.greenLight, borderRadius: 13, padding: '30px', textAlign: 'center', color: B.textLight }}>
+                No children match the selected filters.
+              </div>
+            )}
+            {sorted.map(c => {
+              const childDocs = allDocs.filter(d => d.child_id === c.id)
+              return (
+                <div key={c.id} style={{ background: '#fff', borderRadius: 14, border: `1px solid ${B.border}`, padding: isMobile ? '14px' : '16px 18px', boxShadow: `0 2px 8px rgba(30,125,34,0.05)` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
+                    <Avatar name={c.child_name} photoUrl={c.child_photo_url} size={52} radius={12} clickable={true} />
+                    <div style={{ flex: 1, minWidth: 120 }}>
+                      <div style={{ fontWeight: 700, fontSize: 15, color: B.text }}>{c.child_name}</div>
+                      <div style={{ fontSize: 12, color: B.textMid, marginTop: 3 }}>
+                        {c.date_of_birth && <>Age {calcAge(c.date_of_birth)} · </>}
+                        <span style={{ textTransform: 'capitalize' }}>{c.gender}</span>
+                        {c.grade && <> · {c.grade}</>}
+                        {c.school_name && <> · 🏫 {c.school_name}</>}
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                        {c.academic_average != null && c.academic_average !== '' && (
+                          <span style={{ fontSize: 11, fontWeight: 700, background: B.greenLight, color: B.green, padding: '2px 9px', borderRadius: 20 }}>
+                            📊 {c.academic_average}%
+                          </span>
+                        )}
+                        {c.academic_status && (
+                          <span style={{ fontSize: 11, fontWeight: 700, background: statusBg(c.academic_status), color: statusColor(c.academic_status), padding: '2px 9px', borderRadius: 20 }}>
+                            {c.academic_status}
+                          </span>
+                        )}
+                        {c.medical_notes && (
+                          <span style={{ fontSize: 11, color: '#dc2626', background: '#fef2f2', padding: '2px 9px', borderRadius: 6 }}>⚕ {c.medical_notes}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexShrink: 0, width: isMobile ? '100%' : 'auto' }}>
+                      <Btn onClick={() => onEditChild(c)} variant="secondary" size="sm" full={isMobile}>✏ Edit</Btn>
+                      <Btn onClick={() => onDeleteChild(c)} variant="danger" size="sm" full={isMobile}>Delete</Btn>
+                    </div>
+                  </div>
+                  <div style={{ background: B.greenLight, borderRadius: 10, padding: '12px 14px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: B.textMid, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>📎 Documents</div>
+                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                      {['Birth Certificate', 'School Certificate'].map(docType => {
+                        const existing = childDocs.find(d => d.document_type === docType)
+                        return (
+                          <div key={docType} style={{ flex: 1, minWidth: 150 }}>
+                            <div style={{ fontSize: 11, color: B.textMid, marginBottom: 6, fontWeight: 600 }}>{docType}</div>
+                            {existing
+                              ? <div style={{ background: '#fff', border: `1px solid ${B.border}`, borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <span style={{ fontSize: 16 }}>📄</span>
+                                  <span style={{ fontSize: 11, color: B.green, fontWeight: 600, flex: 1 }}>Uploaded ✓</span>
+                                  <button onClick={() => setViewingDoc(existing)}
+                                    style={{ background: B.greenLight, border: 'none', borderRadius: 6, padding: '3px 9px', cursor: 'pointer', fontSize: 11, color: B.green, fontWeight: 700 }}>View</button>
+                                </div>
+                              : <label style={{ border: `1.5px dashed ${B.green}`, borderRadius: 8, padding: '8px 12px', fontSize: 11, color: B.green, background: '#fafff9', cursor: 'pointer', textAlign: 'center', display: 'block', fontWeight: 600 }}>
+                                  + Upload
+                                  <input type="file" accept="image/*,application/pdf" style={{ display: 'none' }} onChange={async e => {
+                                    if (!e.target.files[0]) return
+                                    setUploading(docType + c.id)
+                                    try {
+                                      const file = e.target.files[0]
+                                      const path = `${family.family_code}/child-${c.id.slice(0, 8)}-${docType.replace(/\s+/g, '-').toLowerCase()}.jpg`
+                                      const url = await uploadFile({ supabase, file, bucket: BUCKETS.DOCUMENTS, path, type: 'document' })
+                                      await supabase.from('documents').insert({ family_id: family.id, child_id: c.id, document_type: docType, file_url: url, file_name: file.name, file_size_kb: Math.round(file.size / 1024) })
+                                      toast(`${docType} uploaded`)
+                                      onDocUploaded()
+                                    } catch (err) { toast(err.message, 'error') }
+                                    finally { setUploading(null) }
+                                  }} />
+                                </label>
+                            }
+                            {uploading === docType + c.id && <div style={{ fontSize: 11, color: B.green, marginTop: 4 }}>⏳ Uploading…</div>}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 // ─── FAMILY DETAIL PAGE ───────────────────────────────────────────────────────
 function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, onAddChild, onEditChild, onDeleteChild, toast, onDocUploaded, isMobile }) {
   const kids = allChildren.filter(c => c.family_id === family.id)
@@ -1423,159 +1577,15 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
         </div>
       )}
 
+
       {tab === 'children' && (
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
-            <span style={{ fontSize: 14, color: B.textMid }}>{kids.length} children registered</span>
-            <Btn onClick={() => onAddChild(family.id)} size="sm" variant="gold">＋ Add Child</Btn>
-          </div>
-
-          {/* Sort + Filter controls */}
-          {kids.length > 0 && (() => {
-            const [sortBy, setSortBy] = useState('name')
-            const [filterGender, setFilterGender] = useState('All')
-            const [filterStatus, setFilterStatus] = useState('All')
-
-            const sorted = [...kids]
-              .filter(c => filterGender === 'All' || c.gender === filterGender.toLowerCase())
-              .filter(c => filterStatus === 'All' || c.academic_status === filterStatus)
-              .sort((a, b) => {
-                if (sortBy === 'name') return a.child_name.localeCompare(b.child_name)
-                if (sortBy === 'age-asc') return new Date(b.date_of_birth) - new Date(a.date_of_birth)
-                if (sortBy === 'age-desc') return new Date(a.date_of_birth) - new Date(b.date_of_birth)
-                if (sortBy === 'grade') return (a.grade || '').localeCompare(b.grade || '')
-                if (sortBy === 'average-desc') return (b.academic_average || 0) - (a.academic_average || 0)
-                if (sortBy === 'average-asc') return (a.academic_average || 0) - (b.academic_average || 0)
-                return 0
-              })
-
-            const statusColor = s => ({ 'Excellent': B.green, 'Good': '#0891b2', 'Average': B.goldDark, 'Needs Support': '#dc2626' }[s] || B.textLight)
-            const statusBg   = s => ({ 'Excellent': B.greenLight, 'Good': '#e0f2fe', 'Average': B.goldLight, 'Needs Support': '#fef2f2' }[s] || '#f3f4f6')
-
-            return (
-              <>
-                <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${B.border}`, padding: '12px 14px', marginBottom: 14, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sort:</div>
-                  <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-                    style={{ padding: '6px 10px', border: `1.5px solid ${B.border}`, borderRadius: 8, fontSize: 13, color: B.text, fontFamily: 'inherit', background: '#fafff9' }}>
-                    <option value="name">Name A–Z</option>
-                    <option value="age-desc">Oldest first</option>
-                    <option value="age-asc">Youngest first</option>
-                    <option value="grade">Grade</option>
-                    <option value="average-desc">Average (High→Low)</option>
-                    <option value="average-asc">Average (Low→High)</option>
-                  </select>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gender:</div>
-                  {['All', 'Female', 'Male'].map(g => (
-                    <button key={g} onClick={() => setFilterGender(g)}
-                      style={{ padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1.5px solid ${filterGender === g ? B.green : B.border}`, background: filterGender === g ? B.green : '#fff', color: filterGender === g ? '#fff' : B.textMid }}>
-                      {g}
-                    </button>
-                  ))}
-                  <div style={{ fontSize: 11, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status:</div>
-                  {['All', 'Excellent', 'Good', 'Average', 'Needs Support'].map(s => (
-                    <button key={s} onClick={() => setFilterStatus(s)}
-                      style={{ padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1.5px solid ${filterStatus === s ? B.green : B.border}`, background: filterStatus === s ? B.green : '#fff', color: filterStatus === s ? '#fff' : B.textMid, whiteSpace: 'nowrap' }}>
-                      {s}
-                    </button>
-                  ))}
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {sorted.length === 0 && (
-                    <div style={{ background: B.greenLight, borderRadius: 13, padding: '30px', textAlign: 'center', color: B.textLight }}>
-                      No children match the selected filters.
-                    </div>
-                  )}
-                  {sorted.map(c => {
-                    const childDocs = allDocs.filter(d => d.child_id === c.id)
-                    return (
-                      <div key={c.id} style={{ background: '#fff', borderRadius: 14, border: `1px solid ${B.border}`, padding: isMobile ? '14px' : '16px 18px', boxShadow: `0 2px 8px rgba(30,125,34,0.05)` }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
-                          <Avatar name={c.child_name} photoUrl={c.child_photo_url} size={52} radius={12} clickable={true} />
-                          <div style={{ flex: 1, minWidth: 120 }}>
-                            <div style={{ fontWeight: 700, fontSize: 15, color: B.text }}>{c.child_name}</div>
-                            <div style={{ fontSize: 12, color: B.textMid, marginTop: 3 }}>
-                              {c.date_of_birth && <>Age {calcAge(c.date_of_birth)} · </>}
-                              <span style={{ textTransform: 'capitalize' }}>{c.gender}</span>
-                              {c.grade && <> · {c.grade}</>}
-                              {c.school_name && <> · 🏫 {c.school_name}</>}
-                            </div>
-                            <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
-                              {c.academic_average != null && c.academic_average !== '' && (
-                                <span style={{ fontSize: 11, fontWeight: 700, background: B.greenLight, color: B.green, padding: '2px 9px', borderRadius: 20 }}>
-                                  📊 {c.academic_average}%
-                                </span>
-                              )}
-                              {c.academic_status && (
-                                <span style={{ fontSize: 11, fontWeight: 700, background: statusBg(c.academic_status), color: statusColor(c.academic_status), padding: '2px 9px', borderRadius: 20 }}>
-                                  {c.academic_status}
-                                </span>
-                              )}
-                              {c.medical_notes && (
-                                <span style={{ fontSize: 11, color: '#dc2626', background: '#fef2f2', padding: '2px 9px', borderRadius: 6 }}>⚕ {c.medical_notes}</span>
-                              )}
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', gap: 8, flexShrink: 0, width: isMobile ? '100%' : 'auto' }}>
-                            <Btn onClick={() => onEditChild(c)} variant="secondary" size="sm" full={isMobile}>✏ Edit</Btn>
-                            <Btn onClick={() => onDeleteChild(c)} variant="danger" size="sm" full={isMobile}>Delete</Btn>
-                          </div>
-                        </div>
-                        <div style={{ background: B.greenLight, borderRadius: 10, padding: '12px 14px' }}>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: B.textMid, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>📎 Documents</div>
-                          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                            {['Birth Certificate', 'School Certificate'].map(docType => {
-                              const existing = childDocs.find(d => d.document_type === docType)
-                              return (
-                                <div key={docType} style={{ flex: 1, minWidth: 150 }}>
-                                  <div style={{ fontSize: 11, color: B.textMid, marginBottom: 6, fontWeight: 600 }}>{docType}</div>
-                                  {existing
-                                    ? <div style={{ background: '#fff', border: `1px solid ${B.border}`, borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <span style={{ fontSize: 16 }}>📄</span>
-                                        <span style={{ fontSize: 11, color: B.green, fontWeight: 600, flex: 1 }}>Uploaded ✓</span>
-                                        <button onClick={() => setViewingDoc(existing)}
-                                          style={{ background: B.greenLight, border: 'none', borderRadius: 6, padding: '3px 9px', cursor: 'pointer', fontSize: 11, color: B.green, fontWeight: 700 }}>View</button>
-                                      </div>
-                                    : <label style={{ border: `1.5px dashed ${B.green}`, borderRadius: 8, padding: '8px 12px', fontSize: 11, color: B.green, background: '#fafff9', cursor: 'pointer', textAlign: 'center', display: 'block', fontWeight: 600 }}>
-                                        + Upload
-                                        <input type="file" accept="image/*,application/pdf" style={{ display: 'none' }} onChange={async e => {
-                                          if (!e.target.files[0]) return
-                                          setUploading(docType + c.id)
-                                          try {
-                                            const file = e.target.files[0]
-                                            const path = `${family.family_code}/child-${c.id.slice(0, 8)}-${docType.replace(/\s+/g, '-').toLowerCase()}.jpg`
-                                            const url = await uploadFile({ supabase, file, bucket: BUCKETS.DOCUMENTS, path, type: 'document' })
-                                            await supabase.from('documents').insert({ family_id: family.id, child_id: c.id, document_type: docType, file_url: url, file_name: file.name, file_size_kb: Math.round(file.size / 1024) })
-                                            toast(`${docType} uploaded`)
-                                            onDocUploaded()
-                                          } catch (err) { toast(err.message, 'error') }
-                                          finally { setUploading(null) }
-                                        }} />
-                                      </label>
-                                  }
-                                  {uploading === docType + c.id && <div style={{ fontSize: 11, color: B.green, marginTop: 4 }}>⏳ Uploading…</div>}
-                                </div>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </>
-            )
-          })()}
-
-          {kids.length === 0 && (
-            <div style={{ background: B.greenLight, borderRadius: 13, padding: '40px', textAlign: 'center', color: B.textLight }}>
-              <div style={{ fontSize: 38, marginBottom: 8 }}>👶</div>
-              <div style={{ fontWeight: 600, marginBottom: 10 }}>No children added yet</div>
-              <Btn onClick={() => onAddChild(family.id)} size="sm" variant="gold">Add First Child</Btn>
-            </div>
-          )}
-        </div>
+        <ChildrenTab
+          kids={kids} allDocs={allDocs} family={family}
+          onAddChild={onAddChild} onEditChild={onEditChild} onDeleteChild={onDeleteChild}
+          toast={toast} onDocUploaded={onDocUploaded}
+          setViewingDoc={setViewingDoc} setUploading={setUploading} uploading={uploading}
+          isMobile={isMobile}
+        />
       )}
 
       {/* DOCUMENTS */}
