@@ -2032,7 +2032,10 @@ function SignupPage({ onSwitchToLogin }) {
         profile_photo_url = await uploadFile({ supabase, file: photoFile, bucket: BUCKETS.STAFF_PHOTOS, path, type: 'photo' })
       }
       if (data.user) {
-        await supabase.from('users').insert({ id: data.user.id, email, full_name: fullName, role: 'staff', profile_photo_url })
+        const { error: profileError } = await supabase
+          .from('users')
+          .upsert({ id: data.user.id, email, full_name: fullName, role: 'staff', profile_photo_url })
+        if (profileError) throw profileError
       }
       setDone(true)
     } catch (e) { setError(e.message) }
