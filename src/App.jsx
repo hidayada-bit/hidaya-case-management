@@ -441,12 +441,166 @@ const DonutChart = ({ active, inactive, pending }) => {
 
 // ─── MOBILE BOTTOM NAV ────────────────────────────────────────────────────────
 const NAV = [
-  { id: 'dashboard', label: 'Home',    d: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10' },
-  { id: 'projects',  label: 'Projects', d: 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z' },
-  { id: 'families',  label: 'Families', d: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75' },
-  { id: 'analytics', label: 'Stats',   d: 'M18 20V10 M12 20V4 M6 20v-6' },
-  { id: 'settings',  label: 'Settings', d: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6 M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z' },
+  { id: 'dashboard', label: 'Home',      d: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10' },
+  { id: 'projects',  label: 'Projects',  d: 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z' },
+  { id: 'families',  label: 'Families',  d: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75' },
+  { id: 'messaging', label: 'Messages',  d: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
+  { id: 'analytics', label: 'Stats',     d: 'M18 20V10 M12 20V4 M6 20v-6' },
+  { id: 'settings',  label: 'Settings',  d: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6 M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z' },
 ]
+
+// ─── MESSAGING PAGE ───────────────────────────────────────────────────────────
+function MessagingPage({ families, isMobile }) {
+  const [message, setMessage] = useState('')
+  const [selectedProject, setSelectedProject] = useState('OVC')
+  const [selectedBranch, setSelectedBranch] = useState('All')
+  const GROUP_SIZE = 10
+
+  const recipients = families.filter(f => {
+    if (f.project !== selectedProject) return false
+    if (selectedProject === 'HF' && selectedBranch !== 'All' && f.branch !== selectedBranch) return false
+    return f.phone_number
+  })
+
+  // Split into groups of 10
+  const groups = []
+  for (let i = 0; i < recipients.length; i += GROUP_SIZE) {
+    groups.push(recipients.slice(i, i + GROUP_SIZE))
+  }
+
+  const openSMS = (group) => {
+    if (!message.trim()) { alert('Please type a message first.'); return }
+    const numbers = group.map(f => f.phone_number.replace(/[\s\-]/g, '')).join(',')
+    window.open(`sms:${numbers}?body=${encodeURIComponent(message)}`, '_blank')
+  }
+
+  const branchOptions = ['All', ...HF_BRANCHES]
+
+  return (
+    <div style={{ padding: isMobile ? '14px 12px 28px' : '22px 26px', maxWidth: 820, margin: '0 auto' }}>
+      {/* Header banner */}
+      <div style={{
+        background: `linear-gradient(135deg, ${B.sidebar}, ${B.sidebarMid})`,
+        borderRadius: 14, padding: '16px 20px', marginBottom: 20,
+        display: 'flex', alignItems: 'center', gap: 14,
+        border: `1px solid rgba(245,168,0,0.3)`, position: 'relative', overflow: 'hidden',
+      }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, ${B.gold}, ${B.green})` }} />
+        <div style={{ fontSize: 28 }}>💬</div>
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>Send Announcement</div>
+          <div style={{ fontSize: 12, color: '#a5d6a7' }}>Compose a message and send to beneficiary groups via SMS</div>
+        </div>
+      </div>
+
+      {/* Project + Branch selectors */}
+      <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${B.border}`, padding: '18px', marginBottom: 16, boxShadow: `0 2px 12px rgba(30,125,34,0.06)` }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: B.textMid, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>1. Select Recipients</div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          {['OVC', 'HF'].map(p => (
+            <button key={p} onClick={() => { setSelectedProject(p); setSelectedBranch('All') }}
+              style={{
+                padding: '8px 20px', borderRadius: 20, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                border: `1.5px solid ${selectedProject === p ? B.green : B.border}`,
+                background: selectedProject === p ? B.green : '#fff',
+                color: selectedProject === p ? '#fff' : B.textMid,
+                transition: 'all 0.15s',
+              }}>{p}</button>
+          ))}
+        </div>
+        {selectedProject === 'HF' && (
+          <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {branchOptions.map(b => (
+              <button key={b} onClick={() => setSelectedBranch(b)}
+                style={{
+                  padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  border: `1.5px solid ${selectedBranch === b ? B.gold : B.border}`,
+                  background: selectedBranch === b ? B.goldLight : '#fff',
+                  color: selectedBranch === b ? B.goldDark : B.textMid,
+                  transition: 'all 0.15s',
+                }}>{b}</button>
+            ))}
+          </div>
+        )}
+        <div style={{ marginTop: 12, fontSize: 12, color: B.textMid }}>
+          <span style={{ fontWeight: 700, color: B.green }}>{recipients.length}</span> recipients with phone numbers
+          {recipients.length !== families.filter(f => f.project === selectedProject).length && (
+            <span style={{ color: '#dc2626', marginLeft: 6 }}>({families.filter(f => f.project === selectedProject).length - recipients.length} missing phone numbers)</span>
+          )}
+        </div>
+      </div>
+
+      {/* Message compose */}
+      <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${B.border}`, padding: '18px', marginBottom: 16, boxShadow: `0 2px 12px rgba(30,125,34,0.06)` }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: B.textMid, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>2. Compose Message</div>
+        <textarea
+          value={message}
+          onChange={e => setMessage(e.target.value)}
+          placeholder="Type your announcement here… e.g. Dear beneficiary, please be informed that the next distribution will be on Monday 10th at 9:00AM."
+          rows={5}
+          style={{
+            width: '100%', padding: '12px 14px', border: `1.5px solid ${B.border}`,
+            borderRadius: 10, fontSize: 15, color: B.text, fontFamily: 'inherit',
+            background: '#fafff9', resize: 'vertical', outline: 'none', boxSizing: 'border-box',
+          }}
+          onFocus={e => e.target.style.borderColor = B.green}
+          onBlur={e => e.target.style.borderColor = B.border}
+        />
+        <div style={{ fontSize: 11, color: B.textLight, marginTop: 6 }}>{message.length} characters</div>
+      </div>
+
+      {/* Groups */}
+      {recipients.length === 0 ? (
+        <div style={{ background: B.greenLight, borderRadius: 13, padding: '40px', textAlign: 'center', color: B.textLight }}>
+          <div style={{ fontSize: 38, marginBottom: 8 }}>📵</div>
+          <div style={{ fontWeight: 600 }}>No recipients found with phone numbers</div>
+        </div>
+      ) : (
+        <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${B.border}`, overflow: 'hidden', boxShadow: `0 2px 12px rgba(30,125,34,0.06)` }}>
+          <div style={{ padding: '14px 18px', borderBottom: `1px solid ${B.greenLight}`, background: B.greenLight, fontSize: 12, fontWeight: 700, color: B.textMid, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            3. Send to Groups — {groups.length} group{groups.length !== 1 ? 's' : ''} of {GROUP_SIZE}
+          </div>
+          {groups.map((group, idx) => (
+            <div key={idx} style={{
+              padding: '14px 18px', borderBottom: `1px solid ${B.greenLight}`,
+              display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
+            }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: B.greenLight, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 13, fontWeight: 800, color: B.green, flexShrink: 0,
+              }}>{idx + 1}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: B.text, marginBottom: 3 }}>
+                  Group {idx + 1} — {group.length} recipients
+                </div>
+                <div style={{ fontSize: 11, color: B.textLight, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {group.map(f => f.mother_name).join(', ')}
+                </div>
+              </div>
+              <button
+                onClick={() => openSMS(group)}
+                style={{
+                  background: `linear-gradient(135deg, ${B.green}, ${B.greenMid})`,
+                  color: '#fff', border: 'none', borderRadius: 10,
+                  padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  boxShadow: `0 2px 8px rgba(30,125,34,0.3)`,
+                  minHeight: 40, flexShrink: 0,
+                }}
+              >
+                📱 Send SMS
+              </button>
+            </div>
+          ))}
+          <div style={{ padding: '12px 18px', background: B.goldLight, fontSize: 12, color: B.goldDark, fontWeight: 600 }}>
+            💡 Tap "Send SMS" on each group — your phone's SMS app will open with the numbers and message pre-filled. Send one group, come back, send the next.
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 // ─── PROJECTS ─────────────────────────────────────────────────────────────────
 const HF_BRANCHES = ['Addis Ababa', 'Bishoftu', 'Dangla', 'Bure', 'Dire Dawa', 'Nekemte', 'Chagni']
@@ -1269,13 +1423,151 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
         </div>
       )}
 
-      {/* CHILDREN */}
       {tab === 'children' && (
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
             <span style={{ fontSize: 14, color: B.textMid }}>{kids.length} children registered</span>
             <Btn onClick={() => onAddChild(family.id)} size="sm" variant="gold">＋ Add Child</Btn>
           </div>
+
+          {/* Sort + Filter controls */}
+          {kids.length > 0 && (() => {
+            const [sortBy, setSortBy] = useState('name')
+            const [filterGender, setFilterGender] = useState('All')
+            const [filterStatus, setFilterStatus] = useState('All')
+
+            const sorted = [...kids]
+              .filter(c => filterGender === 'All' || c.gender === filterGender.toLowerCase())
+              .filter(c => filterStatus === 'All' || c.academic_status === filterStatus)
+              .sort((a, b) => {
+                if (sortBy === 'name') return a.child_name.localeCompare(b.child_name)
+                if (sortBy === 'age-asc') return new Date(b.date_of_birth) - new Date(a.date_of_birth)
+                if (sortBy === 'age-desc') return new Date(a.date_of_birth) - new Date(b.date_of_birth)
+                if (sortBy === 'grade') return (a.grade || '').localeCompare(b.grade || '')
+                if (sortBy === 'average-desc') return (b.academic_average || 0) - (a.academic_average || 0)
+                if (sortBy === 'average-asc') return (a.academic_average || 0) - (b.academic_average || 0)
+                return 0
+              })
+
+            const statusColor = s => ({ 'Excellent': B.green, 'Good': '#0891b2', 'Average': B.goldDark, 'Needs Support': '#dc2626' }[s] || B.textLight)
+            const statusBg   = s => ({ 'Excellent': B.greenLight, 'Good': '#e0f2fe', 'Average': B.goldLight, 'Needs Support': '#fef2f2' }[s] || '#f3f4f6')
+
+            return (
+              <>
+                <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${B.border}`, padding: '12px 14px', marginBottom: 14, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sort:</div>
+                  <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+                    style={{ padding: '6px 10px', border: `1.5px solid ${B.border}`, borderRadius: 8, fontSize: 13, color: B.text, fontFamily: 'inherit', background: '#fafff9' }}>
+                    <option value="name">Name A–Z</option>
+                    <option value="age-desc">Oldest first</option>
+                    <option value="age-asc">Youngest first</option>
+                    <option value="grade">Grade</option>
+                    <option value="average-desc">Average (High→Low)</option>
+                    <option value="average-asc">Average (Low→High)</option>
+                  </select>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gender:</div>
+                  {['All', 'Female', 'Male'].map(g => (
+                    <button key={g} onClick={() => setFilterGender(g)}
+                      style={{ padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1.5px solid ${filterGender === g ? B.green : B.border}`, background: filterGender === g ? B.green : '#fff', color: filterGender === g ? '#fff' : B.textMid }}>
+                      {g}
+                    </button>
+                  ))}
+                  <div style={{ fontSize: 11, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status:</div>
+                  {['All', 'Excellent', 'Good', 'Average', 'Needs Support'].map(s => (
+                    <button key={s} onClick={() => setFilterStatus(s)}
+                      style={{ padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1.5px solid ${filterStatus === s ? B.green : B.border}`, background: filterStatus === s ? B.green : '#fff', color: filterStatus === s ? '#fff' : B.textMid, whiteSpace: 'nowrap' }}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {sorted.length === 0 && (
+                    <div style={{ background: B.greenLight, borderRadius: 13, padding: '30px', textAlign: 'center', color: B.textLight }}>
+                      No children match the selected filters.
+                    </div>
+                  )}
+                  {sorted.map(c => {
+                    const childDocs = allDocs.filter(d => d.child_id === c.id)
+                    return (
+                      <div key={c.id} style={{ background: '#fff', borderRadius: 14, border: `1px solid ${B.border}`, padding: isMobile ? '14px' : '16px 18px', boxShadow: `0 2px 8px rgba(30,125,34,0.05)` }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
+                          <Avatar name={c.child_name} photoUrl={c.child_photo_url} size={52} radius={12} clickable={true} />
+                          <div style={{ flex: 1, minWidth: 120 }}>
+                            <div style={{ fontWeight: 700, fontSize: 15, color: B.text }}>{c.child_name}</div>
+                            <div style={{ fontSize: 12, color: B.textMid, marginTop: 3 }}>
+                              {c.date_of_birth && <>Age {calcAge(c.date_of_birth)} · </>}
+                              <span style={{ textTransform: 'capitalize' }}>{c.gender}</span>
+                              {c.grade && <> · {c.grade}</>}
+                              {c.school_name && <> · 🏫 {c.school_name}</>}
+                            </div>
+                            <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                              {c.academic_average != null && c.academic_average !== '' && (
+                                <span style={{ fontSize: 11, fontWeight: 700, background: B.greenLight, color: B.green, padding: '2px 9px', borderRadius: 20 }}>
+                                  📊 {c.academic_average}%
+                                </span>
+                              )}
+                              {c.academic_status && (
+                                <span style={{ fontSize: 11, fontWeight: 700, background: statusBg(c.academic_status), color: statusColor(c.academic_status), padding: '2px 9px', borderRadius: 20 }}>
+                                  {c.academic_status}
+                                </span>
+                              )}
+                              {c.medical_notes && (
+                                <span style={{ fontSize: 11, color: '#dc2626', background: '#fef2f2', padding: '2px 9px', borderRadius: 6 }}>⚕ {c.medical_notes}</span>
+                              )}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 8, flexShrink: 0, width: isMobile ? '100%' : 'auto' }}>
+                            <Btn onClick={() => onEditChild(c)} variant="secondary" size="sm" full={isMobile}>✏ Edit</Btn>
+                            <Btn onClick={() => onDeleteChild(c)} variant="danger" size="sm" full={isMobile}>Delete</Btn>
+                          </div>
+                        </div>
+                        <div style={{ background: B.greenLight, borderRadius: 10, padding: '12px 14px' }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: B.textMid, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>📎 Documents</div>
+                          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                            {['Birth Certificate', 'School Certificate'].map(docType => {
+                              const existing = childDocs.find(d => d.document_type === docType)
+                              return (
+                                <div key={docType} style={{ flex: 1, minWidth: 150 }}>
+                                  <div style={{ fontSize: 11, color: B.textMid, marginBottom: 6, fontWeight: 600 }}>{docType}</div>
+                                  {existing
+                                    ? <div style={{ background: '#fff', border: `1px solid ${B.border}`, borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <span style={{ fontSize: 16 }}>📄</span>
+                                        <span style={{ fontSize: 11, color: B.green, fontWeight: 600, flex: 1 }}>Uploaded ✓</span>
+                                        <button onClick={() => setViewingDoc(existing)}
+                                          style={{ background: B.greenLight, border: 'none', borderRadius: 6, padding: '3px 9px', cursor: 'pointer', fontSize: 11, color: B.green, fontWeight: 700 }}>View</button>
+                                      </div>
+                                    : <label style={{ border: `1.5px dashed ${B.green}`, borderRadius: 8, padding: '8px 12px', fontSize: 11, color: B.green, background: '#fafff9', cursor: 'pointer', textAlign: 'center', display: 'block', fontWeight: 600 }}>
+                                        + Upload
+                                        <input type="file" accept="image/*,application/pdf" style={{ display: 'none' }} onChange={async e => {
+                                          if (!e.target.files[0]) return
+                                          setUploading(docType + c.id)
+                                          try {
+                                            const file = e.target.files[0]
+                                            const path = `${family.family_code}/child-${c.id.slice(0, 8)}-${docType.replace(/\s+/g, '-').toLowerCase()}.jpg`
+                                            const url = await uploadFile({ supabase, file, bucket: BUCKETS.DOCUMENTS, path, type: 'document' })
+                                            await supabase.from('documents').insert({ family_id: family.id, child_id: c.id, document_type: docType, file_url: url, file_name: file.name, file_size_kb: Math.round(file.size / 1024) })
+                                            toast(`${docType} uploaded`)
+                                            onDocUploaded()
+                                          } catch (err) { toast(err.message, 'error') }
+                                          finally { setUploading(null) }
+                                        }} />
+                                      </label>
+                                  }
+                                  {uploading === docType + c.id && <div style={{ fontSize: 11, color: B.green, marginTop: 4 }}>⏳ Uploading…</div>}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
+            )
+          })()}
+
           {kids.length === 0 && (
             <div style={{ background: B.greenLight, borderRadius: 13, padding: '40px', textAlign: 'center', color: B.textLight }}>
               <div style={{ fontSize: 38, marginBottom: 8 }}>👶</div>
@@ -1283,75 +1575,6 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
               <Btn onClick={() => onAddChild(family.id)} size="sm" variant="gold">Add First Child</Btn>
             </div>
           )}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {kids.map(c => {
-              const childDocs = allDocs.filter(d => d.child_id === c.id)
-              return (
-                <div key={c.id} style={{
-                  background: '#fff', borderRadius: 14,
-                  border: `1px solid ${B.border}`, padding: isMobile ? '14px' : '16px 18px',
-                  boxShadow: `0 2px 8px rgba(30,125,34,0.05)`,
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
-                    <Avatar name={c.child_name} photoUrl={c.child_photo_url} size={52} radius={12} clickable={true} />
-                    <div style={{ flex: 1, minWidth: 120 }}>
-                      <div style={{ fontWeight: 700, fontSize: 15, color: B.text }}>{c.child_name}</div>
-                      <div style={{ fontSize: 12, color: B.textMid, marginTop: 3 }}>
-                        {c.date_of_birth && <>Age {calcAge(c.date_of_birth)} · {c.date_of_birth} · </>}{c.grade} · 🏫 {c.school_name}
-                      </div>
-                      {c.medical_notes && (
-                        <div style={{ marginTop: 5, fontSize: 11, color: '#dc2626', background: '#fef2f2', padding: '3px 9px', borderRadius: 6, display: 'inline-block' }}>
-                          ⚕ {c.medical_notes}
-                        </div>
-                      )}
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, flexShrink: 0, width: isMobile ? '100%' : 'auto' }}>
-                      <Btn onClick={() => onEditChild(c)} variant="secondary" size="sm" full={isMobile}>✏ Edit</Btn>
-                      <Btn onClick={() => onDeleteChild(c)} variant="danger" size="sm" full={isMobile}>Delete</Btn>
-                    </div>
-                  </div>
-                  <div style={{ background: B.greenLight, borderRadius: 10, padding: '12px 14px' }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: B.textMid, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>📎 Documents</div>
-                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                      {['Birth Certificate', 'School Certificate'].map(docType => {
-                        const existing = childDocs.find(d => d.document_type === docType)
-                        return (
-                          <div key={docType} style={{ flex: 1, minWidth: 150 }}>
-                            <div style={{ fontSize: 11, color: B.textMid, marginBottom: 6, fontWeight: 600 }}>{docType}</div>
-                            {existing
-                              ? <div style={{ background: '#fff', border: `1px solid ${B.border}`, borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                                  <span style={{ fontSize: 16 }}>📄</span>
-                                  <span style={{ fontSize: 11, color: B.green, fontWeight: 600, flex: 1 }}>Uploaded ✓</span>
-                                  <button onClick={() => setViewingDoc(existing)}
-                                    style={{ background: B.greenLight, border: 'none', borderRadius: 6, padding: '3px 9px', cursor: 'pointer', fontSize: 11, color: B.green, fontWeight: 700 }}>View</button>
-                                </div>
-                              : <label style={{ border: `1.5px dashed ${B.green}`, borderRadius: 8, padding: '8px 12px', fontSize: 11, color: B.green, background: '#fafff9', cursor: 'pointer', textAlign: 'center', display: 'block', fontWeight: 600 }}>
-                                  + Upload
-                                  <input type="file" accept="image/*,application/pdf" style={{ display: 'none' }} onChange={async e => {
-                                    if (!e.target.files[0]) return
-                                    setUploading(docType + c.id)
-                                    try {
-                                      const file = e.target.files[0]
-                                      const path = `${family.family_code}/child-${c.id.slice(0, 8)}-${docType.replace(/\s+/g, '-').toLowerCase()}.jpg`
-                                      const url = await uploadFile({ supabase, file, bucket: BUCKETS.DOCUMENTS, path, type: 'document' })
-                                      await supabase.from('documents').insert({ family_id: family.id, child_id: c.id, document_type: docType, file_url: url, file_name: file.name, file_size_kb: Math.round(file.size / 1024) })
-                                      toast(`${docType} uploaded`)
-                                      onDocUploaded()
-                                    } catch (err) { toast(err.message, 'error') }
-                                    finally { setUploading(null) }
-                                  }} />
-                                </label>
-                            }
-                            {uploading === docType + c.id && <div style={{ fontSize: 11, color: B.green, marginTop: 4 }}>⏳ Uploading…</div>}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
         </div>
       )}
 
@@ -1474,7 +1697,7 @@ function FamilyForm({ initial, defaultProject, defaultBranch, onSave, onCancel, 
 
 // ─── CHILD FORM ───────────────────────────────────────────────────────────────
 function ChildForm({ initial, familyId, onSave, onCancel, saving }) {
-  const [f, setF] = useState(initial || { child_name: '', gender: 'female', date_of_birth: '', grade: '', school_name: '', medical_notes: '', child_photo_url: null })
+  const [f, setF] = useState(initial || { child_name: '', gender: 'female', date_of_birth: '', grade: '', school_name: '', medical_notes: '', child_photo_url: null, academic_average: '', academic_status: '' })
   const [photoFile, setPhotoFile] = useState(null)
   const [birthCertFile, setBirthCertFile] = useState(null)
   const [schoolCertFile, setSchoolCertFile] = useState(null)
@@ -1495,6 +1718,14 @@ function ChildForm({ initial, familyId, onSave, onCancel, saving }) {
         <FI label="Date of Birth" value={f.date_of_birth} onChange={s('date_of_birth')} type="date" req />
         <FI label="Grade / Level" value={f.grade} onChange={s('grade')} placeholder="Grade 4" />
         <FI label="School Name" value={f.school_name} onChange={s('school_name')} placeholder="School name" />
+        <FI label="Academic Average (0–100)" value={f.academic_average} onChange={s('academic_average')} type="number" placeholder="e.g. 85" />
+        <FS label="Academic Status" value={f.academic_status} onChange={s('academic_status')} options={[
+          { value: '', label: 'Select status…' },
+          { value: 'Excellent', label: '🌟 Excellent' },
+          { value: 'Good', label: '👍 Good' },
+          { value: 'Average', label: '📊 Average' },
+          { value: 'Needs Support', label: '⚠️ Needs Support' },
+        ]} />
       </div>
       <FT label="Medical Notes" value={f.medical_notes} onChange={s('medical_notes')} placeholder="Any health conditions…" />
       <div style={{ background: B.greenLight, borderRadius: 11, padding: '14px', marginBottom: 14, border: `1px solid ${B.border}` }}>
@@ -1840,7 +2071,7 @@ export default function App() {
         child_photo_url = await uploadFile({ supabase, file: photoFile, bucket: BUCKETS.CHILD_PHOTOS, path, type: 'photo' })
         child_photo_url = `${child_photo_url}?t=${Date.now()}`
       }
-      const payload = { family_id: famId, child_name: form.child_name, gender: form.gender, date_of_birth: form.date_of_birth || null, grade: form.grade, school_name: form.school_name, medical_notes: form.medical_notes, child_photo_url }
+      const payload = { family_id: famId, child_name: form.child_name, gender: form.gender, date_of_birth: form.date_of_birth || null, grade: form.grade, school_name: form.school_name, medical_notes: form.medical_notes, child_photo_url, academic_average: form.academic_average !== '' ? Number(form.academic_average) : null, academic_status: form.academic_status || null }
       let childId = editingChild?.id
       if (editingChild) {
         const { error } = await supabase.from('children').update(payload).eq('id', editingChild.id)
@@ -1898,7 +2129,7 @@ export default function App() {
     : page === 'project-detail'
       ? selectedProject === 'HF' ? ['Projects', 'HF', selectedBranch] : ['Projects', 'OVC']
       : page === 'branches' ? ['Projects', 'HF'] : null
-  const pageTitle = { dashboard: 'Dashboard', detail: 'Family Details', analytics: 'Statistics', settings: 'Settings', projects: 'Projects', branches: 'HF Branches', 'project-detail': 'Beneficiaries' }[page]
+  const pageTitle = { dashboard: 'Dashboard', detail: 'Family Details', analytics: 'Statistics', settings: 'Settings', projects: 'Projects', branches: 'HF Branches', 'project-detail': 'Beneficiaries', messaging: 'Send Message' }[page]
 
   return (
     <div style={{
@@ -1993,6 +2224,7 @@ export default function App() {
             />
           )}
           {page === 'analytics' && <AnalyticsPage families={families} children={children} isMobile={isMobile} />}
+          {page === 'messaging' && <MessagingPage families={families} isMobile={isMobile} />}
           {page === 'settings' && (
             <div style={{ padding: '60px 20px', textAlign: 'center', color: B.textLight }}>
               <div style={{ fontSize: 48, marginBottom: 12 }}>⚙️</div>
