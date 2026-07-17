@@ -21,7 +21,7 @@ const BANKS = [
 const PROJECTS = ['OVC', 'HF']
 
 // ─── LETTER PREVIEW + EXPORT ─────────────────────────────────────────────────
-function BankLetter({ families, bank, project, onClose }) {
+function BankLetter({ families, bank, project, onClose, isMobile }) {
   const printRef = useRef()
   const filtered = families.filter(f => f.bank === bank.id && f.project === project)
   const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })
@@ -112,8 +112,7 @@ function BankLetter({ families, bank, project, onClose }) {
     URL.revokeObjectURL(url)
   }
 
-  const handleExportExcel = async () => {
-    // Simple HTML table export that Excel can open
+  const handleExportExcel = () => {
     const html = `
       <table>
         <tr><th>R.No</th><th>Family ID</th><th>Beneficiary Name</th><th>Account No</th></tr>
@@ -144,57 +143,70 @@ function BankLetter({ families, bank, project, onClose }) {
           <div style={{ fontSize: 11, color: '#81c784' }}>{filtered.length} beneficiaries · {today}</div>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button onClick={handlePrint}      style={toolBtn('#1e7d22')}>🖨 Print / PDF</button>
-          <button onClick={handleExportCSV}  style={toolBtn('#0891b2')}>📄 CSV</button>
+          <button onClick={handlePrint}       style={toolBtn('#1e7d22')}>🖨 Print / PDF</button>
+          <button onClick={handleExportCSV}   style={toolBtn('#0891b2')}>📄 CSV</button>
           <button onClick={handleExportExcel} style={toolBtn('#059669')}>📊 Excel</button>
-          <button onClick={onClose}          style={toolBtn('#dc2626')}>✕ Close</button>
+          <button onClick={onClose}           style={toolBtn('#dc2626')}>✕ Close</button>
         </div>
       </div>
 
-      {/* Letter Preview */}
-      <div ref={printRef} style={{ width: '100%', maxWidth: 860, background: '#fff', borderRadius: 12, overflow: 'hidden', boxShadow: '0 8px 40px rgba(0,0,0,0.4)', position: 'relative', minHeight: 500 }}>
-        {/* Template background */}
-        <img src={bank.template} alt="template" style={{ width: '100%', display: 'block', minHeight: 300 }} />
-        {/* Content overlay */}
-        <div style={{ position: 'absolute', top: '42%', left: '7%', right: '7%', fontFamily: "'Times New Roman', serif" }}>
-          <div style={{ textAlign: 'right', fontSize: 13, marginBottom: 20 }}>{today}</div>
+      {/* Letter Preview — desktop only */}
+      {!isMobile && (
+        <div ref={printRef} style={{ width: '100%', maxWidth: 860, background: '#fff', borderRadius: 12, overflow: 'hidden', boxShadow: '0 8px 40px rgba(0,0,0,0.4)', position: 'relative', minHeight: 500 }}>
+          {/* Template background */}
+          <img src={bank.template} alt="template" style={{ width: '100%', display: 'block', minHeight: 300 }} />
 
-          <div style={{ fontSize: 13, fontWeight: 'bold', textDecoration: 'underline', marginBottom: 16 }}>
-            RE: Payment List — {project} Beneficiaries
+          {/* Content overlay */}
+          <div style={{ position: 'absolute', top: '42%', left: '7%', right: '7%', fontFamily: "'Times New Roman', serif" }}>
+            <div style={{ textAlign: 'right', fontSize: 13, marginBottom: 20 }}>{today}</div>
+
+            <div style={{ fontSize: 13, fontWeight: 'bold', textDecoration: 'underline', marginBottom: 16 }}>
+              RE: Payment List — {project} Beneficiaries
+            </div>
+
+            <div style={{ fontSize: 12, lineHeight: 1.7, marginBottom: 20 }}>
+              Please find below the list of {project} project beneficiaries under Hidaya Development Association
+              who are registered with {bank.name}. Kindly process the following payments accordingly.
+            </div>
+
+            {/* Table */}
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, marginBottom: 16 }}>
+              <thead>
+                <tr>
+                  {['R.No', 'Family ID', 'Beneficiary Name', 'Account No'].map(h => (
+                    <th key={h} style={{ background: B.green, color: '#fff', padding: '7px 10px', textAlign: 'left', border: '1px solid #999', fontSize: 11 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0
+                  ? <tr><td colSpan={4} style={{ padding: 20, textAlign: 'center', color: B.textLight, border: '1px solid #ccc' }}>No beneficiaries found for this filter.</td></tr>
+                  : filtered.map((f, i) => (
+                    <tr key={f.id}>
+                      <td style={{ padding: '6px 10px', border: '1px solid #ccc', background: i % 2 === 1 ? '#f9f9f9' : '#fff' }}>{f.roll_number || i + 1}</td>
+                      <td style={{ padding: '6px 10px', border: '1px solid #ccc', background: i % 2 === 1 ? '#f9f9f9' : '#fff' }}>{f.family_code || '—'}</td>
+                      <td style={{ padding: '6px 10px', border: '1px solid #ccc', background: i % 2 === 1 ? '#f9f9f9' : '#fff' }}>{f.mother_name}</td>
+                      <td style={{ padding: '6px 10px', border: '1px solid #ccc', background: i % 2 === 1 ? '#f9f9f9' : '#fff' }}>{f.account_number || '—'}</td>
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+
+            <div style={{ fontSize: 13, fontWeight: 700 }}>Total Beneficiaries: {filtered.length}</div>
           </div>
-
-          <div style={{ fontSize: 12, lineHeight: 1.7, marginBottom: 20 }}>
-            Please find below the list of {project} project beneficiaries under Hidaya Development Association
-            who are registered with {bank.name}. Kindly process the following payments accordingly.
-          </div>
-
-          {/* Table */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, marginBottom: 16 }}>
-            <thead>
-              <tr>
-                {['R.No', 'Family ID', 'Beneficiary Name', 'Account No'].map(h => (
-                  <th key={h} style={{ background: B.green, color: '#fff', padding: '7px 10px', textAlign: 'left', border: '1px solid #999', fontSize: 11 }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0
-                ? <tr><td colSpan={4} style={{ padding: 20, textAlign: 'center', color: B.textLight, border: '1px solid #ccc' }}>No beneficiaries found for this filter.</td></tr>
-                : filtered.map((f, i) => (
-                  <tr key={f.id}>
-                    <td style={{ padding: '6px 10px', border: '1px solid #ccc', background: i % 2 === 1 ? '#f9f9f9' : '#fff' }}>{f.roll_number || i + 1}</td>
-                    <td style={{ padding: '6px 10px', border: '1px solid #ccc', background: i % 2 === 1 ? '#f9f9f9' : '#fff' }}>{f.family_code || '—'}</td>
-                    <td style={{ padding: '6px 10px', border: '1px solid #ccc', background: i % 2 === 1 ? '#f9f9f9' : '#fff' }}>{f.mother_name}</td>
-                    <td style={{ padding: '6px 10px', border: '1px solid #ccc', background: i % 2 === 1 ? '#f9f9f9' : '#fff' }}>{f.account_number || '—'}</td>
-                  </tr>
-                ))
-              }
-            </tbody>
-          </table>
-
-          <div style={{ fontSize: 13, fontWeight: 700 }}>Total Beneficiaries: {filtered.length}</div>
         </div>
-      </div>
+      )}
+
+      {/* Mobile: no preview, just a note */}
+      {isMobile && (
+        <div style={{ background: '#fff', borderRadius: 12, padding: 24, textAlign: 'center', width: '100%', maxWidth: 860 }}>
+          <div style={{ fontSize: 32, marginBottom: 10 }}>🖨</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: B.text, marginBottom: 6 }}>Ready to export</div>
+          <div style={{ fontSize: 12, color: B.textLight }}>{filtered.length} beneficiaries for {bank.name} — {project}</div>
+          <div style={{ fontSize: 11, color: B.textLight, marginTop: 8 }}>Use Print/PDF or CSV above to get the full letter.</div>
+        </div>
+      )}
     </div>
   )
 }
@@ -206,7 +218,7 @@ const toolBtn = (bg) => ({
 
 // ─── MAIN BANK LIST PAGE ──────────────────────────────────────────────────────
 export default function BankListPage({ families, isMobile }) {
-  const [viewing, setViewing] = useState(null) // { bank, project }
+  const [viewing, setViewing] = useState(null)
 
   const getCount = (bankId, project) =>
     families.filter(f => f.bank === bankId && f.project === project).length
@@ -214,7 +226,7 @@ export default function BankListPage({ families, isMobile }) {
   return (
     <div style={{ padding: isMobile ? '14px 12px' : '22px 26px', maxWidth: 900, margin: '0 auto' }}>
       {/* Header banner */}
-      <div style={{ background: `linear-gradient(135deg, ${B.sidebar}, ${B.greenMid || '#2e9e33'})`, borderRadius: 14, padding: '16px 20px', marginBottom: 24, position: 'relative', overflow: 'hidden', border: `1px solid rgba(245,168,0,0.3)` }}>
+      <div style={{ background: `linear-gradient(135deg, ${B.sidebar}, ${B.greenMid})`, borderRadius: 14, padding: '16px 20px', marginBottom: 24, position: 'relative', overflow: 'hidden', border: `1px solid rgba(245,168,0,0.3)` }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, ${B.gold}, ${B.green})` }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ fontSize: 30 }}>🏦</div>
@@ -280,6 +292,7 @@ export default function BankListPage({ families, isMobile }) {
           bank={viewing.bank}
           project={viewing.project}
           onClose={() => setViewing(null)}
+          isMobile={isMobile}
         />
       )}
     </div>
