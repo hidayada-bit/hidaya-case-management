@@ -28,10 +28,11 @@ const toolBtn = (bg) => ({
 
 // ─── LETTER PREVIEW + EXPORT ─────────────────────────────────────────────────
 function BankLetter({ families, bank, project, onClose, isMobile }) {
-  const filtered = families.filter(f => f.bank === bank.id && f.project === project)
+  const filtered = families
+    .filter(f => f.bank === bank.id && f.project === project)
+    .sort((a, b) => (a.mother_name || '').localeCompare(b.mother_name || ''))
   const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })
   const [copied, setCopied] = useState(false)
-  const [copiedRow, setCopiedRow] = useState(null)
 
   const rowLine = (f, i) => `${f.roll_number || i + 1}\t${f.mother_name}\t${f.account_number || '—'}`
 
@@ -43,13 +44,6 @@ function BankLetter({ families, bank, project, onClose, isMobile }) {
     navigator.clipboard.writeText(lines.join('\n')).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-    })
-  }
-
-  const handleCopyRow = (f, i) => {
-    navigator.clipboard.writeText(rowLine(f, i)).then(() => {
-      setCopiedRow(f.id)
-      setTimeout(() => setCopiedRow(null), 1500)
     })
   }
 
@@ -288,66 +282,6 @@ function BankLetter({ families, bank, project, onClose, isMobile }) {
               </table>
               <div style={{ fontSize: 'clamp(9px, 2.6vw, 13px)', fontWeight: 700 }}>Total Beneficiaries: {filtered.length}</div>
             </div>
-          </div>
-
-          {/* Tap-to-copy list — the template text above is too small to tap precisely, so this gives an easy way to copy each row */}
-          <div style={{
-            background: '#fff', borderRadius: 14, overflow: 'hidden',
-            boxShadow: '0 6px 24px rgba(0,0,0,0.25)', border: `1px solid ${B.border}`,
-          }}>
-            <div style={{ padding: '10px 14px', borderBottom: `1px solid ${B.border}`, background: B.greenLight }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: B.textMid }}>Tap a row below to copy it</div>
-            </div>
-            <div style={{ padding: '10px 12px' }}>
-              {filtered.length === 0
-                ? (
-                  <div style={{ padding: 20, textAlign: 'center', color: B.textLight }}>
-                    <div style={{ fontSize: 28, marginBottom: 6 }}>🔍</div>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>No beneficiaries found</div>
-                  </div>
-                )
-                : filtered.map((f, i) => (
-                  <div
-                    key={f.id}
-                    onClick={() => handleCopyRow(f, i)}
-                    style={{
-                      background: copiedRow === f.id ? B.greenLight : '#fafff9',
-                      borderRadius: 10, border: `1.5px solid ${copiedRow === f.id ? B.green : B.border}`,
-                      padding: '12px 14px', marginBottom: 8,
-                      display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer',
-                    }}
-                  >
-                    <div style={{
-                      width: 34, height: 34, borderRadius: 9, flexShrink: 0,
-                      background: B.greenLight, color: B.green,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontWeight: 800, fontSize: 13,
-                    }}>
-                      {f.roll_number || i + 1}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: B.text }}>{f.mother_name}</div>
-                      <div style={{ fontSize: 12, color: B.textMid, fontFamily: 'monospace', marginTop: 2 }}>
-                        {f.account_number || '—'}
-                      </div>
-                    </div>
-                    <div style={{ fontSize: 16, color: copiedRow === f.id ? B.green : B.textLight, flexShrink: 0 }}>
-                      {copiedRow === f.id ? '✓' : '📋'}
-                    </div>
-                  </div>
-                ))
-              }
-            </div>
-
-            {filtered.length > 0 && (
-              <div style={{
-                background: B.sidebar, padding: '12px 16px',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#a5d6a7' }}>Total Beneficiaries</span>
-                <span style={{ fontSize: 18, fontWeight: 800, color: B.gold }}>{filtered.length}</span>
-              </div>
-            )}
           </div>
         </div>
       )}
