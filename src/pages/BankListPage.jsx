@@ -235,41 +235,75 @@ function BankLetter({ families, bank, project, onClose, isMobile }) {
         </div>
       )}
 
-      {/* ── MOBILE: readable letter-style preview (no export needed) ── */}
+      {/* ── MOBILE: actual template image, scaled + readable ── */}
       {isMobile && (
         <div style={{ width: '100%', maxWidth: 860 }}>
-          <div style={{
-            background: '#fff', borderRadius: 14, overflow: 'hidden',
-            boxShadow: '0 6px 24px rgba(0,0,0,0.35)', border: `1px solid ${B.border}`,
-          }}>
-            {/* Letterhead strip */}
-            <div style={{
-              background: `linear-gradient(135deg, ${B.sidebar}, ${B.greenMid})`,
-              padding: '14px 16px', position: 'relative',
-            }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, ${B.gold}, ${B.green})` }} />
-              <div style={{ fontSize: 15, fontWeight: 800, color: '#fff' }}>{bank.name}</div>
-              <div style={{ fontSize: 11, color: B.gold, marginTop: 2 }}>Hidaya Development Association</div>
-            </div>
 
-            {/* Body */}
-            <div style={{ padding: '16px 16px 6px', fontFamily: "'Times New Roman', serif" }}>
-              <div style={{ textAlign: 'right', fontSize: 13, color: B.textMid, marginBottom: 12 }}>{today}</div>
-              <div style={{ fontSize: 14, fontWeight: 700, textDecoration: 'underline', color: B.text, marginBottom: 10 }}>
+          {/* The real letterhead template, same as desktop, with responsive (vw-based) text so it stays readable on a phone */}
+          <div style={{
+            width: '100%', borderRadius: 12, overflow: 'hidden',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
+            position: 'relative',
+            aspectRatio: '1 / 1.414',
+            background: '#fff', marginBottom: 14,
+          }}>
+            <img
+              src={bank.template} alt="template"
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill' }}
+            />
+            <div style={{
+              position: 'absolute',
+              top: '22%', left: '8%', right: '8%', bottom: '10%',
+              overflowY: 'auto',
+              fontFamily: "'Times New Roman', serif",
+            }}>
+              <div style={{ textAlign: 'right', fontSize: 'clamp(9px, 2.6vw, 13px)', marginBottom: '3vw' }}>{today}</div>
+              <div style={{ fontSize: 'clamp(9px, 2.7vw, 13px)', fontWeight: 'bold', textDecoration: 'underline', marginBottom: '3vw' }}>
                 RE: Payment List — {project} Beneficiaries
               </div>
-              <div style={{ fontSize: 13, lineHeight: 1.7, color: B.text, marginBottom: 6 }}>
-                Beneficiaries of the <b>{project}</b> project registered with <b>{bank.name}</b>. Tap a row to copy it.
+              <div style={{ fontSize: 'clamp(8px, 2.3vw, 12px)', lineHeight: 1.6, marginBottom: '3vw' }}>
+                Please find below the list of {project} project beneficiaries under Hidaya Development Association
+                who are registered with {bank.name}. Kindly process the following payments accordingly.
               </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'clamp(7px, 2vw, 12px)', marginBottom: '3vw' }}>
+                <thead>
+                  <tr>
+                    {['R.No', 'Family ID', 'Name', 'Account'].map(h => (
+                      <th key={h} style={{ background: B.green, color: '#fff', padding: '1.2vw 1.5vw', textAlign: 'left', border: '1px solid #999' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.length === 0
+                    ? <tr><td colSpan={4} style={{ padding: '3vw', textAlign: 'center', color: '#999', border: '1px solid #ccc' }}>No beneficiaries found.</td></tr>
+                    : filtered.map((f, i) => (
+                      <tr key={f.id}>
+                        {[f.roll_number||i+1, f.family_code||'—', f.mother_name, f.account_number||'—'].map((v, j) => (
+                          <td key={j} style={{ padding: '1.2vw 1.5vw', border: '1px solid #ccc', background: i%2===1?'#f9f9f9':'#fff' }}>{v}</td>
+                        ))}
+                      </tr>
+                    ))
+                  }
+                </tbody>
+              </table>
+              <div style={{ fontSize: 'clamp(9px, 2.6vw, 13px)', fontWeight: 700 }}>Total Beneficiaries: {filtered.length}</div>
             </div>
+          </div>
 
-            {/* Beneficiary rows — bigger, clearer, tap-to-copy */}
-            <div style={{ padding: '4px 12px 14px' }}>
+          {/* Tap-to-copy list — the template text above is too small to tap precisely, so this gives an easy way to copy each row */}
+          <div style={{
+            background: '#fff', borderRadius: 14, overflow: 'hidden',
+            boxShadow: '0 6px 24px rgba(0,0,0,0.25)', border: `1px solid ${B.border}`,
+          }}>
+            <div style={{ padding: '10px 14px', borderBottom: `1px solid ${B.border}`, background: B.greenLight }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: B.textMid }}>Tap a row below to copy it</div>
+            </div>
+            <div style={{ padding: '10px 12px' }}>
               {filtered.length === 0
                 ? (
-                  <div style={{ padding: 30, textAlign: 'center', color: B.textLight }}>
-                    <div style={{ fontSize: 32, marginBottom: 8 }}>🔍</div>
-                    <div style={{ fontWeight: 600 }}>No beneficiaries found</div>
+                  <div style={{ padding: 20, textAlign: 'center', color: B.textLight }}>
+                    <div style={{ fontSize: 28, marginBottom: 6 }}>🔍</div>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>No beneficiaries found</div>
                   </div>
                 )
                 : filtered.map((f, i) => (
@@ -305,7 +339,6 @@ function BankLetter({ families, bank, project, onClose, isMobile }) {
               }
             </div>
 
-            {/* Total */}
             {filtered.length > 0 && (
               <div style={{
                 background: B.sidebar, padding: '12px 16px',
