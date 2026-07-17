@@ -154,10 +154,9 @@ function BankLetter({ families, bank, project, onClose }) {
       {/* Letter Preview */}
       <div ref={printRef} style={{ width: '100%', maxWidth: 860, background: '#fff', borderRadius: 12, overflow: 'hidden', boxShadow: '0 8px 40px rgba(0,0,0,0.4)', position: 'relative', minHeight: 500 }}>
         {/* Template background */}
-        <img src={bank.template} alt="template" style={{ width: '100%', display: 'block' }} />
-
+        <img src={bank.template} alt="template" style={{ width: '100%', display: 'block', minHeight: 300 }} />
         {/* Content overlay */}
-        <div style={{ position: 'absolute', top: '17%', left: '7%', right: '7%', fontFamily: "'Times New Roman', serif" }}>
+        <div style={{ position: 'absolute', top: '42%', left: '7%', right: '7%', fontFamily: "'Times New Roman', serif" }}>
           <div style={{ textAlign: 'right', fontSize: 13, marginBottom: 20 }}>{today}</div>
 
           <div style={{ fontSize: 13, fontWeight: 'bold', textDecoration: 'underline', marginBottom: 16 }}>
