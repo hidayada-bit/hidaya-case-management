@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import ImageUpload from './components/ImageUpload'
 import { supabase, BUCKETS } from './lib/supabase'
 import { uploadFile } from './lib/imageUtils'
@@ -1621,11 +1621,59 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
   )
 }
 
+// ─── ID SEQUENCE HELPERS ───────────────────────────────────────────────────────
+// HF:  roll number 0001, 0002… (4 digits)   family code HF/0001/26
+// OVC: roll number  001,  002… (3 digits)   family code OVC/0001/26 (code segment is always 4 digits)
+const ROLL_PAD = { HF: 4, OVC: 3 }
+const CODE_PAD = 4
+
+function pad(n, len) { return String(n).padStart(len, '0') }
+
+function extractSeq(fam) {
+  // Prefer the numeric segment inside family_code (e.g. "HF/0007/26" -> 7); fall back to roll_number.
+  const codeMatch = (fam.family_code || '').match(/\/(\d+)\//)
+  if (codeMatch) return parseInt(codeMatch[1], 10) || 0
+  const rollMatch = (fam.roll_number || '').match(/\d+/)
+  return rollMatch ? parseInt(rollMatch[0], 10) : 0
+}
+
+function nextIdsForProject(families, project) {
+  const seqs = families.filter(fam => fam.project === project).map(extractSeq)
+  const next = (seqs.length ? Math.max(...seqs) : 0) + 1
+  const year = String(new Date().getFullYear()).slice(-2)
+  return {
+    roll_number: pad(next, ROLL_PAD[project] || 4),
+    family_code: `${project}/${pad(next, CODE_PAD)}/${year}`,
+  }
+}
+
 // ─── FAMILY FORM ─────────────────────────────────────────────────────────────
-function FamilyForm({ initial, defaultProject, defaultBranch, onSave, onCancel, saving }) {
-  const [f, setF] = useState(initial || { family_code: '', roll_number: '', mother_name: '', mother_id_number: '', phone_number: '', alternate_phone: '', address: '', city: 'Addis Ababa', district: '', notes: '', status: 'active', mother_photo_url: null, project: defaultProject || 'HF', branch: defaultBranch || '', bank: '', account_number: '' })
+function FamilyForm({ initial, defaultProject, defaultBranch, families = [], onSave, onCancel, saving }) {
+  const isNew = !initial
+  const [f, setF] = useState(() => {
+    if (initial) return initial
+    const startProject = defaultProject || 'HF'
+    const ids = nextIdsForProject(families, startProject)
+    return { family_code: ids.family_code, roll_number: ids.roll_number, mother_name: '', mother_id_number: '', phone_number: '', alternate_phone: '', address: '', city: 'Addis Ababa', district: '', notes: '', status: 'active', mother_photo_url: null, project: startProject, branch: defaultBranch || '', bank: '', account_number: '' }
+  })
   const [photoFile, setPhotoFile] = useState(null)
+  // Tracks whether the person has hand-edited family_code/roll_number, so we stop auto-filling once they do.
+  const touchedIds = useRef(false)
   const s = k => v => setF(x => ({ ...x, [k]: v }))
+  const sTracked = k => v => { touchedIds.current = true; setF(x => ({ ...x, [k]: v })) }
+
+  const handleProjectChange = v => {
+    setF(x => {
+      const next = { ...x, project: v, branch: v === 'OVC' ? '' : x.branch }
+      if (isNew && !touchedIds.current) {
+        const ids = nextIdsForProject(families, v)
+        next.family_code = ids.family_code
+        next.roll_number = ids.roll_number
+      }
+      return next
+    })
+  }
+
   const bp = useBreakpoint()
   const isMobile = bp === 'mobile'
   return (
@@ -1639,12 +1687,12 @@ function FamilyForm({ initial, defaultProject, defaultBranch, onSave, onCancel, 
         </div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '0 16px' }}>
-        <FS label="Project" value={f.project} onChange={v => setF(x => ({ ...x, project: v, branch: v === 'OVC' ? '' : x.branch }))} options={[{ value: 'OVC', label: 'OVC' }, { value: 'HF', label: 'HF' }]} />
+        <FS label="Project" value={f.project} onChange={handleProjectChange} options={[{ value: 'OVC', label: 'OVC' }, { value: 'HF', label: 'HF' }]} />
         {f.project === 'HF' && (
           <FS label="Branch" value={f.branch} onChange={s('branch')} options={[{ value: '', label: 'Select branch…' }, ...HF_BRANCHES.map(b => ({ value: b, label: b }))]} />
         )}
-        <FI label="Family Code" value={f.family_code} onChange={s('family_code')} placeholder="FM007" req />
-        <FI label="Roll Number" value={f.roll_number} onChange={s('roll_number')} placeholder="1007" req />
+        <FI label={`Family Code${isNew ? ' (auto)' : ''}`} value={f.family_code} onChange={sTracked('family_code')} placeholder="HF/0001/26" req />
+        <FI label={`Roll Number${isNew ? ' (auto)' : ''}`} value={f.roll_number} onChange={sTracked('roll_number')} placeholder="0001" req />
         <FI label="Mother Full Name" value={f.mother_name} onChange={s('mother_name')} placeholder="Full name" req />
         <FI label="National ID Number" value={f.mother_id_number} onChange={s('mother_id_number')} placeholder="123-456-789" />
         <FI label="Phone Number" value={f.phone_number} onChange={s('phone_number')} type="tel" placeholder="0911-000-000" req />
@@ -2585,7 +2633,7 @@ export default function App() {
 
       {/* Modals */}
       <Modal open={showFamilyForm} onClose={() => !saving && setShowFamilyForm(false)} title={editingFamily ? 'Edit Family' : 'Register New Family'} width={640}>
-        <FamilyForm initial={editingFamily} defaultProject={selectedProject} defaultBranch={selectedBranch} onSave={saveFamily} onCancel={() => setShowFamilyForm(false)} saving={saving} />
+        <FamilyForm initial={editingFamily} defaultProject={selectedProject} defaultBranch={selectedBranch} families={families} onSave={saveFamily} onCancel={() => setShowFamilyForm(false)} saving={saving} />
       </Modal>
 
       <Modal open={showChildForm} onClose={() => !saving && setShowChildForm(false)} title={editingChild ? 'Edit Child' : 'Add Child'} width={560}>
