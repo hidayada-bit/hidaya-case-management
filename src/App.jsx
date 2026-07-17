@@ -53,6 +53,11 @@ const statusStyle = s => ({
   pending:  { bg: B.goldLight, color: '#7a4f00', dot: B.gold },
 }[s] || { bg: '#f3f4f6', color: '#374151', dot: '#9ca3af' })
 
+// Small badge so a beneficiary's project (and HF branch) is visible on their card at a glance.
+const projectBadge = f => f.project === 'HF'
+  ? { label: 'HF', bg: `linear-gradient(135deg, ${B.green}, ${B.greenMid})`, ring: B.green }
+  : { label: 'OVC', bg: `linear-gradient(135deg, ${B.gold}, ${B.goldMid})`, ring: B.gold }
+
 // ─── LIGHTBOX ────────────────────────────────────────────────────────────────
 function Lightbox({ src, alt, onClose }) {
   useEffect(() => {
@@ -150,7 +155,7 @@ const StatusBadge = ({ s }) => {
   )
 }
 
-function Avatar({ name, photoUrl, size = 40, radius = 10, clickable = false }) {
+function Avatar({ name, photoUrl, size = 40, radius = 10, clickable = false, badge = null }) {
   const [lightbox, setLightbox] = useState(false)
   const style = {
     width: size, height: size, borderRadius: radius,
@@ -162,21 +167,34 @@ function Avatar({ name, photoUrl, size = 40, radius = 10, clickable = false }) {
   return (
     <>
       {lightbox && <Lightbox src={photoUrl} alt={name} onClose={() => setLightbox(false)} />}
-      {photoUrl
-        ? <img
-            src={photoUrl} alt={name} style={style}
-            onClick={() => clickable && setLightbox(true)}
-            onMouseEnter={e => { if (clickable) { e.target.style.transform = 'scale(1.05)'; e.target.style.boxShadow = `0 4px 16px rgba(0,0,0,0.3)` } }}
-            onMouseLeave={e => { e.target.style.transform = 'scale(1)'; e.target.style.boxShadow = 'none' }}
-          />
-        : <div style={{
-            width: size, height: size, borderRadius: radius,
-            background: `linear-gradient(135deg, ${getColor(name)}, ${getColor(name)}cc)`,
-            color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 800, fontSize: size * 0.33, flexShrink: 0,
-            border: `2px solid rgba(255,255,255,0.2)`,
-          }}>{initials(name)}</div>
-      }
+      <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+        {photoUrl
+          ? <img
+              src={photoUrl} alt={name} style={style}
+              onClick={() => clickable && setLightbox(true)}
+              onMouseEnter={e => { if (clickable) { e.target.style.transform = 'scale(1.05)'; e.target.style.boxShadow = `0 4px 16px rgba(0,0,0,0.3)` } }}
+              onMouseLeave={e => { e.target.style.transform = 'scale(1)'; e.target.style.boxShadow = 'none' }}
+            />
+          : <div style={{
+              width: size, height: size, borderRadius: radius,
+              background: `linear-gradient(135deg, ${getColor(name)}, ${getColor(name)}cc)`,
+              color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 800, fontSize: size * 0.33, flexShrink: 0,
+              border: `2px solid rgba(255,255,255,0.2)`,
+            }}>{initials(name)}</div>
+        }
+        {badge && (
+          <div title={badge.label} style={{
+            position: 'absolute', bottom: -4, right: -5,
+            background: badge.bg, color: '#fff',
+            fontSize: Math.max(8, Math.round(size * 0.2)),
+            fontWeight: 800, letterSpacing: '0.02em',
+            padding: '2px 5px', borderRadius: 6, lineHeight: 1.3,
+            border: '2px solid #fff', boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
+            whiteSpace: 'nowrap',
+          }}>{badge.label}</div>
+        )}
+      </div>
     </>
   )
 }
@@ -1103,9 +1121,18 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
                   transition: 'background 0.15s', minHeight: 64,
                 }}
               >
-                <Avatar name={f.mother_name} photoUrl={f.mother_photo_url} size={46} radius={11} />
+                <Avatar name={f.mother_name} photoUrl={f.mother_photo_url} size={46} radius={11} badge={projectBadge(f)} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: B.text, marginBottom: 3 }}>{f.mother_name}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: B.text }}>{f.mother_name}</div>
+                    {f.project === 'HF' && f.branch && (
+                      <span style={{
+                        fontSize: 10, fontWeight: 700, color: B.greenDark,
+                        background: B.greenLight, border: `1px solid ${B.border}`,
+                        borderRadius: 8, padding: '1px 6px', whiteSpace: 'nowrap',
+                      }}>📍 {f.branch}</span>
+                    )}
+                  </div>
                   <div style={{ fontSize: 11, color: B.textLight }}>{f.family_code} · {f.district} · {f.children_count?.[0]?.count ?? 0} children</div>
                 </div>
                 <StatusBadge s={f.status} />
@@ -1154,8 +1181,13 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
                     <td style={{ padding: '12px 14px', fontSize: 13, color: B.textMid }}>{f.roll_number}</td>
                     <td style={{ padding: '12px 14px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <Avatar name={f.mother_name} photoUrl={f.mother_photo_url} size={34} radius={9} />
-                        <span style={{ fontWeight: 650, fontSize: 13, color: B.text }}>{f.mother_name}</span>
+                        <Avatar name={f.mother_name} photoUrl={f.mother_photo_url} size={34} radius={9} badge={projectBadge(f)} />
+                        <div>
+                          <div style={{ fontWeight: 650, fontSize: 13, color: B.text }}>{f.mother_name}</div>
+                          {f.project === 'HF' && f.branch && (
+                            <div style={{ fontSize: 10, color: B.textLight, marginTop: 1 }}>📍 {f.branch}</div>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td style={{ padding: '12px 14px' }}>
