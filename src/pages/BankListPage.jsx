@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 
 const B = {
   green:      '#1e7d22',
@@ -20,58 +20,38 @@ const BANKS = [
 ]
 const PROJECTS = ['OVC', 'HF']
 
-// ─── LETTER CONTENT (shared between preview and print) ───────────────────────
-function LetterContent({ filtered, bank, project, today }) {
-  return (
-    <div style={{ fontFamily: "'Times New Roman', serif" }}>
-      <div style={{ textAlign: 'right', fontSize: 13, marginBottom: 20 }}>{today}</div>
-
-      <div style={{ fontSize: 13, fontWeight: 'bold', textDecoration: 'underline', marginBottom: 16 }}>
-        RE: Payment List — {project} Beneficiaries
-      </div>
-
-      <div style={{ fontSize: 12, lineHeight: 1.8, marginBottom: 20 }}>
-        Please find below the list of {project} project beneficiaries under Hidaya Development Association
-        who are registered with {bank.name}. Kindly process the following payments accordingly.
-      </div>
-
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, marginBottom: 16 }}>
-        <thead>
-          <tr>
-            {['R.No', 'Family ID', 'Beneficiary Name', 'Account No'].map(h => (
-              <th key={h} style={{
-                background: '#1e7d22', color: '#fff',
-                padding: '8px 10px', textAlign: 'left',
-                border: '1px solid #999', fontSize: 11,
-              }}>{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {filtered.length === 0
-            ? <tr><td colSpan={4} style={{ padding: 20, textAlign: 'center', color: '#999', border: '1px solid #ccc' }}>No beneficiaries found.</td></tr>
-            : filtered.map((f, i) => (
-              <tr key={f.id}>
-                {[f.roll_number || i+1, f.family_code || '—', f.mother_name, f.account_number || '—'].map((val, j) => (
-                  <td key={j} style={{ padding: '7px 10px', border: '1px solid #ccc', background: i % 2 === 1 ? '#f9f9f9' : '#fff', fontSize: 12 }}>{val}</td>
-                ))}
-              </tr>
-            ))
-          }
-        </tbody>
-      </table>
-
-      <div style={{ fontSize: 13, fontWeight: 700, marginTop: 8 }}>
-        Total Beneficiaries: {filtered.length}
-      </div>
-    </div>
-  )
-}
+const toolBtn = (bg) => ({
+  background: bg, color: '#fff', border: 'none', borderRadius: 8,
+  padding: '7px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+  whiteSpace: 'nowrap',
+})
 
 // ─── LETTER PREVIEW + EXPORT ─────────────────────────────────────────────────
 function BankLetter({ families, bank, project, onClose, isMobile }) {
   const filtered = families.filter(f => f.bank === bank.id && f.project === project)
   const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })
+  const [copied, setCopied] = useState(false)
+  const [copiedRow, setCopiedRow] = useState(null)
+
+  const rowLine = (f, i) => `${f.roll_number || i + 1}\t${f.mother_name}\t${f.account_number || '—'}`
+
+  const handleCopy = () => {
+    const lines = [
+      'R.No\tBeneficiary Name\tAccount No',
+      ...filtered.map((f, i) => rowLine(f, i)),
+    ]
+    navigator.clipboard.writeText(lines.join('\n')).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  const handleCopyRow = (f, i) => {
+    navigator.clipboard.writeText(rowLine(f, i)).then(() => {
+      setCopiedRow(f.id)
+      setTimeout(() => setCopiedRow(null), 1500)
+    })
+  }
 
   const handlePrint = () => {
     const win = window.open('', '_blank')
@@ -84,8 +64,7 @@ function BankLetter({ families, bank, project, onClose, isMobile }) {
           html, body { width: 210mm; }
           @page { size: A4; margin: 0; }
           .page {
-            width: 210mm;
-            min-height: 297mm;
+            width: 210mm; min-height: 297mm;
             position: relative;
             background-image: url('${window.location.origin}${bank.template}');
             background-size: 100% 100%;
@@ -94,12 +73,8 @@ function BankLetter({ families, bank, project, onClose, isMobile }) {
           }
           .content {
             position: absolute;
-            top: 22%;
-            left: 8%;
-            right: 8%;
-            bottom: 10%;
+            top: 22%; left: 8%; right: 8%; bottom: 10%;
             font-family: 'Times New Roman', serif;
-            overflow: hidden;
           }
           .date { text-align: right; font-size: 12pt; margin-bottom: 18pt; }
           .subject { font-size: 12pt; font-weight: bold; text-decoration: underline; margin-bottom: 14pt; }
@@ -109,9 +84,7 @@ function BankLetter({ families, bank, project, onClose, isMobile }) {
           td { padding: 6pt 9pt; border: 1pt solid #ccc; }
           tr:nth-child(even) td { background: #f5f5f5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .total { margin-top: 12pt; font-size: 12pt; font-weight: bold; }
-          @media print {
-            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          }
+          @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
         </style>
       </head>
       <body>
@@ -182,85 +155,172 @@ function BankLetter({ families, bank, project, onClose, isMobile }) {
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 9999,
-      background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(6px)',
+      background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(6px)',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      justifyContent: 'flex-start', padding: isMobile ? 12 : 20, overflowY: 'auto',
+      justifyContent: 'flex-start', padding: isMobile ? 10 : 20, overflowY: 'auto',
     }}>
-      {/* Toolbar */}
+
+      {/* ── TOOLBAR ── */}
       <div style={{
         width: '100%', maxWidth: 860, flexShrink: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: B.sidebar, borderRadius: 12, padding: '12px 18px',
-        marginBottom: 16, border: '1px solid rgba(245,168,0,0.3)',
-        flexWrap: 'wrap', gap: 10,
+        background: B.sidebar, borderRadius: 12, padding: '10px 14px',
+        marginBottom: 12, border: '1px solid rgba(245,168,0,0.3)',
+        flexWrap: 'wrap', gap: 8, position: isMobile ? 'sticky' : 'static', top: 0,
       }}>
         <div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: B.gold }}>{bank.name} — {project}</div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: B.gold }}>{bank.name} — {project}</div>
           <div style={{ fontSize: 11, color: '#81c784' }}>{filtered.length} beneficiaries · {today}</div>
         </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button onClick={handlePrint}       style={toolBtn('#1e7d22')}>🖨 Print / PDF</button>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {!isMobile && <button onClick={handlePrint} style={toolBtn('#1e7d22')}>🖨 Print</button>}
           <button onClick={handleExportCSV}   style={toolBtn('#0891b2')}>📄 CSV</button>
-          <button onClick={handleExportExcel} style={toolBtn('#059669')}>📊 Excel</button>
-          <button onClick={onClose}           style={toolBtn('#dc2626')}>✕ Close</button>
+          {!isMobile && <button onClick={handleExportExcel} style={toolBtn('#059669')}>📊 Excel</button>}
+          <button onClick={handleCopy} style={toolBtn(copied ? '#6b21a8' : '#7c3aed')}>{copied ? '✓ Copied all!' : '📋 Copy all'}</button>
+          <button onClick={onClose} style={toolBtn('#dc2626')}>✕</button>
         </div>
       </div>
 
-      {/* ── DESKTOP PREVIEW ── */}
+      {/* ── DESKTOP: full template preview ── */}
       {!isMobile && (
         <div style={{
           width: '100%', maxWidth: 860,
           borderRadius: 12, overflow: 'hidden',
           boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
-          // A4 aspect ratio: 1:1.414
           position: 'relative',
           aspectRatio: '1 / 1.414',
           background: '#fff',
         }}>
-          {/* Full template as background */}
           <img
-            src={bank.template}
-            alt="template"
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill', display: 'block' }}
+            src={bank.template} alt="template"
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill' }}
           />
-          {/* Content sits in the white area: top 22% → bottom 10% */}
           <div style={{
             position: 'absolute',
             top: '22%', left: '8%', right: '8%', bottom: '10%',
             overflowY: 'auto',
+            fontFamily: "'Times New Roman', serif",
           }}>
-            <LetterContent filtered={filtered} bank={bank} project={project} today={today} />
+            <div style={{ textAlign: 'right', fontSize: 13, marginBottom: 18 }}>{today}</div>
+            <div style={{ fontSize: 13, fontWeight: 'bold', textDecoration: 'underline', marginBottom: 14 }}>
+              RE: Payment List — {project} Beneficiaries
+            </div>
+            <div style={{ fontSize: 12, lineHeight: 1.8, marginBottom: 18 }}>
+              Please find below the list of {project} project beneficiaries under Hidaya Development Association
+              who are registered with {bank.name}. Kindly process the following payments accordingly.
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, marginBottom: 14 }}>
+              <thead>
+                <tr>
+                  {['R.No', 'Family ID', 'Beneficiary Name', 'Account No'].map(h => (
+                    <th key={h} style={{ background: B.green, color: '#fff', padding: '7px 10px', textAlign: 'left', border: '1px solid #999', fontSize: 11 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0
+                  ? <tr><td colSpan={4} style={{ padding: 16, textAlign: 'center', color: '#999', border: '1px solid #ccc' }}>No beneficiaries found.</td></tr>
+                  : filtered.map((f, i) => (
+                    <tr key={f.id}>
+                      {[f.roll_number||i+1, f.family_code||'—', f.mother_name, f.account_number||'—'].map((v, j) => (
+                        <td key={j} style={{ padding: '6px 10px', border: '1px solid #ccc', background: i%2===1?'#f9f9f9':'#fff' }}>{v}</td>
+                      ))}
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+            <div style={{ fontSize: 13, fontWeight: 700 }}>Total Beneficiaries: {filtered.length}</div>
           </div>
         </div>
       )}
 
-      {/* ── MOBILE: no preview, just info card ── */}
+      {/* ── MOBILE: readable letter-style preview (no export needed) ── */}
       {isMobile && (
-        <div style={{
-          background: '#fff', borderRadius: 12, padding: 24,
-          textAlign: 'center', width: '100%', maxWidth: 860,
-        }}>
-          <div style={{ fontSize: 36, marginBottom: 10 }}>🖨</div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: B.text, marginBottom: 6 }}>Ready to export</div>
-          <div style={{ fontSize: 13, color: B.textMid, marginBottom: 4 }}>
-            <strong>{filtered.length}</strong> beneficiaries
-          </div>
-          <div style={{ fontSize: 12, color: B.textLight }}>
-            {bank.name} — {project} Project
-          </div>
-          <div style={{ fontSize: 11, color: B.textLight, marginTop: 12, lineHeight: 1.6 }}>
-            Tap <strong>Print / PDF</strong> above to generate the full letter on the bank template.
+        <div style={{ width: '100%', maxWidth: 860 }}>
+          <div style={{
+            background: '#fff', borderRadius: 14, overflow: 'hidden',
+            boxShadow: '0 6px 24px rgba(0,0,0,0.35)', border: `1px solid ${B.border}`,
+          }}>
+            {/* Letterhead strip */}
+            <div style={{
+              background: `linear-gradient(135deg, ${B.sidebar}, ${B.greenMid})`,
+              padding: '14px 16px', position: 'relative',
+            }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, ${B.gold}, ${B.green})` }} />
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#fff' }}>{bank.name}</div>
+              <div style={{ fontSize: 11, color: B.gold, marginTop: 2 }}>Hidaya Development Association</div>
+            </div>
+
+            {/* Body */}
+            <div style={{ padding: '16px 16px 6px', fontFamily: "'Times New Roman', serif" }}>
+              <div style={{ textAlign: 'right', fontSize: 13, color: B.textMid, marginBottom: 12 }}>{today}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, textDecoration: 'underline', color: B.text, marginBottom: 10 }}>
+                RE: Payment List — {project} Beneficiaries
+              </div>
+              <div style={{ fontSize: 13, lineHeight: 1.7, color: B.text, marginBottom: 6 }}>
+                Beneficiaries of the <b>{project}</b> project registered with <b>{bank.name}</b>. Tap a row to copy it.
+              </div>
+            </div>
+
+            {/* Beneficiary rows — bigger, clearer, tap-to-copy */}
+            <div style={{ padding: '4px 12px 14px' }}>
+              {filtered.length === 0
+                ? (
+                  <div style={{ padding: 30, textAlign: 'center', color: B.textLight }}>
+                    <div style={{ fontSize: 32, marginBottom: 8 }}>🔍</div>
+                    <div style={{ fontWeight: 600 }}>No beneficiaries found</div>
+                  </div>
+                )
+                : filtered.map((f, i) => (
+                  <div
+                    key={f.id}
+                    onClick={() => handleCopyRow(f, i)}
+                    style={{
+                      background: copiedRow === f.id ? B.greenLight : '#fafff9',
+                      borderRadius: 10, border: `1.5px solid ${copiedRow === f.id ? B.green : B.border}`,
+                      padding: '12px 14px', marginBottom: 8,
+                      display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer',
+                    }}
+                  >
+                    <div style={{
+                      width: 34, height: 34, borderRadius: 9, flexShrink: 0,
+                      background: B.greenLight, color: B.green,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontWeight: 800, fontSize: 13,
+                    }}>
+                      {f.roll_number || i + 1}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: B.text }}>{f.mother_name}</div>
+                      <div style={{ fontSize: 12, color: B.textMid, fontFamily: 'monospace', marginTop: 2 }}>
+                        {f.account_number || '—'}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 16, color: copiedRow === f.id ? B.green : B.textLight, flexShrink: 0 }}>
+                      {copiedRow === f.id ? '✓' : '📋'}
+                    </div>
+                  </div>
+                ))
+              }
+            </div>
+
+            {/* Total */}
+            {filtered.length > 0 && (
+              <div style={{
+                background: B.sidebar, padding: '12px 16px',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#a5d6a7' }}>Total Beneficiaries</span>
+                <span style={{ fontSize: 18, fontWeight: 800, color: B.gold }}>{filtered.length}</span>
+              </div>
+            )}
           </div>
         </div>
       )}
     </div>
   )
 }
-
-const toolBtn = (bg) => ({
-  background: bg, color: '#fff', border: 'none', borderRadius: 8,
-  padding: '7px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-})
 
 // ─── MAIN BANK LIST PAGE ──────────────────────────────────────────────────────
 export default function BankListPage({ families, isMobile }) {
@@ -296,7 +356,6 @@ export default function BankListPage({ families, isMobile }) {
             border: `1px solid ${B.border}`, overflow: 'hidden',
             boxShadow: '0 2px 12px rgba(30,125,34,0.07)',
           }}>
-            {/* Bank header */}
             <div style={{
               padding: '14px 20px',
               background: `linear-gradient(to right, ${B.greenLight}, #fff)`,
@@ -306,11 +365,10 @@ export default function BankListPage({ families, isMobile }) {
               <div style={{ width: 4, height: 22, borderRadius: 2, background: `linear-gradient(to bottom, ${B.gold}, ${B.green})` }} />
               <div style={{ fontSize: 15, fontWeight: 800, color: B.text }}>{bank.name}</div>
               <div style={{ marginLeft: 'auto', fontSize: 11, color: B.textLight, fontWeight: 600 }}>
-                {PROJECTS.reduce((sum, p) => sum + getCount(bank.id, p), 0)} total beneficiaries
+                {PROJECTS.reduce((sum, p) => sum + getCount(bank.id, p), 0)} total
               </div>
             </div>
 
-            {/* Project rows */}
             <div style={{ padding: '12px 20px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 12 }}>
               {PROJECTS.map(project => {
                 const count = getCount(bank.id, project)
@@ -351,7 +409,6 @@ export default function BankListPage({ families, isMobile }) {
         ))}
       </div>
 
-      {/* Letter viewer */}
       {viewing && (
         <BankLetter
           families={families}
