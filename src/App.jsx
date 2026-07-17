@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import ImageUpload from './components/ImageUpload'
 import { supabase, BUCKETS } from './lib/supabase'
 import { uploadFile } from './lib/imageUtils'
@@ -273,14 +273,15 @@ const inputBase = {
   fontFamily: 'inherit', background: '#fafff9', boxSizing: 'border-box',
   minHeight: 46,
 }
-const FI = ({ label, value, onChange, placeholder, type = 'text', req }) => (
+const FI = ({ label, value, onChange, placeholder, type = 'text', req, disabled }) => (
   <div style={{ marginBottom: 16 }}>
     <FL req={req}>{label}</FL>
     <input
-      type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-      style={inputBase}
-      onFocus={e => e.target.style.borderColor = B.green}
-      onBlur={e => e.target.style.borderColor = B.border}
+      type={type} value={value} onChange={e => !disabled && onChange(e.target.value)} placeholder={placeholder}
+      readOnly={disabled}
+      style={disabled ? { ...inputBase, background: '#f3f4f6', color: B.textMid, cursor: 'not-allowed' } : inputBase}
+      onFocus={e => !disabled && (e.target.style.borderColor = B.green)}
+      onBlur={e => !disabled && (e.target.style.borderColor = B.border)}
     />
   </div>
 )
@@ -1689,15 +1690,13 @@ function FamilyForm({ initial, defaultProject, defaultBranch, families = [], onS
     return { family_code: ids.family_code, roll_number: ids.roll_number, mother_name: '', mother_id_number: '', phone_number: '', alternate_phone: '', address: '', city: 'Addis Ababa', district: '', notes: '', status: 'active', mother_photo_url: null, project: startProject, branch: defaultBranch || '', bank: '', account_number: '' }
   })
   const [photoFile, setPhotoFile] = useState(null)
-  // Tracks whether the person has hand-edited family_code/roll_number, so we stop auto-filling once they do.
-  const touchedIds = useRef(false)
   const s = k => v => setF(x => ({ ...x, [k]: v }))
-  const sTracked = k => v => { touchedIds.current = true; setF(x => ({ ...x, [k]: v })) }
 
+  // Family Code is never hand-typed — it's always derived from the project's sequence.
   const handleProjectChange = v => {
     setF(x => {
       const next = { ...x, project: v, branch: v === 'OVC' ? '' : x.branch }
-      if (isNew && !touchedIds.current) {
+      if (isNew) {
         const ids = nextIdsForProject(families, v)
         next.family_code = ids.family_code
         next.roll_number = ids.roll_number
@@ -1723,8 +1722,7 @@ function FamilyForm({ initial, defaultProject, defaultBranch, families = [], onS
         {f.project === 'HF' && (
           <FS label="Branch" value={f.branch} onChange={s('branch')} options={[{ value: '', label: 'Select branch…' }, ...HF_BRANCHES.map(b => ({ value: b, label: b }))]} />
         )}
-        <FI label={`Family Code${isNew ? ' (auto)' : ''}`} value={f.family_code} onChange={sTracked('family_code')} placeholder="HF/0001/26" req />
-        <FI label={`Roll Number${isNew ? ' (auto)' : ''}`} value={f.roll_number} onChange={sTracked('roll_number')} placeholder="0001" req />
+        <FI label="Family Code (system-generated)" value={f.family_code} disabled req />
         <FI label="Mother Full Name" value={f.mother_name} onChange={s('mother_name')} placeholder="Full name" req />
         <FI label="National ID Number" value={f.mother_id_number} onChange={s('mother_id_number')} placeholder="123-456-789" />
         <FI label="Phone Number" value={f.phone_number} onChange={s('phone_number')} type="tel" placeholder="0911-000-000" req />
