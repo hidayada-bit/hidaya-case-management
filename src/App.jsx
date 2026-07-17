@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import ImageUpload from './components/ImageUpload'
 import { supabase, BUCKETS } from './lib/supabase'
 import { uploadFile } from './lib/imageUtils'
+import BankListPage from './pages/BankListPage'
 
 // ─── HDA BRAND COLORS ────────────────────────────────────────────────────────
 const B = {
@@ -447,6 +448,7 @@ const NAV = [
   { id: 'messaging', label: 'Messages',  d: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
   { id: 'analytics', label: 'Stats',     d: 'M18 20V10 M12 20V4 M6 20v-6' },
   { id: 'academics', label: 'Academics', d: 'M22 10L12 5 2 10l10 5 10-5z M6 12v5c0 1 3 3 6 3s6-2 6-3v-5' },
+  { id: 'banklist',  label: 'Bank List', d: 'M3 9h18M3 15h18M9 3v18M15 3v18M3 3h18a0 0 0 0 1 0 18H3a0 0 0 0 1 0-18z' },
   { id: 'settings',  label: 'Settings',  d: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6 M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z' },
 ]
 
@@ -1621,7 +1623,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
 
 // ─── FAMILY FORM ─────────────────────────────────────────────────────────────
 function FamilyForm({ initial, defaultProject, defaultBranch, onSave, onCancel, saving }) {
-  const [f, setF] = useState(initial || { family_code: '', roll_number: '', mother_name: '', mother_id_number: '', phone_number: '', alternate_phone: '', address: '', city: 'Addis Ababa', district: '', notes: '', status: 'active', mother_photo_url: null, project: defaultProject || 'HF', branch: defaultBranch || '' })
+  const [f, setF] = useState(initial || { family_code: '', roll_number: '', mother_name: '', mother_id_number: '', phone_number: '', alternate_phone: '', address: '', city: 'Addis Ababa', district: '', notes: '', status: 'active', mother_photo_url: null, project: defaultProject || 'HF', branch: defaultBranch || '', bank: '', account_number: '' })
   const [photoFile, setPhotoFile] = useState(null)
   const s = k => v => setF(x => ({ ...x, [k]: v }))
   const bp = useBreakpoint()
@@ -1653,6 +1655,18 @@ function FamilyForm({ initial, defaultProject, defaultBranch, onSave, onCancel, 
       <FT label="Full Address" value={f.address} onChange={s('address')} placeholder="Street, Kebele, Woreda…" />
       <FT label="Case Notes" value={f.notes} onChange={s('notes')} placeholder="Any relevant notes…" />
       <FS label="Status" value={f.status} onChange={s('status')} options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }, { value: 'pending', label: 'Pending' }]} />
+      {/* Bank Info */}
+      <div style={{ background: '#f0f7f0', borderRadius: 10, padding: '14px', marginBottom: 14, border: '1px solid #c8e6c9' }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#4a6b4a', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>🏦 Bank Information</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+          <FS label="Bank" value={f.bank} onChange={s('bank')} options={[
+            { value: '', label: '— Select Bank —' },
+            { value: 'CBE', label: 'Commercial Bank of Ethiopia' },
+            { value: 'OB',  label: 'Oromia Bank' },
+          ]} />
+          <FI label="Account Number" value={f.account_number} onChange={s('account_number')} placeholder="1000XXXXXXXXX" />
+        </div>
+      </div>
       <div style={{
         display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8,
         flexDirection: isMobile ? 'column-reverse' : 'row',
@@ -2366,7 +2380,7 @@ export default function App() {
         const path = `${form.family_code}/mother.jpg`
         mother_photo_url = await uploadFile({ supabase, file: photoFile, bucket: BUCKETS.MOTHER_PHOTOS, path, type: 'photo' })
       }
-      const payload = { family_code: form.family_code, roll_number: form.roll_number, mother_name: form.mother_name, mother_id_number: form.mother_id_number, phone_number: form.phone_number, alternate_phone: form.alternate_phone, address: form.address, city: form.city, district: form.district, notes: form.notes, status: form.status, mother_photo_url, project: form.project, branch: form.project === 'HF' ? form.branch : null }
+      const payload = { family_code: form.family_code, roll_number: form.roll_number, mother_name: form.mother_name, mother_id_number: form.mother_id_number, phone_number: form.phone_number, alternate_phone: form.alternate_phone, address: form.address, city: form.city, district: form.district, notes: form.notes, status: form.status, mother_photo_url, project: form.project, branch: form.project === 'HF' ? form.branch : null, bank: form.bank || null, account_number: form.account_number || null }
       if (editingFamily) {
         const { error } = await supabase.from('families').update(payload).eq('id', editingFamily.id)
         if (error) throw error
@@ -2455,7 +2469,7 @@ export default function App() {
     : page === 'project-detail'
       ? selectedProject === 'HF' ? ['Projects', 'HF', selectedBranch] : ['Projects', 'OVC']
       : page === 'branches' ? ['Projects', 'HF'] : null
-  const pageTitle = { dashboard: 'Dashboard', detail: 'Family Details', analytics: 'Statistics', academics: 'Academics', settings: 'Settings', projects: 'Projects', branches: 'HF Branches', 'project-detail': 'Beneficiaries', messaging: 'Send Message' }[page]
+  const pageTitle = { dashboard: 'Dashboard', detail: 'Family Details', analytics: 'Statistics', academics: 'Academics', settings: 'Settings', projects: 'Projects', branches: 'HF Branches', 'project-detail': 'Beneficiaries', messaging: 'Send Message', banklist: 'Bank List' }[page]
 
   return (
     <div style={{
@@ -2554,6 +2568,7 @@ export default function App() {
           {page === 'analytics' && <AnalyticsPage families={families} children={children} isMobile={isMobile} />}
           {page === 'academics' && <AcademicsPage children={children} isMobile={isMobile} />}
           {page === 'messaging' && <MessagingPage families={families} isMobile={isMobile} />}
+          {page === 'banklist' && <BankListPage families={families} isMobile={isMobile} />}
           {page === 'settings' && (
             <SettingsPage user={user} onUpdateUser={setUser} toast={toast} isMobile={isMobile} />
           )}
