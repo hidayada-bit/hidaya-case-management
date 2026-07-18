@@ -1741,8 +1741,8 @@ function FamilyForm({ initial, defaultProject, defaultBranch, families = [], onS
   <FL>Bank</FL>
   <div style={{ display: 'flex', gap: 10 }}>
     {[
-      { value: 'CBE', logo: '/cbe_logo.',    name: 'CBE' },
-      { value: 'OB',  logo: '/oromia_logo', name: 'Oromia' },
+      { value: 'CBE', logo: '/cbe_logo.png',    name: 'CBE' },
+      { value: 'OB',  logo: '/oromia_logo.png', name: 'Oromia' },
     ].map(b => (
       <div
         key={b.value}
@@ -1758,7 +1758,7 @@ function FamilyForm({ initial, defaultProject, defaultBranch, families = [], onS
       >
         <img
           src={b.logo} alt={b.name}
-          style={{ width: '100%', maxHeight: 60, objectFit: 'cover', objectPosition: 'top', borderRadius: 6 }}
+          style={{ width: '100%', maxHeight: 60, objectFit: 'contain', borderRadius: 6, background: '#fff' }}
         />
         <div style={{ fontSize: 11, fontWeight: 700, color: f.bank === b.value ? B.green : B.textMid }}>
           {f.bank === b.value ? '✓ ' : ''}{b.name}
