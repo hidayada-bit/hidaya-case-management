@@ -1737,11 +1737,36 @@ function FamilyForm({ initial, defaultProject, defaultBranch, families = [], onS
       <div style={{ background: '#f0f7f0', borderRadius: 10, padding: '14px', marginBottom: 14, border: '1px solid #c8e6c9' }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#4a6b4a', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>🏦 Bank Information</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
-          <FS label="Bank" value={f.bank} onChange={s('bank')} options={[
-            { value: '', label: '— Select Bank —' },
-            { value: 'CBE', label: 'Commercial Bank of Ethiopia' },
-            { value: 'OB',  label: 'Oromia Bank' },
-          ]} />
+          <div style={{ marginBottom: 14 }}>
+  <FL>Bank</FL>
+  <div style={{ display: 'flex', gap: 10 }}>
+    {[
+      { value: 'CBE', logo: '/cbe_template.png',    name: 'CBE' },
+      { value: 'OB',  logo: '/oromia_template.png', name: 'Oromia' },
+    ].map(b => (
+      <div
+        key={b.value}
+        onClick={() => s('bank')(b.value)}
+        style={{
+          flex: 1, borderRadius: 10, cursor: 'pointer', padding: '10px',
+          border: f.bank === b.value ? `2px solid ${B.green}` : `2px solid ${B.border}`,
+          background: f.bank === b.value ? B.greenLight : '#fafff9',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+          transition: 'all 0.15s',
+          boxShadow: f.bank === b.value ? `0 2px 10px rgba(30,125,34,0.2)` : 'none',
+        }}
+      >
+        <img
+          src={b.logo} alt={b.name}
+          style={{ width: '100%', maxHeight: 60, objectFit: 'cover', objectPosition: 'top', borderRadius: 6 }}
+        />
+        <div style={{ fontSize: 11, fontWeight: 700, color: f.bank === b.value ? B.green : B.textMid }}>
+          {f.bank === b.value ? '✓ ' : ''}{b.name}
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
           <FI label="Account Number" value={f.account_number} onChange={s('account_number')} placeholder="1000XXXXXXXXX" />
         </div>
       </div>
