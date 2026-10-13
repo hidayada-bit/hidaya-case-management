@@ -1592,6 +1592,8 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? '140px' : '190px'}, 1fr))`, gap: 12 }}>
             {[
               { type: 'Mother ID', icon: 'idcard' },
+              { type: 'Birth Certificate', icon: 'file' },
+              { type: 'Death Certificate', icon: 'file' },
               { type: 'Bank Book', icon: 'bank' },
               { type: 'Family Photo', icon: 'image' },
               { type: 'Other', icon: 'clipboard' },

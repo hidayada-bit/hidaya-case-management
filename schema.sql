@@ -56,6 +56,7 @@ create table if not exists public.documents (
   child_id        uuid references public.children(id) on delete cascade,
   document_type   text not null check (document_type in (
                     'Birth Certificate',
+                    'Death Certificate',
                     'School Certificate',
                     'Mother ID',
                     'Bank Book',
