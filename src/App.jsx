@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import ImageUpload from './components/ImageUpload'
 import { supabase, BUCKETS } from './lib/supabase'
 import { uploadFile } from './lib/imageUtils'
@@ -2215,6 +2215,7 @@ export default function App() {
   const [selectedFamily, setSelectedFamily] = useState(null)
   const [selectedProject, setSelectedProject] = useState(null) // 'OVC' | 'HF' | null
   const [selectedBranch, setSelectedBranch] = useState(null)
+  const [detailOrigin, setDetailOrigin] = useState('dashboard') // page the family detail was opened from
 
   const [families, setFamilies] = useState([])
   const [children, setChildren] = useState([])
@@ -2237,6 +2238,48 @@ export default function App() {
     setSelectedFamily(null)
     setSelectedProject(null)
     setSelectedBranch(null)
+  }, [])
+
+  // Open a family and remember which list it was opened from, so Back returns there
+  const openFamily = (f) => {
+    setDetailOrigin(page === 'detail' ? detailOrigin : page)
+    setSelectedFamily(f)
+    setPage('detail')
+  }
+  const closeFamily = () => setPage(detailOrigin || 'dashboard')
+
+  // ── Browser / phone back-button support ────────────────────
+  const familiesRef = useRef([])
+  useEffect(() => { familiesRef.current = families }, [families])
+  const restoringRef = useRef(false)
+  const historyReadyRef = useRef(false)
+
+  useEffect(() => {
+    const snapshot = { page, familyId: selectedFamily?.id || null, project: selectedProject, branch: selectedBranch, origin: detailOrigin }
+    if (restoringRef.current) { restoringRef.current = false; return }
+    if (!historyReadyRef.current) {
+      historyReadyRef.current = true
+      window.history.replaceState(snapshot, '')
+      return
+    }
+    const cur = window.history.state
+    if (cur && JSON.stringify(cur) === JSON.stringify(snapshot)) return
+    window.history.pushState(snapshot, '')
+  }, [page, selectedFamily?.id, selectedProject, selectedBranch, detailOrigin])
+
+  useEffect(() => {
+    const onPop = (e) => {
+      const st = e.state
+      if (!st) return
+      restoringRef.current = true
+      setPage(st.page)
+      setSelectedProject(st.project)
+      setSelectedBranch(st.branch)
+      setDetailOrigin(st.origin || 'dashboard')
+      setSelectedFamily(st.familyId ? (familiesRef.current.find(f => f.id === st.familyId) || null) : null)
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
   }, [])
 
   // Collapse sidebar on tablet automatically
@@ -2380,7 +2423,7 @@ export default function App() {
       if (confirmDelete.type === 'family') {
         const { error } = await supabase.from('families').delete().eq('id', confirmDelete.item.id)
         if (error) throw error
-        if (page === 'detail') setPage('dashboard')
+        if (page === 'detail') setPage(detailOrigin || 'dashboard')
         toast('Family deleted', 'info')
       } else {
         const { error } = await supabase.from('children').delete().eq('id', confirmDelete.item.id)
@@ -2492,7 +2535,7 @@ export default function App() {
           {allowed && (page === 'dashboard' || page === 'families') && (
             <DashboardPage
               families={families} children={children} loading={dataLoading}
-              onView={f => { setSelectedFamily(f); setPage('detail') }}
+              onView={openFamily}
               onAdd={() => { setEditingFamily(null); setShowFamilyForm(true) }}
               isMobile={isMobile} isTablet={isTablet} canEdit={canEdit}
             />
@@ -2515,7 +2558,7 @@ export default function App() {
             <DashboardPage
               families={families.filter(f => f.project === selectedProject && (selectedProject === 'OVC' || f.branch === selectedBranch))}
               children={children} loading={dataLoading}
-              onView={f => { setSelectedFamily(f); setPage('detail') }}
+              onView={openFamily}
               onAdd={() => { setEditingFamily(null); setShowFamilyForm(true) }}
               isMobile={isMobile} isTablet={isTablet} canEdit={canEdit}
             />
@@ -2523,7 +2566,7 @@ export default function App() {
           {allowed && page === 'detail' && selectedFamily && (
             <FamilyDetailPage
               family={selectedFamily} allChildren={children} allDocs={docs}
-              onBack={() => setPage('dashboard')}
+              onBack={closeFamily}
               onEditFamily={f => { setEditingFamily(f); setShowFamilyForm(true) }}
               onDeleteFamily={f => setConfirmDelete({ type: 'family', item: f })}
               onAddChild={fid => { setEditingChild(null); setChildFamilyId(fid); setShowChildForm(true) }}
