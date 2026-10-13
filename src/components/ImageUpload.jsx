@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { compressImage, formatBytes } from '../lib/imageUtils'
+import Icon from './Icon'
 
 /**
  * Reusable image/document upload component.
@@ -48,7 +49,7 @@ export default function ImageUpload({
       const localUrl = URL.createObjectURL(compressed)
       setPreview(localUrl)
       setStatus('ready')
-      setInfo(`${formatBytes(file.size)} → ${formatBytes(compressed.size)} ✓`)
+      setInfo(`${formatBytes(file.size)} to ${formatBytes(compressed.size)}`)
       onFileReady?.(compressed)
     } catch (err) {
       setStatus('error')
@@ -107,18 +108,18 @@ export default function ImageUpload({
           <div style={{ textAlign: 'center', padding: '8px 12px' }}>
             {status === 'compressing' ? (
               <>
-                <div style={{ fontSize: 22, marginBottom: 4 }}>⏳</div>
+                <div style={{ marginBottom: 4, color: '#60a5fa' }}><Icon name="spinner" size={22} spin /></div>
                 <div style={{ fontSize: 11, color: '#60a5fa', fontWeight: 600 }}>Compressing…</div>
               </>
             ) : status === 'ready' && isDoc ? (
               <>
-                <div style={{ fontSize: 22, marginBottom: 4 }}>✅</div>
+                <div style={{ marginBottom: 4, color: '#10b981' }}><Icon name="done" size={22} /></div>
                 <div style={{ fontSize: 11, color: '#10b981', fontWeight: 600 }}>Ready to upload</div>
               </>
             ) : (
               <>
-                <div style={{ fontSize: isDoc ? 22 : 18, marginBottom: 4 }}>
-                  {isDoc ? '📄' : '📷'}
+                <div style={{ marginBottom: 4, color: '#60a5fa' }}>
+                  <Icon name={isDoc ? 'file' : 'camera'} size={isDoc ? 22 : 20} />
                 </div>
                 <div style={{ fontSize: 11, color: '#60a5fa', fontWeight: 600 }}>
                   {isDoc ? 'Click or drag file' : 'Upload photo'}
@@ -158,7 +159,7 @@ export default function ImageUpload({
       {/* Error */}
       {error && (
         <div style={{ fontSize: 11, color: '#ef4444', marginTop: 4, background: '#fef2f2', padding: '4px 8px', borderRadius: 6 }}>
-          ⚠ {error}
+          <Icon name="warn" size={12} /> {error}
         </div>
       )}
 

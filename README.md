@@ -57,7 +57,7 @@ The app will open at http://localhost:5173
 ### 2b. Run the database schema
 1. In your Supabase project, go to **SQL Editor**
 2. Click **New Query**
-3. Paste the contents of `supabase/schema.sql`
+3. Paste the contents of `schema.sql`
 4. Click **Run**
 
 ### 2c. Create Storage Buckets
@@ -148,3 +148,28 @@ This means **1 GB Supabase Storage easily covers 200+ families** with all docume
 | Admin   | Full access, manage users, delete   |
 | Staff   | Add/edit families and children      |
 | Viewer  | Read-only                           |
+
+
+---
+
+## Roles, access approval and payments (migration 002)
+
+After running `schema.sql`, run **`supabase/migrations/002_roles_payments.sql`** once in the SQL Editor.
+Then make yourself the first admin (otherwise nobody can approve requests):
+
+```sql
+update public.users set role='admin', status='approved' where email = 'you@example.com';
+```
+
+**How access works:** a new person clicks *Request access* on the login page, their account is `pending` and shows a
+"Waiting for approval" screen, then an admin opens **Staff** in the menu, approves them and picks their role.
+
+| Role | Can do |
+|------|--------|
+| Administrator | Everything, approves staff and assigns roles |
+| Director | View everything incl. payments (read-only) |
+| Finance | Record payments, bank lists, view beneficiaries |
+| Project Coordinator | Add/edit beneficiaries, academics, messaging, view payments |
+| Data Collector | Add/edit beneficiaries and documents |
+
+To change what a role can do, edit `src/lib/permissions.js` (screens) and the policies in the migration (database).

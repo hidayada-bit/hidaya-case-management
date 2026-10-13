@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Icon from '../components/Icon'
 
 const B = {
   green:      '#1e7d22',
@@ -23,7 +24,7 @@ const PROJECTS = ['OVC', 'HF']
 const toolBtn = (bg) => ({
   background: bg, color: '#fff', border: 'none', borderRadius: 8,
   padding: '7px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-  whiteSpace: 'nowrap',
+  whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 6,
 })
 
 // How many beneficiary rows fit inside one template's content box before it needs a second page.
@@ -194,11 +195,11 @@ function BankLetter({ families, bank, project, onClose, isMobile }) {
           <div style={{ fontSize: 11, color: '#81c784' }}>{filtered.length} beneficiaries · {today}{totalPages > 1 ? ` · ${totalPages} pages` : ''}</div>
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {!isMobile && <button onClick={handlePrint} style={toolBtn('#1e7d22')}>🖨 Print</button>}
-          <button onClick={handleExportCSV}   style={toolBtn('#0891b2')}>📄 CSV</button>
-          {!isMobile && <button onClick={handleExportExcel} style={toolBtn('#059669')}>📊 Excel</button>}
-          <button onClick={handleCopy} style={toolBtn(copied ? '#6b21a8' : '#7c3aed')}>{copied ? '✓ Copied all!' : '📋 Copy all'}</button>
-          <button onClick={onClose} style={toolBtn('#dc2626')}>✕</button>
+          {!isMobile && <button onClick={handlePrint} style={toolBtn('#1e7d22')}><Icon name="print" size={14} />Print</button>}
+          <button onClick={handleExportCSV}   style={toolBtn('#0891b2')}><Icon name="file" size={14} />CSV</button>
+          {!isMobile && <button onClick={handleExportExcel} style={toolBtn('#059669')}><Icon name="spreadsheet" size={14} />Excel</button>}
+          <button onClick={handleCopy} style={toolBtn(copied ? '#6b21a8' : '#7c3aed')}>{copied ? <><Icon name="check" size={14} />Copied all!</> : <><Icon name="copy" size={14} />Copy all</>}</button>
+          <button onClick={onClose} style={toolBtn('#dc2626')}><Icon name="x" size={14} /></button>
         </div>
       </div>
 
@@ -358,7 +359,7 @@ export default function BankListPage({ families, isMobile }) {
       }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, ${B.gold}, ${B.green})` }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ fontSize: 30 }}>🏦</div>
+          <Icon name="bank" size={30} color={B.gold} />
           <div>
             <div style={{ fontSize: 16, fontWeight: 800, color: B.gold }}>Bank List</div>
             <div style={{ fontSize: 12, color: '#a5d6a7' }}>Generate official bank payment letters by project and bank</div>
@@ -416,8 +417,8 @@ export default function BankListPage({ families, isMobile }) {
                       <div style={{
                         background: `linear-gradient(135deg, ${B.green}, #2e9e33)`,
                         color: '#fff', borderRadius: 8, padding: '6px 14px',
-                        fontSize: 12, fontWeight: 700,
-                      }}>Generate →</div>
+                        fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5,
+                      }}>Generate <Icon name="forward" size={13} /></div>
                     </div>
                   </div>
                 )
