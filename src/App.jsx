@@ -3,6 +3,9 @@ import ImageUpload from './components/ImageUpload'
 import { supabase, BUCKETS } from './lib/supabase'
 import { uploadFile } from './lib/imageUtils'
 import BankListPage from './pages/BankListPage'
+import FamilyPaymentsTab from './pages/FamilyPaymentsTab'
+import { BANKS } from './lib/banks'
+import { useTheme } from './lib/theme'
 import PaymentsPage from './pages/PaymentsPage'
 import UsersPage from './pages/UsersPage'
 import { LoginPage, SignupPage, AccessGate } from './pages/AuthPages'
@@ -925,7 +928,7 @@ function Sidebar({ page, setPage, collapsed, setCollapsed, user, onSignOut, role
 }
 
 // ─── HEADER ───────────────────────────────────────────────────────────────────
-function Header({ title, breadcrumb, isMobile, user }) {
+function Header({ title, breadcrumb, isMobile, user, isDark, onToggleTheme }) {
   return (
     <div style={{
       background: '#fff', borderBottom: `2px solid ${B.greenLight}`,
@@ -955,6 +958,10 @@ function Header({ title, breadcrumb, isMobile, user }) {
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         {!isMobile && <span style={{ fontSize: 12, color: B.textMid, fontWeight: 600 }}>HDA Staff Portal</span>}
+        <button onClick={onToggleTheme} aria-label={isDark ? 'Switch to light mode' : 'Switch to night mode'} title={isDark ? 'Light mode' : 'Night mode'}
+          style={{ background: B.greenLight, border: `1px solid ${B.border}`, borderRadius: 10, width: 36, height: 36, cursor: 'pointer', color: B.greenDark, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Icon name={isDark ? 'sun' : 'moon'} size={17} />
+        </button>
         {user && <Avatar name={user.full_name || user.email} photoUrl={user.profile_photo_url} size={34} radius={10} clickable={true} />}
       </div>
     </div>
@@ -1379,9 +1386,11 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
 }
 
 // ─── FAMILY DETAIL PAGE ───────────────────────────────────────────────────────
-function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, onDeleteFamily, onAddChild, onEditChild, onDeleteChild, toast, onDocUploaded, isMobile, canEdit = true, canDelete = true }) {
+function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, onDeleteFamily, onAddChild, onEditChild, onDeleteChild, toast, onDocUploaded, isMobile, canEdit = true, canDelete = true, canViewPayments = false, canManagePayments = false, user = null }) {
   const kids = allChildren.filter(c => c.family_id === family.id)
   const famDocs = allDocs.filter(d => d.family_id === family.id)
+  // Birth certificates live in each child's tab, so they are not listed with the mother's documents
+  const motherDocs = famDocs.filter(d => !(d.document_type === 'Birth Certificate' && !d.child_id))
   const [tab, setTab] = useState('overview')
   const [uploading, setUploading] = useState(null)
   const [viewingDoc, setViewingDoc] = useState(null)
@@ -1514,7 +1523,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
         border: `1px solid ${B.border}`,
         position: 'sticky', top: isMobile ? 58 : 0, zIndex: 20,
       }}>
-        {['overview', 'children', 'documents', 'notes'].map(t => (
+        {['overview', 'children', 'documents', ...(canViewPayments ? ['payment'] : []), 'notes'].map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -1592,7 +1601,6 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? '140px' : '190px'}, 1fr))`, gap: 12 }}>
             {[
               { type: 'Mother ID', icon: 'idcard' },
-              { type: 'Birth Certificate', icon: 'file' },
               { type: 'Death Certificate', icon: 'file' },
               { type: 'Bank Book', icon: 'bank' },
               { type: 'Family Photo', icon: 'image' },
@@ -1626,10 +1634,10 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
               )
             })}
           </div>
-          {famDocs.length > 0 && (
+          {motherDocs.length > 0 && (
             <div style={{ marginTop: 18, background: '#fff', borderRadius: 13, border: `1px solid ${B.border}`, overflow: 'hidden' }}>
               <div style={{ padding: '13px 18px', borderBottom: `1px solid ${B.greenLight}`, fontSize: 13, fontWeight: 700, color: B.text, background: B.greenLight }}>All Uploaded Documents</div>
-              {famDocs.map(d => (
+              {motherDocs.map(d => (
                 <div key={d.id} style={{ padding: '12px 18px', borderBottom: `1px solid ${B.greenLight}`, display: 'flex', alignItems: 'center', gap: 12 }}>
                   <Icon name="file" size={20} color={B.green} />
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -1643,6 +1651,11 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
             </div>
           )}
         </div>
+      )}
+
+      {/* PAYMENT */}
+      {tab === 'payment' && canViewPayments && (
+        <FamilyPaymentsTab family={family} user={user} canManage={canManagePayments} toast={toast} isMobile={isMobile} />
       )}
 
       {/* NOTES */}
@@ -1741,13 +1754,10 @@ function FamilyForm({ initial, defaultProject, defaultBranch, families = [], onS
       <div style={{ background: '#f0f7f0', borderRadius: 10, padding: '14px', marginBottom: 14, border: '1px solid #c8e6c9' }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#4a6b4a', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}><Icon name="bank" size={13} /> Bank Information</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
-          <div style={{ marginBottom: 14 }}>
+          <div style={{ marginBottom: 14, gridColumn: '1 / -1' }}>
   <FL>Bank</FL>
   <div style={{ display: 'flex', gap: 10 }}>
-    {[
-      { value: 'CBE', logo: '/cbe_logo.png',    name: 'CBE' },
-      { value: 'OB',  logo: '/oromia_logo.png', name: 'Oromia' },
-    ].map(b => (
+    {BANKS.map(b => ({ value: b.id, logo: b.logo, name: b.label })).map(b => (
       <div
         key={b.value}
         onClick={() => s('bank')(b.value)}
@@ -1760,10 +1770,14 @@ function FamilyForm({ initial, defaultProject, defaultBranch, families = [], onS
           boxShadow: f.bank === b.value ? `0 2px 10px rgba(30,125,34,0.2)` : 'none',
         }}
       >
-        <img
-          src={b.logo} alt={b.name}
-          style={{ width: '100%', maxHeight: 60, objectFit: 'contain', borderRadius: 6, background: '#fff' }}
-        />
+        <div style={{ width: '100%', height: 60, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, background: '#fff', overflow: 'hidden' }}>
+          <span style={{ position: 'absolute', fontSize: 15, fontWeight: 800, color: B.greenDark, letterSpacing: '0.02em' }}>{b.name}</span>
+          <img
+            src={b.logo} alt={b.name}
+            onError={e => { e.currentTarget.style.display = 'none' }}
+            style={{ position: 'relative', width: '100%', height: '100%', objectFit: 'contain', background: '#fff' }}
+          />
+        </div>
         <div style={{ fontSize: 11, fontWeight: 700, color: f.bank === b.value ? B.green : B.textMid }}>
           {f.bank === b.value && <Icon name="check" size={12} />}{' '}{b.name}
         </div>
@@ -2203,6 +2217,7 @@ export default function App() {
   const bp = useBreakpoint()
   const isMobile = bp === 'mobile'
   const isTablet = bp === 'tablet'
+  const { isDark, toggle: toggleTheme } = useTheme()
 
   const [session, setSession] = useState(null)
   const [user, setUser] = useState(null)
@@ -2523,7 +2538,7 @@ export default function App() {
 
       {/* Main content */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, paddingBottom: isMobile ? 'calc(54px + env(safe-area-inset-bottom))' : 0 }}>
-        <Header title={pageTitle} breadcrumb={breadcrumb} isMobile={isMobile} user={user} />
+        <Header title={pageTitle} breadcrumb={breadcrumb} isMobile={isMobile} user={user} isDark={isDark} onToggleTheme={toggleTheme} />
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {!allowed && (
             <div style={{ padding: '70px 20px', textAlign: 'center', color: B.textMid }}>
@@ -2574,6 +2589,7 @@ export default function App() {
               onDeleteChild={c => setConfirmDelete({ type: 'child', item: c })}
               toast={toast} onDocUploaded={reloadDocs}
               isMobile={isMobile} canEdit={canEdit} canDelete={canDelete}
+              canViewPayments={can(role, 'view_payments')} canManagePayments={can(role, 'manage_payments')} user={user}
             />
           )}
           {allowed && page === 'analytics' && <AnalyticsPage families={families} children={children} isMobile={isMobile} />}

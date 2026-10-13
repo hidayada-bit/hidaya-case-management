@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Icon from '../components/Icon'
+import { BANKS } from '../lib/banks'
 
 const B = {
   green:      '#1e7d22',
@@ -15,10 +16,6 @@ const B = {
   textLight:  '#7a9b7a',
 }
 
-const BANKS = [
-  { id: 'CBE', name: 'Commercial Bank of Ethiopia', short: 'CBE', template: '/cbe_template.png' },
-  { id: 'OB',  name: 'Oromia Bank',                 short: 'OB',  template: '/oromia_template.png' },
-]
 const PROJECTS = ['OVC', 'HF']
 
 const toolBtn = (bg) => ({
@@ -215,9 +212,9 @@ function BankLetter({ families, bank, project, onClose, isMobile }) {
           position: 'relative',
           aspectRatio: '1 / 1.414',
           background: '#fff', marginBottom: isLast ? 0 : 16,
-        }}>
+        }} className="no-invert">
           <img
-            src={bank.template} alt="template"
+            src={bank.template} alt="template" onError={e => { e.currentTarget.style.display = 'none' }}
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill' }}
           />
           <div style={{
@@ -282,9 +279,9 @@ function BankLetter({ families, bank, project, onClose, isMobile }) {
               position: 'relative',
               aspectRatio: '1 / 1.414',
               background: '#fff', marginBottom: isLast ? 0 : 14,
-            }}>
+            }} className="no-invert">
               <img
-                src={bank.template} alt="template"
+                src={bank.template} alt="template" onError={e => { e.currentTarget.style.display = 'none' }}
                 style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill' }}
               />
               <div style={{

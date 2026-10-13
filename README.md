@@ -173,3 +173,10 @@ update public.users set role='admin', status='approved' where email = 'you@examp
 | Data Collector | Add/edit beneficiaries and documents |
 
 To change what a role can do, edit `src/lib/permissions.js` (screens) and the policies in the migration (database).
+
+---
+
+## 🏦 Adding Awash Bank assets
+Awash Bank is registered in `src/lib/banks.js`. Drop these files into `public/`:
+- `awash_logo.png` — shown on the registration form (a text badge shows until it exists)
+- `awash_template.png` — letterhead for the Bank List letter (plain paper is used until it exists)

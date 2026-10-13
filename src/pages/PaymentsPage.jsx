@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import Icon from '../components/Icon'
+import { BANKS, bankLabel } from '../lib/banks'
 
 const B = {
   green: '#1e7d22', greenDark: '#145717', greenLight: '#e8f5e9', greenMid: '#2e9e33',
@@ -229,7 +230,7 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
           </select>
         )}
         <select value={bank} onChange={e => setBank(e.target.value)} style={filterStyle} aria-label="Bank">
-          <option value="All">All banks</option><option value="CBE">CBE</option><option value="OB">Oromia</option><option value="None">No bank set</option>
+          <option value="All">All banks</option>{BANKS.map(b => <option key={b.id} value={b.id}>{b.label}</option>)}<option value="None">No bank set</option>
         </select>
         <select value={statusF} onChange={e => setStatusF(e.target.value)} style={filterStyle} aria-label="Status">
           <option value="All">All statuses</option>
@@ -297,7 +298,7 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
                 <div style={{ fontSize: 11, color: B.textLight }}>{f.family_code}{f.project === 'HF' && f.branch ? ` · ${f.branch}` : ''}</div>
               </div>
               <div style={{ fontSize: 12.5, color: B.textMid, minWidth: 0 }}>
-                <div style={{ fontWeight: 700 }}>{f.bank === 'OB' ? 'Oromia' : f.bank || '—'}</div>
+                <div style={{ fontWeight: 700 }}>{bankLabel(f.bank)}</div>
                 <div style={{ fontSize: 11, color: f.account_number ? B.textLight : '#b45309' }}>{f.account_number || 'No account'}</div>
               </div>
               <div style={{ minWidth: 0 }}>

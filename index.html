@@ -15,6 +15,10 @@
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f0f4ff; }
       #root { min-height: 100vh; }
+      /* Night mode: invert the UI, then flip photos/paper back so they look natural */
+      html.dark { filter: invert(1) hue-rotate(180deg); background: #fff; color-scheme: dark; }
+      html.dark img, html.dark video, html.dark canvas, html.dark iframe, html.dark .no-invert { filter: invert(1) hue-rotate(180deg); }
+      html.dark .no-invert img { filter: none; }
     </style>
   </head>
   <body>
