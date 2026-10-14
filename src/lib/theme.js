@@ -9,6 +9,9 @@ export const B = {
   gold: 'var(--c-gold)', goldDark: 'var(--c-gold-dark)', goldLight: 'var(--c-gold-light)', goldMid: 'var(--c-gold-mid)',
   sidebar: 'var(--c-sidebar)', sidebarMid: 'var(--c-sidebar-mid)',
   white: 'var(--c-card)', card: 'var(--c-card)', input: 'var(--c-input)', bg: 'var(--c-bg)',
+  okText: 'var(--c-ok-text)', warnText: 'var(--c-warn-text)', errBg: 'var(--c-err-bg)', errText: 'var(--c-err-text)', errBorder: 'var(--c-err-border)',
+  neutralBg: 'var(--c-neutral-bg)', neutralText: 'var(--c-neutral-text)', infoBg: 'var(--c-info-bg)', infoText: 'var(--c-info-text)', goldBorder: 'var(--c-gold-border)',
+  red: 'var(--c-red)', amber: 'var(--c-amber)', orange: 'var(--c-orange)',
   border: 'var(--c-border)', text: 'var(--c-text)', textMid: 'var(--c-text-mid)', textLight: 'var(--c-text-light)',
 }
 

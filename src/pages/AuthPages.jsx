@@ -174,6 +174,7 @@ const friendly = msg => {
   if (/email not confirmed/i.test(msg)) return 'Please confirm your email first, then sign in.'
   if (/already registered/i.test(msg)) return 'An account with this email already exists. Try signing in.'
   if (/password should be at least/i.test(msg)) return 'Password must be at least 6 characters.'
+  if (/rate limit|too many requests|over_email_send_rate_limit/i.test(msg)) return 'Too many emails were sent recently. Please wait a few minutes and try again, or ask an administrator to create/approve your account.'
   return msg
 }
 

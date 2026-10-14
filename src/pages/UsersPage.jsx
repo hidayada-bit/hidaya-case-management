@@ -44,7 +44,7 @@ function PendingRow({ u, onApprove, onReject, busy }) {
         <button disabled={busy} onClick={() => onApprove(u, role)} style={smallBtn(`linear-gradient(135deg, ${B.green}, ${B.greenMid})`, '#fff')}>
           <Icon name="approve" size={15} />Approve
         </button>
-        <button disabled={busy} onClick={() => onReject(u)} style={smallBtn('#fef2f2', '#dc2626', '1.5px solid #fecaca')}>
+        <button disabled={busy} onClick={() => onReject(u)} style={smallBtn(B.errBg, B.red, '1.5px solid #fecaca')}>
           <Icon name="reject" size={15} />Decline
         </button>
       </div>
@@ -106,7 +106,7 @@ export default function UsersPage({ currentUser, toast, isMobile }) {
       </div>
 
       {/* Pending */}
-      <div style={{ ...card, borderColor: pending.length ? '#ffe082' : B.border }}>
+      <div style={{ ...card, borderColor: pending.length ? B.goldBorder : B.border }}>
         {cardHead('clock', 'Access requests', pending.length, pending.length ? B.goldLight : B.greenLight)}
         {loading ? <div style={{ padding: 24, textAlign: 'center', color: B.textLight, fontSize: 13 }}>Loading…</div>
           : pending.length === 0 ? <div style={{ padding: 24, textAlign: 'center', color: B.textLight, fontSize: 13 }}>No pending requests.</div>
@@ -126,7 +126,7 @@ export default function UsersPage({ currentUser, toast, isMobile }) {
               </select>
               {self
                 ? <span style={{ fontSize: 11, color: B.textLight, fontWeight: 700, minWidth: 90, textAlign: 'center' }}>You</span>
-                : <button disabled={busy} onClick={() => revoke(u)} style={smallBtn('#fff', '#dc2626', '1.5px solid #fecaca')}><Icon name="reject" size={15} />Remove</button>}
+                : <button disabled={busy} onClick={() => revoke(u)} style={smallBtn('#fff', B.red, '1.5px solid #fecaca')}><Icon name="reject" size={15} />Remove</button>}
             </div>
           )
         })}
@@ -136,7 +136,7 @@ export default function UsersPage({ currentUser, toast, isMobile }) {
       {/* Removed */}
       {removed.length > 0 && (
         <div style={card}>
-          {cardHead('reject', 'Declined / removed', removed.length, '#f3f4f6')}
+          {cardHead('reject', 'Declined / removed', removed.length, B.neutralBg)}
           {removed.map(u => (
             <div key={u.id} style={{ padding: '13px 18px', borderBottom: `1px solid ${B.greenLight}`, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', opacity: 0.85 }}>
               <Person u={u} />

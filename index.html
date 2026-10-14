@@ -17,22 +17,30 @@
       #root { min-height: 100vh; }
       :root {
         --c-green:#1e7d22; --c-green-dark:#145717; --c-green-light:#e8f5e9; --c-green-mid:#2e9e33;
-        --c-gold:#f5a800; --c-gold-dark:#c87d00; --c-gold-light:#fff8e1; --c-gold-mid:#ffb300;
+        --c-gold:#f5a800; --c-gold-dark:#c87d00; --c-gold-light:#fff8e1; --c-gold-mid:#ffb300; --c-gold-border:#ffe082;
         --c-sidebar:#0d3b0f; --c-sidebar-mid:#145717;
         --c-card:#ffffff; --c-input:#fafff9; --c-bg:#f0f7f0;
         --c-border:#c8e6c9; --c-text:#1a2e1a; --c-text-mid:#4a6b4a; --c-text-light:#7a9b7a;
+        --c-ok-text:#1b5e20; --c-warn-text:#7a4f00; --c-err-bg:#fef2f2; --c-err-text:#991b1b; --c-err-border:#fecaca;
+        --c-neutral-bg:#f3f4f6; --c-neutral-text:#374151; --c-info-bg:#eef2ff; --c-info-text:#3730a3;
+        --c-red:#dc2626; --c-amber:#b45309; --c-orange:#e65100;
       }
-      /* Night mode: deep forest-green surfaces, soft off-white text */
+      /* Night mode: calm, low-contrast dark green. Nothing pure white or neon. */
       html.dark {
         color-scheme: dark;
-        --c-green:#3aa23f; --c-green-dark:#9be0a0; --c-green-light:#1d3322; --c-green-mid:#4cb851;
-        --c-gold:#f5a800; --c-gold-dark:#f2b84b; --c-gold-light:#33290f; --c-gold-mid:#ffb300;
-        --c-sidebar:#08200a; --c-sidebar-mid:#0f3a12;
-        --c-card:#14211a; --c-input:#0f1913; --c-bg:#0c1510;
-        --c-border:#28402d; --c-text:#e4eee5; --c-text-mid:#a8c1aa; --c-text-light:#7d977f;
+        --c-green:#3b9d40; --c-green-dark:#93d29a; --c-green-light:#1c2d21; --c-green-mid:#4aab4f;
+        --c-gold:#e8a317; --c-gold-dark:#dcae55; --c-gold-light:#2c2613; --c-gold-mid:#f0ae20; --c-gold-border:#5a4a1c;
+        --c-sidebar:#0b2410; --c-sidebar-mid:#133a17;
+        --c-card:#16231b; --c-input:#101a14; --c-bg:#0f1912;
+        --c-border:#2a4030; --c-text:#d3e0d4; --c-text-mid:#9db59f; --c-text-light:#78907a;
+        --c-ok-text:#93d29a; --c-warn-text:#dcae55; --c-err-bg:#321a1a; --c-err-text:#f0a8a8; --c-err-border:#5a2b2b;
+        --c-neutral-bg:#222c26; --c-neutral-text:#b3c1b5; --c-info-bg:#1f2540; --c-info-text:#aeb7ee;
+        --c-red:#ef8080; --c-amber:#dcae55; --c-orange:#f0a060;
       }
       html.dark body { background: var(--c-bg); }
-      html.dark ::placeholder { color: #6c836e; }
+      html.dark ::placeholder { color: #667d69; }
+      html.dark img { filter: brightness(0.92); }
+      html.dark input, html.dark select, html.dark textarea { color-scheme: dark; }
     </style>
   </head>
   <body>

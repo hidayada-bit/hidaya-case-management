@@ -19,3 +19,19 @@ export async function saveRates(rates, userId) {
   )
   return error
 }
+
+// ── Child age rule for payments ─────────────────────────────────────────────
+// Children aged 18 or under are paid for; from their 19th birthday they stay on the
+// profile (children tab) but are no longer counted in the payment. No birth date = counted.
+export const ageOf = dob => {
+  if (!dob) return null
+  const b = new Date(dob), n = new Date()
+  let a = n.getFullYear() - b.getFullYear()
+  if (n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate())) a--
+  return a
+}
+export const MAX_PAYING_AGE = 18
+export const isPayingChild = c => { const a = ageOf(c.date_of_birth); return a == null || a <= MAX_PAYING_AGE }
+
+// Family case state: 'normal' | 'on_hold' | 'transferred' (missing column => normal)
+export const caseState = f => f?.case_state || 'normal'

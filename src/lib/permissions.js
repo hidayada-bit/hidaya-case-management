@@ -42,6 +42,7 @@ export const PAGE_PERMISSION = {
   banklist: 'view_bank_list',
   payments: 'view_payments',
   users: 'manage_users',
+  archive: 'manage_users', // admin only
   settings: null, // everyone
 }
 

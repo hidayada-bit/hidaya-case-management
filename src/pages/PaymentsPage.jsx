@@ -2,16 +2,16 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import Icon from '../components/Icon'
 import { BANKS, bankLabel } from '../lib/banks'
-import { DEFAULT_RATES, monthlyFor } from '../lib/settings'
+import { DEFAULT_RATES, monthlyFor, caseState } from '../lib/settings'
 import { B } from '../lib/theme'
 
 const HF_BRANCHES = ['Addis Ababa', 'Bishoftu', 'Dangla', 'Bure', 'Dire Dawa', 'Nekemte', 'Chagni']
 
 const STATUS = {
-  paid:    { label: 'Paid',    bg: '#e8f5e9', color: '#1b5e20', dot: '#1e7d22', icon: 'done' },
-  pending: { label: 'Unpaid',  bg: '#fff8e1', color: '#7a4f00', dot: '#f5a800', icon: 'clock' },
-  failed:  { label: 'Failed',  bg: '#fef2f2', color: '#991b1b', dot: '#dc2626', icon: 'fail' },
-  on_hold: { label: 'On hold', bg: '#eef2ff', color: '#3730a3', dot: '#6366f1', icon: 'pending' },
+  paid:    { label: 'Paid',    bg: B.greenLight, color: B.okText, dot: '#1e7d22', icon: 'done' },
+  pending: { label: 'Unpaid',  bg: B.goldLight, color: B.warnText, dot: '#f5a800', icon: 'clock' },
+  failed:  { label: 'Failed',  bg: B.errBg, color: B.errText, dot: B.red, icon: 'fail' },
+  on_hold: { label: 'On hold', bg: B.infoBg, color: B.infoText, dot: '#6366f1', icon: 'pending' },
 }
 
 const inputStyle = {
@@ -21,7 +21,7 @@ const inputStyle = {
 const filterStyle = { padding: '9px 10px', border: `1.5px solid ${B.border}`, borderRadius: 8, fontSize: 13, color: B.text, fontFamily: 'inherit', background: B.card, minHeight: 40 }
 const btn = (variant = 'primary', disabled) => ({
   ...(variant === 'primary' ? { background: `linear-gradient(135deg, ${B.green}, ${B.greenMid})`, color: '#fff', border: 'none' }
-    : variant === 'danger' ? { background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fecaca' }
+    : variant === 'danger' ? { background: B.errBg, color: B.red, border: '1.5px solid #fecaca' }
     : variant === 'gold' ? { background: `linear-gradient(135deg, ${B.gold}, #ffb300)`, color: B.greenDark, border: 'none' }
     : { background: B.card, color: B.text, border: `1.5px solid ${B.border}` }),
   borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1,
@@ -59,7 +59,9 @@ function Sheet({ title, onClose, children, isMobile }) {
 
 const Lbl = ({ children }) => <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: B.textMid, marginBottom: 6 }}>{children}</label>
 
-export default function PaymentsPage({ families, user, canManage, toast, isMobile, childCounts = {}, rates = DEFAULT_RATES }) {
+export default function PaymentsPage({ families, user, canManage, toast, isMobile, childCounts = {}, rates = DEFAULT_RATES, staffNames = {} }) {
+  const isHeld = f => caseState(f) === 'on_hold'
+  const signedBy = p => (p?.recorded_by && staffNames[p.recorded_by]) || null
   const calc = f => monthlyFor(rates, childCounts[f.id] || 0)
   const [month, setMonth] = useState(monthKey(new Date()))
   const [payments, setPayments] = useState({})
@@ -98,7 +100,8 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
       .filter(f => !q || f.mother_name.toLowerCase().includes(q) || (f.family_code || '').toLowerCase().includes(q) || (f.account_number || '').includes(q))
       .map(f => {
         const p = payments[f.id]
-        const status = p?.status || 'pending'
+        // A family on hold is shown UNPAID until released (unless that month was already paid)
+        const status = isHeld(f) && p?.status !== 'paid' ? 'pending' : (p?.status || 'pending')
         return { f, p, status, amount: status === 'paid' ? (p.amount ?? calc(f)) : calc(f) }
       })
       .filter(r => statusF === 'All' || r.status === statusF)
@@ -116,6 +119,13 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
   const toggle = id => setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n })
 
   const openModal = (kind, targets) => {
+    if (kind === 'paid') {
+      const heldOnes = targets.filter(isHeld)
+      if (heldOnes.length) {
+        toast(heldOnes.length === 1 && targets.length === 1 ? `${heldOnes[0].mother_name} is on hold — release the hold first (family profile → Status).` : `${heldOnes.length} family(ies) on hold were skipped — deposits are postponed for them.`, 'info')
+        targets = targets.filter(f => !isHeld(f))
+      }
+    }
     if (!targets.length) return
     const single = targets.length === 1 ? targets[0] : null
     const p = single ? payments[single.id] : null
@@ -211,7 +221,7 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
         <div style={{ height: 9, background: B.greenLight, borderRadius: 5, overflow: 'hidden' }}>
           <div style={{ width: `${pct}%`, height: '100%', background: `linear-gradient(to right, ${B.green}, ${B.greenMid})`, transition: 'width .5s' }} />
         </div>
-        {missingAcct > 0 && <div style={{ fontSize: 11.5, color: '#b45309', marginTop: 8, display: 'flex', gap: 6, alignItems: 'center' }}><Icon name="warn" size={13} />{missingAcct} beneficiar{missingAcct > 1 ? 'ies have' : 'y has'} no bank account on file</div>}
+        {missingAcct > 0 && <div style={{ fontSize: 11.5, color: B.amber, marginTop: 8, display: 'flex', gap: 6, alignItems: 'center' }}><Icon name="warn" size={13} />{missingAcct} beneficiar{missingAcct > 1 ? 'ies have' : 'y has'} no bank account on file</div>}
       </div>
 
       {/* Filters */}
@@ -272,44 +282,44 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
             <a href={`tel:${f.phone_number.replace(/[\s-]/g, '')}`} style={{ ...btn('secondary'), textDecoration: 'none', color: B.green, padding: '8px 11px' }} aria-label={`Call ${f.mother_name}`}><Icon name="phone" size={14} />{!isMobile && 'Call'}</a>
           )
           if (isMobile) return (
-            <div key={f.id} style={{ padding: '13px 14px', borderBottom: `1px solid ${B.greenLight}`, background: sel ? '#f1faf1' : '#fff' }}>
+            <div key={f.id} style={{ padding: '13px 14px', borderBottom: `1px solid ${B.greenLight}`, background: sel ? B.greenLight : B.card }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 {canManage && <input type="checkbox" checked={sel} onChange={() => toggle(f.id)} aria-label={`Select ${f.mother_name}`} style={{ width: 18, height: 18, accentColor: B.green }} />}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 14, color: B.text }}>{f.mother_name}</div>
-                  <div style={{ fontSize: 11, color: B.textLight }}>{f.family_code} · {f.bank || 'No bank'}{f.account_number ? ` · ${f.account_number}` : ''}</div>
+                  <div style={{ fontSize: 11, color: B.textLight }}>{f.family_code} · {f.bank || 'No bank'}{f.account_number ? ` · ${f.account_number}` : ''}{isHeld(f) && <span style={{ marginLeft: 6, background: B.goldLight, color: B.warnText, borderRadius: 10, padding: '1px 7px', fontWeight: 700 }}>On hold</span>}</div>
                 </div>
                 <Badge s={status} />
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 9, flexWrap: 'wrap' }}>
                 <span style={{ fontSize: 13, fontWeight: 800, color: B.text }}>ETB {money(amount)}</span>
-                {p?.paid_on && <span style={{ fontSize: 11, color: B.textLight }}>on {p.paid_on}</span>}
+                {p?.paid_on && <span style={{ fontSize: 11, color: B.textLight }}>on {p.paid_on}{signedBy(p) ? ` · by ${signedBy(p)}` : ''}</span>}
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>{status !== 'paid' && call}{actions}</div>
               </div>
-              {p?.notes && status !== 'paid' && <div style={{ fontSize: 11.5, color: '#991b1b', marginTop: 6 }}>{p.notes}</div>}
+              {p?.notes && status !== 'paid' && <div style={{ fontSize: 11.5, color: B.errText, marginTop: 6 }}>{p.notes}</div>}
             </div>
           )
           return (
-            <div key={f.id} style={{ display: 'grid', gridTemplateColumns: `${canManage ? '36px ' : ''}minmax(180px,1.6fr) 1fr 1.2fr 0.8fr 0.9fr ${canManage ? '200px' : '90px'}`, gap: 12, padding: '11px 16px', borderBottom: `1px solid ${B.greenLight}`, alignItems: 'center', background: sel ? '#f1faf1' : '#fff' }}>
+            <div key={f.id} style={{ display: 'grid', gridTemplateColumns: `${canManage ? '36px ' : ''}minmax(180px,1.6fr) 1fr 1.2fr 0.8fr 0.9fr ${canManage ? '200px' : '90px'}`, gap: 12, padding: '11px 16px', borderBottom: `1px solid ${B.greenLight}`, alignItems: 'center', background: sel ? B.greenLight : B.card }}>
               {canManage && <input type="checkbox" checked={sel} onChange={() => toggle(f.id)} aria-label={`Select ${f.mother_name}`} style={{ width: 16, height: 16, accentColor: B.green }} />}
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: 13.5, color: B.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.mother_name}</div>
-                <div style={{ fontSize: 11, color: B.textLight }}>{f.family_code}{f.project === 'HF' && f.branch ? ` · ${f.branch}` : ''}</div>
+                <div style={{ fontSize: 11, color: B.textLight }}>{f.family_code}{f.project === 'HF' && f.branch ? ` · ${f.branch}` : ''}{isHeld(f) && <span title={f.case_reason || ''} style={{ marginLeft: 6, background: B.goldLight, color: B.warnText, borderRadius: 10, padding: '1px 7px', fontWeight: 700 }}>On hold</span>}</div>
               </div>
               <div style={{ fontSize: 12.5, color: B.textMid, minWidth: 0 }}>
                 <div style={{ fontWeight: 700 }}>{bankLabel(f.bank)}</div>
-                <div style={{ fontSize: 11, color: f.account_number ? B.textLight : '#b45309' }}>{f.account_number || 'No account'}</div>
+                <div style={{ fontSize: 11, color: f.account_number ? B.textLight : B.amber }}>{f.account_number || 'No account'}</div>
               </div>
               <div style={{ minWidth: 0 }}>
                 <Badge s={status} />
                 {(p?.reference || (p?.notes && status !== 'paid')) && (
-                  <div title={p.reference || p.notes} style={{ fontSize: 11, color: status === 'paid' ? B.textLight : '#991b1b', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div title={p.reference || p.notes} style={{ fontSize: 11, color: status === 'paid' ? B.textLight : B.errText, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {status === 'paid' ? `Ref: ${p.reference}` : p.notes}
                   </div>
                 )}
               </div>
               <div style={{ fontSize: 13, fontWeight: 700, color: B.text }}>{money(amount)}</div>
-              <div style={{ fontSize: 12.5, color: B.textMid }}>{p?.paid_on || '—'}</div>
+              <div style={{ fontSize: 12.5, color: B.textMid }}>{p?.paid_on || '—'}{signedBy(p) && <div style={{ fontSize: 10.5, color: B.textLight }}>by {signedBy(p)}</div>}</div>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>{canManage ? <>{actions}{status !== 'paid' && call}</> : call}</div>
             </div>
           )

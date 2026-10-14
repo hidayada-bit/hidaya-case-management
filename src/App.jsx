@@ -4,8 +4,10 @@ import { supabase, BUCKETS } from './lib/supabase'
 import { uploadFile } from './lib/imageUtils'
 import BankListPage from './pages/BankListPage'
 import FamilyPaymentsTab from './pages/FamilyPaymentsTab'
+import FamilyStatusTab from './pages/FamilyStatusTab'
+import ArchivePage from './pages/ArchivePage'
 import { BANKS } from './lib/banks'
-import { DEFAULT_RATES, loadRates, saveRates, monthlyFor } from './lib/settings'
+import { DEFAULT_RATES, loadRates, saveRates, monthlyFor, isPayingChild, caseState, MAX_PAYING_AGE } from './lib/settings'
 import PaymentsPage from './pages/PaymentsPage'
 import UsersPage from './pages/UsersPage'
 import { LoginPage, SignupPage, AccessGate } from './pages/AuthPages'
@@ -39,10 +41,11 @@ const AVATAR_COLORS = [B.green, B.greenMid, B.greenDark, B.goldDark, '#0891b2', 
 const getColor = n => AVATAR_COLORS[n.charCodeAt(0) % AVATAR_COLORS.length]
 
 const statusStyle = s => ({
-  active:   { bg: '#e8f5e9', color: '#1b5e20', dot: B.green },
-  inactive: { bg: '#f3f4f6', color: '#374151', dot: '#9ca3af' },
-  pending:  { bg: B.goldLight, color: '#7a4f00', dot: B.gold },
-}[s] || { bg: '#f3f4f6', color: '#374151', dot: '#9ca3af' })
+  active:   { bg: B.greenLight, color: B.okText, dot: B.green },
+  inactive: { bg: B.neutralBg, color: B.neutralText, dot: '#9ca3af' },
+  pending:  { bg: B.goldLight, color: B.warnText, dot: B.gold },
+  on_hold:  { bg: B.goldLight, color: B.warnText, dot: B.gold },
+}[s] || { bg: B.neutralBg, color: B.neutralText, dot: '#9ca3af' })
 
 // Small badge so a beneficiary's project (and HF branch) is visible on their card at a glance.
 const projectBadge = f => f.project === 'HF'
@@ -117,7 +120,7 @@ function DocViewer({ doc, onClose }) {
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <a href={doc.file_url} download target="_blank" rel="noreferrer" style={{ background: B.green, color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name="download" size={14} />Download</a>
-            <button onClick={onClose} style={{ background: '#dc2626', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name="x" size={14} />Close</button>
+            <button onClick={onClose} style={{ background: B.red, color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name="x" size={14} />Close</button>
           </div>
         </div>
         {/* Viewer */}
@@ -132,7 +135,8 @@ function DocViewer({ doc, onClose }) {
   )
 }
 // ─── REUSABLE UI ──────────────────────────────────────────────────────────────
-const StatusBadge = ({ s }) => {
+const StatusBadge = ({ s, held = false }) => {
+  if (held) s = 'on_hold'
   const st = statusStyle(s)
   return (
     <span style={{
@@ -141,7 +145,7 @@ const StatusBadge = ({ s }) => {
       display: 'inline-flex', alignItems: 'center', gap: 5,
     }}>
       <span style={{ width: 6, height: 6, borderRadius: '50%', background: st.dot }} />
-      {s.charAt(0).toUpperCase() + s.slice(1)}
+      {s === 'on_hold' ? 'On hold' : s.charAt(0).toUpperCase() + s.slice(1)}
     </span>
   )
 }
@@ -198,7 +202,7 @@ const Btn = ({ children, onClick, variant = 'primary', size = 'md', disabled, fu
       boxShadow: `0 2px 8px rgba(30,125,34,0.35)`,
     },
     secondary: { background: B.card, color: B.text, border: `1.5px solid ${B.border}` },
-    danger:    { background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fecaca' },
+    danger:    { background: B.errBg, color: B.red, border: '1.5px solid #fecaca' },
     green:     { background: B.greenLight, color: B.greenDark, border: `1.5px solid ${B.border}` },
     gold: {
       background: `linear-gradient(135deg, ${B.gold}, ${B.goldMid})`,
@@ -270,7 +274,7 @@ const FI = ({ label, value, onChange, placeholder, type = 'text', req, disabled 
     <input
       type={type} value={value} onChange={e => !disabled && onChange(e.target.value)} placeholder={placeholder}
       readOnly={disabled}
-      style={disabled ? { ...inputBase, background: '#f3f4f6', color: B.textMid, cursor: 'not-allowed' } : inputBase}
+      style={disabled ? { ...inputBase, background: B.neutralBg, color: B.textMid, cursor: 'not-allowed' } : inputBase}
       onFocus={e => !disabled && (e.target.style.borderColor = B.green)}
       onBlur={e => !disabled && (e.target.style.borderColor = B.border)}
     />
@@ -311,8 +315,8 @@ function useToast() {
 }
 const ToastColors = {
   success: { bg: B.greenLight, border: '#a5d6a7', color: B.greenDark, icon: 'done' },
-  error:   { bg: '#fef2f2', border: '#fca5a5', color: '#991b1b', icon: 'warn' },
-  info:    { bg: B.goldLight, border: '#ffe082', color: B.goldDark, icon: 'info' },
+  error:   { bg: B.errBg, border: '#fca5a5', color: B.errText, icon: 'warn' },
+  info:    { bg: B.goldLight, border: B.goldBorder, color: B.goldDark, icon: 'info' },
 }
 
 // ─── MODAL ───────────────────────────────────────────────────────────────────
@@ -460,6 +464,7 @@ const NAV = [
   { id: 'analytics', label: 'Stats',     icon: 'chart' },
   { id: 'academics', label: 'Academics', icon: 'graduation' },
   { id: 'banklist',  label: 'Bank List', icon: 'bank' },
+  { id: 'archive',   label: 'Transferred', icon: 'archive' },
   { id: 'users',     label: 'Staff',     icon: 'userCog' },
   { id: 'settings',  label: 'Settings',  icon: 'settings' },
 ]
@@ -540,7 +545,7 @@ function MessagingPage({ families, isMobile }) {
         <div style={{ marginTop: 12, fontSize: 12, color: B.textMid }}>
           <span style={{ fontWeight: 700, color: B.green }}>{recipients.length}</span> recipients with phone numbers
           {recipients.length !== families.filter(f => f.project === selectedProject).length && (
-            <span style={{ color: '#dc2626', marginLeft: 6 }}>({families.filter(f => f.project === selectedProject).length - recipients.length} missing phone numbers)</span>
+            <span style={{ color: B.red, marginLeft: 6 }}>({families.filter(f => f.project === selectedProject).length - recipients.length} missing phone numbers)</span>
           )}
         </div>
       </div>
@@ -863,7 +868,7 @@ function Sidebar({ page, setPage, collapsed, setCollapsed, user, onSignOut, role
       <div style={{ padding: collapsed ? '10px 6px' : '10px 12px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
         {!collapsed && user && (
           <div style={{ marginBottom: 8, padding: '8px 10px', background: 'rgba(255,255,255,0.06)', borderRadius: 8 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#e8f5e9', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: B.greenLight, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {user.full_name || user.email}
             </div>
             <div style={{ fontSize: 10, color: '#81c784', marginTop: 1 }}>{roleLabel(user.role)}</div>
@@ -985,19 +990,26 @@ const StatCard = ({ label, value, icon, bg, color, sub, loading, isMobile }) => 
 )
 
 // ─── DASHBOARD PAGE ───────────────────────────────────────────────────────────
-function DashboardPage({ families, children, loading, onView, onAdd, isMobile, isTablet, canEdit = true }) {
+function DashboardPage({ families, children, loading, onView, onAdd, isMobile, isTablet, canEdit = true, transferredCount = null }) {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('All')
   const [pg, setPg] = useState(1)
   const PER = isMobile ? 6 : 8
-  const active   = families.filter(f => f.status === 'active').length
-  const inactive = families.filter(f => f.status === 'inactive').length
-  const pending  = families.filter(f => f.status === 'pending').length
+  // A family on hold is counted as "On hold" only (not also as active/pending/inactive)
+  const isHeld   = f => caseState(f) === 'on_hold'
+  const held     = families.filter(isHeld).length
+  const active   = families.filter(f => f.status === 'active' && !isHeld(f)).length
+  const inactive = families.filter(f => f.status === 'inactive' && !isHeld(f)).length
+  const pending  = families.filter(f => f.status === 'pending' && !isHeld(f)).length
+  const bar = [
+    { k: 'Active', n: active, c: B.green }, { k: 'Pending', n: pending, c: B.gold },
+    { k: 'Inactive', n: inactive, c: B.textLight }, { k: 'On hold', n: held, c: B.orange },
+  ]
 
   const filtered = families.filter(f => {
     const q = search.toLowerCase()
     return (!q || f.mother_name.toLowerCase().includes(q) || f.family_code.toLowerCase().includes(q) || (f.phone_number || '').includes(q))
-      && (filter === 'All' || f.status === filter.toLowerCase())
+      && (filter === 'All' || (filter === 'On hold' ? isHeld(f) : (f.status === filter.toLowerCase() && !isHeld(f))))
   })
   const paged = filtered.slice((pg - 1) * PER, pg * PER)
   const pages = Math.ceil(filtered.length / PER)
@@ -1022,6 +1034,29 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
             <div style={{ fontSize: 10, color: B.textLight, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Family Statistics</div>
             {loading ? <Skeleton h={60} /> : <DonutChart active={active} inactive={inactive} pending={pending} />}
           </div>
+        )}
+      </div>
+
+      {/* Status bar */}
+      <div style={{ background: B.card, border: `1px solid ${B.border}`, borderRadius: 14, padding: isMobile ? '12px 14px' : '14px 18px', marginBottom: isMobile ? 14 : 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 6 }}>
+          <span style={{ fontSize: 10, color: B.textLight, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Families by status</span>
+          {transferredCount != null && <span style={{ fontSize: 11.5, color: B.textMid, fontWeight: 600 }}><Icon name="archive" size={12} /> {transferredCount} transferred out</span>}
+        </div>
+        {loading ? <Skeleton h={14} /> : (
+          <>
+            <div style={{ display: 'flex', height: 12, borderRadius: 6, overflow: 'hidden', background: B.greenLight, marginBottom: 10 }}>
+              {bar.filter(b => b.n > 0).map(b => <div key={b.k} title={`${b.k}: ${b.n}`} style={{ width: `${(b.n / Math.max(families.length, 1)) * 100}%`, background: b.c, transition: 'width .4s' }} />)}
+            </div>
+            <div style={{ display: 'flex', gap: isMobile ? 10 : 20, flexWrap: 'wrap' }}>
+              {bar.map(b => (
+                <div key={b.k} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: B.text }}>
+                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: b.c }} />
+                  <b style={{ fontSize: 16 }}>{b.n}</b><span style={{ color: B.textMid }}>{b.k}</span>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
@@ -1065,14 +1100,14 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
                 value={filter} onChange={e => { setFilter(e.target.value); setPg(1) }}
                 style={{ padding: '9px 10px', border: `1.5px solid ${B.border}`, borderRadius: 8, fontSize: 13, color: B.text, fontFamily: 'inherit', background: B.input, minHeight: 42 }}
               >
-                {['All', 'Active', 'Inactive', 'Pending'].map(o => <option key={o}>{o}</option>)}
+                {['All', 'Active', 'Inactive', 'Pending', 'On hold'].map(o => <option key={o}>{o}</option>)}
               </select>
             )}
             {!isMobile && canEdit && <Btn onClick={onAdd} variant="gold" size="md"><Icon name="plus" size={16} />Add Family</Btn>}
           </div>
           {isMobile && (
             <div style={{ display: 'flex', gap: 6, width: '100%', overflowX: 'auto' }}>
-              {['All', 'Active', 'Inactive', 'Pending'].map(o => (
+              {['All', 'Active', 'Inactive', 'Pending', 'On hold'].map(o => (
                 <button key={o} onClick={() => { setFilter(o); setPg(1) }}
                   style={{
                     padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700,
@@ -1125,7 +1160,7 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
                   </div>
                   <div style={{ fontSize: 11, color: B.textLight }}>{f.family_code} · {f.district} · {f.children_count?.[0]?.count ?? 0} children</div>
                 </div>
-                <StatusBadge s={f.status} />
+                <StatusBadge s={f.status} held={caseState(f) === 'on_hold'} />
                 <Icon name="chevron" size={18} color={B.border} />
               </div>
             ))}
@@ -1163,7 +1198,7 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
                   <tr
                     key={f.id}
                     style={{ borderBottom: `1px solid ${B.greenLight}`, cursor: 'pointer', transition: 'background 0.12s' }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#f1faf1'}
+                    onMouseEnter={e => e.currentTarget.style.background = B.greenLight}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     onClick={() => onView(f)}
                   >
@@ -1189,7 +1224,7 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
                         {f.children_count?.[0]?.count ?? 0}
                       </span>
                     </td>
-                    <td style={{ padding: '12px 14px' }}><StatusBadge s={f.status} /></td>
+                    <td style={{ padding: '12px 14px' }}><StatusBadge s={f.status} held={caseState(f) === 'on_hold'} /></td>
                     <td style={{ padding: '12px 14px' }}>
                       <button
                         onClick={e => { e.stopPropagation(); onView(f) }}
@@ -1258,15 +1293,15 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
 
 // ─── CHILDREN TAB (proper component so hooks are legal) ───────────────────────
 function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteChild, toast, onDocUploaded, setViewingDoc, setUploading, uploading, isMobile, canEdit = true, canDelete = true }) {
-  const statusColor = s => ({ 'Excellent': B.green, 'Good': '#0891b2', 'Average': B.goldDark, 'Needs Support': '#dc2626' }[s] || B.textLight)
-  const statusBg   = s => ({ 'Excellent': B.greenLight, 'Good': '#e0f2fe', 'Average': B.goldLight, 'Needs Support': '#fef2f2' }[s] || '#f3f4f6')
+  const statusColor = s => ({ 'Excellent': B.green, 'Good': '#0891b2', 'Average': B.goldDark, 'Needs Support': B.red }[s] || B.textLight)
+  const statusBg   = s => ({ 'Excellent': B.greenLight, 'Good': '#e0f2fe', 'Average': B.goldLight, 'Needs Support': B.errBg }[s] || B.neutralBg)
 
   const sorted = [...kids].sort((a, b) => a.child_name.localeCompare(b.child_name))
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
-        <span style={{ fontSize: 14, color: B.textMid }}>{kids.length} children registered</span>
+        <span style={{ fontSize: 14, color: B.textMid }}>{kids.length} children registered{kids.some(k => !isPayingChild(k)) && <> · <b>{kids.filter(isPayingChild).length}</b> in payment · {kids.filter(k => !isPayingChild(k)).length} over {MAX_PAYING_AGE}</>}</span>
         {canEdit && <Btn onClick={() => onAddChild(family.id)} size="sm" variant="gold"><Icon name="plus" size={15} />Add Child</Btn>}
       </div>
 
@@ -1286,12 +1321,20 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
             )}
             {sorted.map(c => {
               const childDocs = allDocs.filter(d => d.child_id === c.id)
+              const aged = !isPayingChild(c) // 19+: shown for records, not counted in payment
               return (
-                <div key={c.id} style={{ background: B.card, borderRadius: 14, border: `1px solid ${B.border}`, padding: isMobile ? '14px' : '16px 18px', boxShadow: `0 2px 8px rgba(30,125,34,0.05)` }}>
+                <div key={c.id} style={{ background: aged ? B.neutralBg : B.card, borderRadius: 14, border: aged ? `1.5px dashed ${B.textLight}` : `1px solid ${B.border}`, padding: isMobile ? '14px' : '16px 18px', boxShadow: aged ? 'none' : `0 2px 8px rgba(30,125,34,0.05)` }}>
+                  {aged && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, fontSize: 11.5, fontWeight: 700, color: B.neutralText }}>
+                      <Icon name="info" size={13} /> Over {MAX_PAYING_AGE} — kept for records, not included in the payment
+                    </div>
+                  )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
                     <Avatar name={c.child_name} photoUrl={c.child_photo_url} size={52} radius={12} clickable={true} />
                     <div style={{ flex: 1, minWidth: 120 }}>
-                      <div style={{ fontWeight: 700, fontSize: 15, color: B.text }}>{c.child_name}</div>
+                      <div style={{ fontWeight: 700, fontSize: 15, color: B.text, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>{c.child_name}
+                        {aged && <span style={{ fontSize: 10.5, fontWeight: 800, background: B.card, color: B.neutralText, border: `1px solid ${B.textLight}`, borderRadius: 20, padding: '1px 8px' }}>NOT IN PAYMENT</span>}
+                      </div>
                       <div style={{ fontSize: 12, color: B.textMid, marginTop: 3 }}>
                         {c.date_of_birth && <>Age {calcAge(c.date_of_birth)} · </>}
                         <span style={{ textTransform: 'capitalize' }}>{c.gender}</span>
@@ -1310,7 +1353,7 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
                           </span>
                         )}
                         {c.medical_notes && (
-                          <span style={{ fontSize: 11, color: '#dc2626', background: '#fef2f2', padding: '2px 9px', borderRadius: 6 }}><Icon name="medical" size={11} /> {c.medical_notes}</span>
+                          <span style={{ fontSize: 11, color: B.red, background: B.errBg, padding: '2px 9px', borderRadius: 6 }}><Icon name="medical" size={11} /> {c.medical_notes}</span>
                         )}
                       </div>
                     </div>
@@ -1369,8 +1412,10 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
 }
 
 // ─── FAMILY DETAIL PAGE ───────────────────────────────────────────────────────
-function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, onDeleteFamily, onAddChild, onEditChild, onDeleteChild, toast, onDocUploaded, isMobile, canEdit = true, canDelete = true, canViewPayments = false, canManagePayments = false, user = null, isAdmin = false, rates = DEFAULT_RATES }) {
+function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, onDeleteFamily, onAddChild, onEditChild, onDeleteChild, toast, onDocUploaded, isMobile, canEdit = true, canDelete = true, canViewPayments = false, canManagePayments = false, user = null, isAdmin = false, rates = DEFAULT_RATES, staffNames = {}, onCaseChanged = () => {} }) {
   const kids = allChildren.filter(c => c.family_id === family.id)
+  const payingKids = kids.filter(isPayingChild)
+  const cState = caseState(family)
   const famDocs = allDocs.filter(d => d.family_id === family.id)
   // Birth certificates live in each child's tab, so they are not listed with the mother's documents
   const motherDocs = famDocs.filter(d => !(d.document_type === 'Birth Certificate' && !d.child_id))
@@ -1387,6 +1432,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
         family_id: family.id, child_id: null,
         document_type: docType, file_url: url,
         file_name: file.name, file_size_kb: Math.round(file.size / 1024),
+        uploaded_by: user?.id || null,
       })
       if (error) throw error
       toast(`${docType} uploaded`)
@@ -1411,8 +1457,17 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
         <div style={{ flex: 1 }} />
         {canEdit && <Btn onClick={() => onEditFamily(family)} variant="secondary" size="sm"><Icon name="edit" size={14} />Edit</Btn>}
         {canDelete && <Btn onClick={() => onDeleteFamily(family)} variant="danger" size="sm"><Icon name="trash" size={14} />Delete</Btn>}
-        <StatusBadge s={family.status} />
+        <StatusBadge s={family.status} held={cState === 'on_hold'} />
+        {cState === 'transferred' && <span style={{ background: B.errBg, color: B.errText, padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700 }}>Transferred</span>}
       </div>
+
+      {cState !== 'normal' && (
+        <div style={{ background: cState === 'on_hold' ? B.goldLight : B.errBg, color: cState === 'on_hold' ? B.warnText : B.errText, border: `1px solid ${cState === 'on_hold' ? B.goldBorder : B.errBorder}`, borderRadius: 12, padding: '10px 14px', marginBottom: 14, fontSize: 13, lineHeight: 1.5 }}>
+          <b>{cState === 'on_hold' ? 'On hold — deposits postponed.' : 'Transferred out of the active lists.'}</b>
+          {' '}{cState === 'on_hold' ? 'Not on the bank list; shown as unpaid on the payment list.' : 'Not on the bank list or payment list.'}
+          {isAdmin && family.case_reason && <> Reason: {family.case_reason}</>}
+        </div>
+      )}
 
       {/* Hero banner */}
       <div style={{
@@ -1506,7 +1561,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
         border: `1px solid ${B.border}`,
         position: 'sticky', top: isMobile ? 58 : 0, zIndex: 20,
       }}>
-        {['overview', 'children', 'documents', ...(canViewPayments ? ['payment'] : []), ...(isAdmin ? ['notes'] : [])].map(t => (
+        {['overview', 'children', 'documents', ...(canViewPayments ? ['payment'] : []), ...(isAdmin ? ['notes', 'status'] : [])].map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -1544,7 +1599,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
             { l: 'Alternate Phone', v: family.alternate_phone || '—', isPhone: true },
             { l: 'City', v: family.city },
             { l: 'District', v: family.district },
-            { l: 'Monthly Support (ETB)', v: monthlyFor(rates, kids.length).toLocaleString() },
+            { l: 'Monthly Support (ETB)', v: monthlyFor(rates, payingKids.length).toLocaleString() },
             { l: 'Registered', v: family.created_at?.slice(0, 10) },
           ].map(r => (
             <div key={r.l} style={{
@@ -1625,7 +1680,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
                   <Icon name="file" size={20} color={B.green} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 650, color: B.text }}>{d.document_type}</div>
-                    <div style={{ fontSize: 11, color: B.textLight, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.file_name} · {d.file_size_kb}KB · {d.uploaded_at?.slice(0, 10)}</div>
+                    <div style={{ fontSize: 11, color: B.textLight, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.file_name} · {d.file_size_kb}KB · {d.uploaded_at?.slice(0, 10)}{staffNames[d.uploaded_by] ? ` · by ${staffNames[d.uploaded_by]}` : ''}</div>
                   </div>
                   <button onClick={() => setViewingDoc(d)}
                     style={{ background: B.greenLight, borderRadius: 7, padding: '5px 12px', fontSize: 12, color: B.green, fontWeight: 700, whiteSpace: 'nowrap', border: 'none', cursor: 'pointer' }}>View</button>
@@ -1638,7 +1693,12 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
 
       {/* PAYMENT */}
       {tab === 'payment' && canViewPayments && (
-        <FamilyPaymentsTab family={family} childCount={kids.length} rates={rates} user={user} canManage={canManagePayments} toast={toast} isMobile={isMobile} />
+        <FamilyPaymentsTab family={family} childCount={payingKids.length} excludedCount={kids.length - payingKids.length} rates={rates} user={user} canManage={isAdmin} staffNames={staffNames} caseState={cState} toast={toast} isMobile={isMobile} />
+      )}
+
+      {/* STATUS (admin only) */}
+      {tab === 'status' && isAdmin && (
+        <FamilyStatusTab family={family} user={user} toast={toast} onChanged={onCaseChanged} isMobile={isMobile} />
       )}
 
       {/* NOTES */}
@@ -2044,7 +2104,7 @@ function AcademicsPage({ children, isMobile }) {
           { label: 'Excellent', color: B.green, bg: B.greenLight },
           { label: 'Good', color: '#0891b2', bg: '#e0f2fe' },
           { label: 'Average', color: B.goldDark, bg: B.goldLight },
-          { label: 'Needs Support', color: '#dc2626', bg: '#fef2f2' },
+          { label: 'Needs Support', color: B.red, bg: B.errBg },
         ].map(s => {
           const count = children.filter(c => c.academic_status === s.label).length
           return (
@@ -2230,6 +2290,7 @@ export default function App() {
   const isTablet = bp === 'tablet'
   const { isDark, toggle: toggleTheme } = useTheme()
   const [rates, setRates] = useState(DEFAULT_RATES)
+  const [staffNames, setStaffNames] = useState({})
 
   const [session, setSession] = useState(null)
   const [user, setUser] = useState(null)
@@ -2353,7 +2414,12 @@ export default function App() {
 
   // Only load data once the account is approved; depends on ids (not the session object) so token refreshes don't reload everything.
   useEffect(() => {
-    if (session && user?.status === 'approved') loadRates().then(r => setRates(r.rates))
+    if (session && user?.status === 'approved') {
+      loadRates().then(r => setRates(r.rates))
+      supabase.from('users').select('id,full_name,email').then(({ data }) => {
+        const m = {}; (data || []).forEach(u => { m[u.id] = u.full_name || u.email }); setStaffNames(m)
+      })
+    }
   }, [session?.user?.id, user?.id, user?.status])
   useEffect(() => { if (session && user?.status === 'approved') loadAll() }, [session?.user?.id, user?.id, user?.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -2438,7 +2504,7 @@ export default function App() {
       const uploadDoc = async (file, docType) => {
         const path = `${fam?.family_code}/child-${childId?.slice(0, 8)}-${docType.replace(/\s+/g, '-').toLowerCase()}.jpg`
         const url = await uploadFile({ supabase, file, bucket: BUCKETS.DOCUMENTS, path, type: 'document' })
-        await supabase.from('documents').insert({ family_id: famId, child_id: childId, document_type: docType, file_url: url, file_name: file.name, file_size_kb: Math.round(file.size / 1024) })
+        await supabase.from('documents').insert({ family_id: famId, child_id: childId, document_type: docType, file_url: url, file_name: file.name, file_size_kb: Math.round(file.size / 1024), uploaded_by: session?.user?.id || null })
       }
       if (birthCertFile) await uploadDoc(birthCertFile, 'Birth Certificate')
       if (schoolCertFile) await uploadDoc(schoolCertFile, 'School Certificate')
@@ -2492,18 +2558,24 @@ export default function App() {
   }
 
   const role = user.role
-  const childCounts = children.reduce((m, c) => { m[c.family_id] = (m[c.family_id] || 0) + 1; return m }, {})
+  // Lists: transferred families are hidden everywhere except the admin-only Transferred page.
+  const liveFamilies = families.filter(f => caseState(f) !== 'transferred')
+  const transferredFamilies = families.filter(f => caseState(f) === 'transferred')
+  // Families on hold keep their profile but are removed from the bank list.
+  const bankFamilies = liveFamilies.filter(f => caseState(f) !== 'on_hold')
+  // Only children aged 18 or under are counted in the payment amount.
+  const childCounts = children.filter(isPayingChild).reduce((m, c) => { m[c.family_id] = (m[c.family_id] || 0) + 1; return m }, {})
   const canEdit = can(role, 'edit_families')
   const canDelete = can(role, 'delete_families')
   const pageKey = ['detail', 'project-detail', 'branches'].includes(page) ? 'families' : page
   const allowed = canOpenPage(role, pageKey)
 
   const breadcrumb = page === 'detail' && selectedFamily
-    ? ['Families', selectedFamily.mother_name]
+    ? [detailOrigin === 'archive' ? 'Transferred' : 'Families', selectedFamily.mother_name]
     : page === 'project-detail'
       ? selectedProject === 'HF' ? ['Projects', 'HF', selectedBranch] : ['Projects', 'OVC']
       : page === 'branches' ? ['Projects', 'HF'] : null
-  const pageTitle = { dashboard: 'Dashboard', detail: 'Family Details', analytics: 'Statistics', academics: 'Academics', settings: 'Settings', projects: 'Projects', branches: 'HF Branches', 'project-detail': 'Beneficiaries', messaging: 'Send Message', banklist: 'Bank List', payments: 'Payments', users: 'Staff & Access' }[page]
+  const pageTitle = { dashboard: 'Dashboard', detail: 'Family Details', analytics: 'Statistics', academics: 'Academics', settings: 'Settings', projects: 'Projects', branches: 'HF Branches', 'project-detail': 'Beneficiaries', messaging: 'Send Message', banklist: 'Bank List', payments: 'Payments', archive: 'Transferred Families', users: 'Staff & Access' }[page]
 
   return (
     <div style={{
@@ -2542,7 +2614,7 @@ export default function App() {
       {/* Sidebar — hidden on mobile */}
       {!isMobile && (
         <Sidebar
-          page={page === 'detail' ? 'families' : page}
+          page={page === 'detail' ? (detailOrigin === 'archive' ? 'archive' : 'families') : page}
           setPage={handleSetPage}
           collapsed={collapsed}
           setCollapsed={setCollapsed}
@@ -2565,7 +2637,7 @@ export default function App() {
           )}
           {allowed && (page === 'dashboard' || page === 'families') && (
             <DashboardPage
-              families={families} children={children} loading={dataLoading}
+              families={liveFamilies} children={children} loading={dataLoading} transferredCount={role === 'admin' ? transferredFamilies.length : null}
               onView={openFamily}
               onAdd={() => { setEditingFamily(null); setShowFamilyForm(true) }}
               isMobile={isMobile} isTablet={isTablet} canEdit={canEdit}
@@ -2573,21 +2645,21 @@ export default function App() {
           )}
           {allowed && page === 'projects' && (
             <ProjectsPage
-              families={families} isMobile={isMobile}
+              families={liveFamilies} isMobile={isMobile}
               onOpenOVC={() => { setSelectedProject('OVC'); setSelectedBranch(null); setPage('project-detail') }}
               onOpenHF={() => setPage('branches')}
             />
           )}
           {allowed && page === 'branches' && (
             <BranchesPage
-              families={families} isMobile={isMobile}
+              families={liveFamilies} isMobile={isMobile}
               onBack={() => setPage('projects')}
               onOpenBranch={branch => { setSelectedProject('HF'); setSelectedBranch(branch); setPage('project-detail') }}
             />
           )}
           {allowed && page === 'project-detail' && (
             <DashboardPage
-              families={families.filter(f => f.project === selectedProject && (selectedProject === 'OVC' || f.branch === selectedBranch))}
+              families={liveFamilies.filter(f => f.project === selectedProject && (selectedProject === 'OVC' || f.branch === selectedBranch))}
               children={children} loading={dataLoading}
               onView={openFamily}
               onAdd={() => { setEditingFamily(null); setShowFamilyForm(true) }}
@@ -2596,7 +2668,8 @@ export default function App() {
           )}
           {allowed && page === 'detail' && selectedFamily && (
             <FamilyDetailPage
-              family={selectedFamily} allChildren={children} allDocs={docs}
+              family={families.find(f => f.id === selectedFamily.id) || selectedFamily} allChildren={children} allDocs={docs} staffNames={staffNames}
+              onCaseChanged={async action => { await loadAll(); if (action === 'transfer') { setPage('archive') } }}
               onBack={closeFamily}
               onEditFamily={f => { setEditingFamily(f); setShowFamilyForm(true) }}
               onDeleteFamily={f => setConfirmDelete({ type: 'family', item: f })}
@@ -2608,11 +2681,12 @@ export default function App() {
               canViewPayments={can(role, 'view_payments')} canManagePayments={can(role, 'manage_payments')} user={user} isAdmin={role === 'admin'} rates={rates}
             />
           )}
-          {allowed && page === 'analytics' && <AnalyticsPage families={families} children={children} isMobile={isMobile} />}
+          {allowed && page === 'analytics' && <AnalyticsPage families={liveFamilies} children={children} isMobile={isMobile} />}
           {allowed && page === 'academics' && <AcademicsPage children={children} isMobile={isMobile} />}
-          {allowed && page === 'messaging' && <MessagingPage families={families} isMobile={isMobile} />}
-          {allowed && page === 'banklist' && <BankListPage families={families} childCounts={childCounts} rates={rates} user={user} isAdmin={role === 'admin'} toast={toast} isMobile={isMobile} />}
-          {allowed && page === 'payments' && <PaymentsPage families={families} childCounts={childCounts} rates={rates} user={user} canManage={can(role, 'manage_payments')} toast={toast} isMobile={isMobile} />}
+          {allowed && page === 'messaging' && <MessagingPage families={liveFamilies} isMobile={isMobile} />}
+          {allowed && page === 'banklist' && <BankListPage families={bankFamilies} childCounts={childCounts} rates={rates} user={user} isAdmin={role === 'admin'} toast={toast} isMobile={isMobile} />}
+          {allowed && page === 'payments' && <PaymentsPage families={liveFamilies} staffNames={staffNames} childCounts={childCounts} rates={rates} user={user} canManage={can(role, 'manage_payments')} toast={toast} isMobile={isMobile} />}
+          {allowed && page === 'archive' && <ArchivePage families={transferredFamilies} onView={openFamily} isMobile={isMobile} />}
           {allowed && page === 'users' && <UsersPage currentUser={user} toast={toast} isMobile={isMobile} />}
           {allowed && page === 'settings' && (
             <SettingsPage user={user} onUpdateUser={setUser} toast={toast} isMobile={isMobile} rates={rates} onRatesChange={setRates} />
@@ -2640,7 +2714,7 @@ export default function App() {
 
       <Modal open={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Confirm Deletion" width={400}>
         <div style={{ textAlign: 'center', padding: '8px 0' }}>
-          <div style={{ marginBottom: 12, color: '#dc2626' }}><Icon name="alert" size={44} /></div>
+          <div style={{ marginBottom: 12, color: B.red }}><Icon name="alert" size={44} /></div>
           <div style={{ fontSize: 15, fontWeight: 800, color: B.text, marginBottom: 8 }}>Delete {confirmDelete?.type === 'family' ? 'Family' : 'Child'}?</div>
           <div style={{ fontSize: 13, color: B.textMid, marginBottom: 24 }}>
             <strong>{confirmDelete?.item?.mother_name || confirmDelete?.item?.child_name}</strong> will be permanently removed.

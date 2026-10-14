@@ -7,10 +7,10 @@ import { B } from '../lib/theme'
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 const STATUS = {
-  paid:    { label: 'Paid',    bg: '#e8f5e9', color: '#1b5e20', dot: '#1e7d22' },
-  pending: { label: 'Unpaid',  bg: '#fff8e1', color: '#7a4f00', dot: '#f5a800' },
-  failed:  { label: 'Failed',  bg: '#fef2f2', color: '#991b1b', dot: '#dc2626' },
-  on_hold: { label: 'On hold', bg: '#eef2ff', color: '#3730a3', dot: '#6366f1' },
+  paid:    { label: 'Paid',    bg: B.greenLight, color: B.okText, dot: '#1e7d22' },
+  pending: { label: 'Unpaid',  bg: B.goldLight, color: B.warnText, dot: '#f5a800' },
+  failed:  { label: 'Failed',  bg: B.errBg, color: B.errText, dot: B.red },
+  on_hold: { label: 'On hold', bg: B.infoBg, color: B.infoText, dot: '#6366f1' },
 }
 const money = n => (n == null || n === '' || isNaN(n)) ? '—' : Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 })
 const todayStr = () => new Date().toISOString().slice(0, 10)
@@ -23,7 +23,7 @@ const inputStyle = {
 const Lbl = ({ children }) => <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: B.textMid, marginBottom: 6 }}>{children}</label>
 
 // Payment history for one mother, January → December of the chosen year.
-export default function FamilyPaymentsTab({ family, user, canManage, toast, isMobile, childCount = 0, rates = DEFAULT_RATES }) {
+export default function FamilyPaymentsTab({ family, user, canManage, toast, isMobile, childCount = 0, excludedCount = 0, rates = DEFAULT_RATES, staffNames = {}, caseState = 'normal' }) {
   const monthly = monthlyFor(rates, childCount)
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
@@ -112,7 +112,7 @@ export default function FamilyPaymentsTab({ family, user, canManage, toast, isMo
           <button aria-label="Next year" disabled={!canGoNext} onClick={() => setYear(y => y + 1)} style={{ background: 'transparent', border: 'none', cursor: canGoNext ? 'pointer' : 'not-allowed', opacity: canGoNext ? 1 : 0.35, width: 34, height: 34, borderRadius: 8, color: B.greenDark, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="chevron" size={18} /></button>
         </div>
         <div style={{ fontSize: 12.5, color: B.textMid, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Icon name="bank" size={14} /> <b>{bankLabel(family.bank)}</b> · {family.account_number || <span style={{ color: '#b45309' }}>No account on file</span>}
+          <Icon name="bank" size={14} /> <b>{bankLabel(family.bank)}</b> · {family.account_number || <span style={{ color: B.amber }}>No account on file</span>}
         </div>
       </div>
 
@@ -122,13 +122,24 @@ export default function FamilyPaymentsTab({ family, user, canManage, toast, isMo
         <span style={{ color: B.textMid }}> · × 12 months = ETB {money(monthly * 12)}</span>
       </div>
 
+      {excludedCount > 0 && (
+        <div style={{ background: B.neutralBg, color: B.neutralText, border: `1px dashed ${B.textLight}`, borderRadius: 12, padding: '9px 14px', marginBottom: 12, fontSize: 12.5 }}>
+          <Icon name="info" size={13} /> {excludedCount} {excludedCount === 1 ? 'child is' : 'children are'} over 18 and not counted in this payment (still listed in the Children tab).
+        </div>
+      )}
+      {caseState === 'on_hold' && (
+        <div style={{ background: B.goldLight, color: B.warnText, border: `1px solid ${B.goldBorder}`, borderRadius: 12, padding: '9px 14px', marginBottom: 12, fontSize: 12.5 }}>
+          <Icon name="pending" size={13} /> This family is on hold — deposits are postponed and unpaid months stay unpaid until the hold is released.
+        </div>
+      )}
+
       {/* Summary */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: isMobile ? 8 : 12, marginBottom: 14 }}>
         {[
           { l: `Expected ${year} (ETB)`, v: money(totals.expectedAmt), c: B.text },
-          { l: 'Paid (ETB)', v: money(totals.paidAmt), sub: `${totals.paid} / 12 months`, c: '#1b5e20' },
+          { l: 'Paid (ETB)', v: money(totals.paidAmt), sub: `${totals.paid} / 12 months`, c: B.okText },
           { l: 'Outstanding (ETB)', v: money(totals.outstanding), sub: `${totals.unpaid} unpaid`, c: B.goldDark },
-          { l: 'Issues', v: totals.issues, sub: 'failed / on hold', c: '#dc2626' },
+          { l: 'Issues', v: totals.issues, sub: 'failed / on hold', c: B.red },
         ].map(t => (
           <div key={t.l} style={{ background: B.card, border: `1px solid ${B.border}`, borderRadius: 12, padding: '11px 14px' }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t.l}</div>
@@ -155,8 +166,11 @@ export default function FamilyPaymentsTab({ family, user, canManage, toast, isMo
                   <div style={{ fontSize: 11, color: B.textLight, minHeight: 28, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {m.status === 'paid'
                       ? <>Paid {m.p?.paid_on || ''}{m.p?.reference ? <><br />Ref: {m.p.reference}</> : null}</>
-                      : m.p?.notes ? <span style={{ color: '#991b1b' }}>{m.p.notes}</span> : '—'}
+                      : m.p?.notes ? <span style={{ color: B.errText }}>{m.p.notes}</span> : '—'}
                   </div>
+                  {m.p?.recorded_by && staffNames[m.p.recorded_by] && (
+                    <div style={{ fontSize: 10.5, color: B.textLight }}><Icon name="edit" size={10} /> Signed by {staffNames[m.p.recorded_by]}</div>
+                  )}
                   {canManage && (
                     <button onClick={() => openEdit(m)} style={{ background: B.greenLight, border: `1px solid ${B.border}`, color: B.green, borderRadius: 8, padding: '7px', fontSize: 12, fontWeight: 700, cursor: 'pointer', minHeight: 34, fontFamily: 'inherit' }}>
                       {m.status === 'pending' ? 'Record payment' : 'Update'}

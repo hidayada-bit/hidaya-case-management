@@ -184,3 +184,14 @@ Awash Bank is registered in `src/lib/banks.js`. Drop these files into `public/`:
 ## 💰 Payment rates (migration 004)
 Run `supabase/migrations/004_payment_rates.sql` once in the Supabase SQL Editor. The admin then sets the
 per-mother and per-child rates in Settings → Payment Rates. Monthly amount = mother rate + (children × child rate).
+
+## 🚦 Family hold / transfer (migration 005)
+Run `supabase/migrations/005_family_case_state.sql` once. Admins get a **Status** tab on each family profile:
+- **Put on hold** – stays in the family list, removed from the bank list, shown *unpaid* on the payment list.
+- **Transfer out** – removed from families, bank list and payment list; moves to the admin-only **Transferred** page with its history.
+- Every action asks for a reason and is signed with the admin's name; admins can edit the reason later.
+
+## ✉️ Removing the "email rate limit exceeded" error
+This limit is enforced by Supabase, not by the app, so it must be changed in the Supabase dashboard:
+1. **Authentication → Rate Limits** → raise "Rate limit for sending emails" (this needs a custom SMTP provider: **Project Settings → Authentication → SMTP Settings**; Supabase's built-in mailer is capped at a few emails per hour).
+2. Or avoid emails entirely: **Authentication → Providers → Email → turn off "Confirm email"**. New staff still need an admin's approval inside the app.
