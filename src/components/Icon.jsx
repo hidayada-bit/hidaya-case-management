@@ -33,8 +33,8 @@ export default function Icon({ name, size = 16, color = 'currentColor', strokeWi
   if (!C) return null
   return (
     <C
-      size={size} color={color} strokeWidth={strokeWidth}
-      style={{ flexShrink: 0, verticalAlign: 'middle', animation: spin ? 'spin 0.9s linear infinite' : undefined, ...style }}
+      size={size} color="currentColor" strokeWidth={strokeWidth}
+      style={{ color, flexShrink: 0, verticalAlign: 'middle', animation: spin ? 'spin 0.9s linear infinite' : undefined, ...style }}
       aria-hidden="true" {...rest}
     />
   )

@@ -2,12 +2,9 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import Icon from '../components/Icon'
 import { bankLabel } from '../lib/banks'
+import { DEFAULT_RATES, monthlyFor } from '../lib/settings'
+import { B } from '../lib/theme'
 
-const B = {
-  green: '#1e7d22', greenDark: '#145717', greenLight: '#e8f5e9', greenMid: '#2e9e33',
-  gold: '#f5a800', goldLight: '#fff8e1', goldDark: '#c87d00',
-  border: '#c8e6c9', text: '#1a2e1a', textMid: '#4a6b4a', textLight: '#7a9b7a',
-}
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 const STATUS = {
   paid:    { label: 'Paid',    bg: '#e8f5e9', color: '#1b5e20', dot: '#1e7d22' },
@@ -21,12 +18,13 @@ const periodOf = (year, m) => `${year}-${String(m + 1).padStart(2, '0')}-01`
 
 const inputStyle = {
   width: '100%', padding: '10px 12px', border: `1.5px solid ${B.border}`, borderRadius: 9, fontSize: 15,
-  color: B.text, background: '#fafff9', fontFamily: 'inherit', boxSizing: 'border-box', minHeight: 44, outline: 'none',
+  color: B.text, background: B.input, fontFamily: 'inherit', boxSizing: 'border-box', minHeight: 44, outline: 'none',
 }
 const Lbl = ({ children }) => <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: B.textMid, marginBottom: 6 }}>{children}</label>
 
 // Payment history for one mother, January → December of the chosen year.
-export default function FamilyPaymentsTab({ family, user, canManage, toast, isMobile }) {
+export default function FamilyPaymentsTab({ family, user, canManage, toast, isMobile, childCount = 0, rates = DEFAULT_RATES }) {
+  const monthly = monthlyFor(rates, childCount)
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [rows, setRows] = useState({}) // month index -> payment row
@@ -50,17 +48,19 @@ export default function FamilyPaymentsTab({ family, user, canManage, toast, isMo
 
   const months = useMemo(() => MONTHS.map((name, i) => {
     const p = rows[i]
-    return { i, name, p, status: p?.status || 'pending', amount: p?.amount ?? family.monthly_support ?? null }
-  }), [rows, family.monthly_support])
+    const status = p?.status || 'pending'
+    return { i, name, p, status, amount: status === 'paid' ? (p.amount ?? monthly) : monthly }
+  }), [rows, monthly])
 
   const totals = useMemo(() => {
-    const t = { paid: 0, unpaid: 0, issues: 0, paidAmt: 0, expectedAmt: 0 }
+    const t = { paid: 0, unpaid: 0, issues: 0, paidAmt: 0, expectedAmt: 0, outstanding: 0 }
     months.forEach(m => {
       t.expectedAmt += Number(m.amount) || 0
       if (m.status === 'paid') { t.paid++; t.paidAmt += Number(m.amount) || 0 }
       else if (m.status === 'pending') t.unpaid++
       else t.issues++
     })
+    t.outstanding = Math.max(t.expectedAmt - t.paidAmt, 0)
     return t
   }, [months])
 
@@ -83,10 +83,10 @@ export default function FamilyPaymentsTab({ family, user, canManage, toast, isMo
     }
     setSaving(true)
     try {
-      const amt = form.amount !== '' ? Number(form.amount) : (family.monthly_support ?? null)
+      const amt = form.amount !== '' ? Number(form.amount) : monthly
       const base = { family_id: family.id, period: periodOf(year, edit), recorded_by: user?.id || null }
       const payload = resetToUnpaid
-        ? { ...base, status: 'pending', amount: m.p?.amount ?? family.monthly_support ?? null, paid_on: null, reference: null, notes: null }
+        ? { ...base, status: 'pending', amount: monthly, paid_on: null, reference: null, notes: null }
         : form.status === 'paid'
           ? { ...base, status: 'paid', amount: amt, paid_on: form.paid_on, reference: form.reference.trim() || null, notes: form.notes.trim() || null }
           : { ...base, status: form.status, amount: amt, paid_on: null, reference: null, notes: form.notes.trim() }
@@ -116,17 +116,24 @@ export default function FamilyPaymentsTab({ family, user, canManage, toast, isMo
         </div>
       </div>
 
+      {/* Formula */}
+      <div style={{ background: B.greenLight, border: `1px solid ${B.border}`, borderRadius: 12, padding: '11px 14px', marginBottom: 12, fontSize: 13, color: B.text }}>
+        <b>Monthly amount:</b> {money(rates.mother)} (mother) + {childCount} {childCount === 1 ? 'child' : 'children'} × {money(rates.child)} = <b>ETB {money(monthly)}</b>
+        <span style={{ color: B.textMid }}> · × 12 months = ETB {money(monthly * 12)}</span>
+      </div>
+
       {/* Summary */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: isMobile ? 8 : 12, marginBottom: 14 }}>
         {[
-          { l: 'Months paid', v: `${totals.paid} / 12`, c: '#1b5e20' },
-          { l: 'Total paid (ETB)', v: money(totals.paidAmt), c: '#1b5e20' },
-          { l: 'Unpaid months', v: totals.unpaid, c: B.goldDark },
-          { l: 'Issues', v: totals.issues, c: '#dc2626' },
+          { l: `Expected ${year} (ETB)`, v: money(totals.expectedAmt), c: B.text },
+          { l: 'Paid (ETB)', v: money(totals.paidAmt), sub: `${totals.paid} / 12 months`, c: '#1b5e20' },
+          { l: 'Outstanding (ETB)', v: money(totals.outstanding), sub: `${totals.unpaid} unpaid`, c: B.goldDark },
+          { l: 'Issues', v: totals.issues, sub: 'failed / on hold', c: '#dc2626' },
         ].map(t => (
-          <div key={t.l} style={{ background: '#fff', border: `1px solid ${B.border}`, borderRadius: 12, padding: '11px 14px' }}>
+          <div key={t.l} style={{ background: B.card, border: `1px solid ${B.border}`, borderRadius: 12, padding: '11px 14px' }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t.l}</div>
             <div style={{ fontSize: 20, fontWeight: 800, color: t.c }}>{t.v}</div>
+            {t.sub && <div style={{ fontSize: 11, color: B.textLight }}>{t.sub}</div>}
           </div>
         ))}
       </div>
@@ -139,7 +146,7 @@ export default function FamilyPaymentsTab({ family, user, canManage, toast, isMo
             {months.map(m => {
               const st = STATUS[m.status]
               return (
-                <div key={m.i} style={{ background: '#fff', border: `1px solid ${B.border}`, borderTop: `3px solid ${st.dot}`, borderRadius: 12, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
+                <div key={m.i} style={{ background: B.card, border: `1px solid ${B.border}`, borderTop: `3px solid ${st.dot}`, borderRadius: 12, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
                     <span style={{ fontWeight: 800, fontSize: 14, color: B.text }}>{m.name}</span>
                     <span style={{ background: st.bg, color: st.color, padding: '3px 9px', borderRadius: 20, fontSize: 10.5, fontWeight: 700, whiteSpace: 'nowrap' }}>{st.label}</span>
@@ -164,7 +171,7 @@ export default function FamilyPaymentsTab({ family, user, canManage, toast, isMo
       {/* Edit modal */}
       {edit != null && (
         <div onClick={() => !saving && setEdit(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(13,59,15,0.5)', zIndex: 9000, display: 'flex', alignItems: isMobile ? 'flex-end' : 'center', justifyContent: 'center', padding: isMobile ? 0 : 16 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', width: '100%', maxWidth: 440, borderRadius: isMobile ? '20px 20px 0 0' : 18, boxShadow: '0 32px 80px rgba(0,0,0,0.3)', maxHeight: '92vh', overflow: 'auto' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: B.card, width: '100%', maxWidth: 440, borderRadius: isMobile ? '20px 20px 0 0' : 18, boxShadow: '0 32px 80px rgba(0,0,0,0.3)', maxHeight: '92vh', overflow: 'auto' }}>
             <div style={{ padding: '14px 20px', borderBottom: `2px solid ${B.greenLight}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 16, fontWeight: 800, color: B.text }}>{MONTHS[edit]} {year} — {family.mother_name}</span>
               <button onClick={() => setEdit(null)} aria-label="Close" style={{ background: B.greenLight, border: `1px solid ${B.border}`, borderRadius: 8, width: 32, height: 32, cursor: 'pointer', color: B.greenDark, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="x" size={16} /></button>
@@ -190,8 +197,8 @@ export default function FamilyPaymentsTab({ family, user, canManage, toast, isMo
                 <textarea rows={3} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} style={{ ...inputStyle, resize: 'vertical' }} />
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                {months[edit].p && <button disabled={saving} onClick={() => save(true)} style={{ background: '#fff', color: B.text, border: `1.5px solid ${B.border}`, borderRadius: 9, padding: '8px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', minHeight: 40, fontFamily: 'inherit', marginRight: 'auto' }}>Reset to unpaid</button>}
-                <button disabled={saving} onClick={() => setEdit(null)} style={{ background: '#fff', color: B.text, border: `1.5px solid ${B.border}`, borderRadius: 9, padding: '8px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', minHeight: 40, fontFamily: 'inherit' }}>Cancel</button>
+                {months[edit].p && <button disabled={saving} onClick={() => save(true)} style={{ background: B.card, color: B.text, border: `1.5px solid ${B.border}`, borderRadius: 9, padding: '8px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', minHeight: 40, fontFamily: 'inherit', marginRight: 'auto' }}>Reset to unpaid</button>}
+                <button disabled={saving} onClick={() => setEdit(null)} style={{ background: B.card, color: B.text, border: `1.5px solid ${B.border}`, borderRadius: 9, padding: '8px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', minHeight: 40, fontFamily: 'inherit' }}>Cancel</button>
                 <button disabled={saving} onClick={() => save(false)} style={{ background: `linear-gradient(135deg, ${B.green}, ${B.greenMid})`, color: '#fff', border: 'none', borderRadius: 9, padding: '8px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', minHeight: 40, fontFamily: 'inherit', opacity: saving ? 0.6 : 1 }}>{saving ? 'Saving…' : 'Save'}</button>
               </div>
             </div>

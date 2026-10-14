@@ -2,12 +2,9 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import Icon from '../components/Icon'
 import { BANKS, bankLabel } from '../lib/banks'
+import { DEFAULT_RATES, monthlyFor } from '../lib/settings'
+import { B } from '../lib/theme'
 
-const B = {
-  green: '#1e7d22', greenDark: '#145717', greenLight: '#e8f5e9', greenMid: '#2e9e33',
-  gold: '#f5a800', goldLight: '#fff8e1', goldDark: '#c87d00', sidebar: '#0d3b0f', sidebarMid: '#145717',
-  border: '#c8e6c9', text: '#1a2e1a', textMid: '#4a6b4a', textLight: '#7a9b7a',
-}
 const HF_BRANCHES = ['Addis Ababa', 'Bishoftu', 'Dangla', 'Bure', 'Dire Dawa', 'Nekemte', 'Chagni']
 
 const STATUS = {
@@ -19,14 +16,14 @@ const STATUS = {
 
 const inputStyle = {
   width: '100%', padding: '10px 12px', border: `1.5px solid ${B.border}`, borderRadius: 9, fontSize: 15,
-  color: B.text, background: '#fafff9', fontFamily: 'inherit', boxSizing: 'border-box', minHeight: 44, outline: 'none',
+  color: B.text, background: B.input, fontFamily: 'inherit', boxSizing: 'border-box', minHeight: 44, outline: 'none',
 }
-const filterStyle = { padding: '9px 10px', border: `1.5px solid ${B.border}`, borderRadius: 8, fontSize: 13, color: B.text, fontFamily: 'inherit', background: '#fff', minHeight: 40 }
+const filterStyle = { padding: '9px 10px', border: `1.5px solid ${B.border}`, borderRadius: 8, fontSize: 13, color: B.text, fontFamily: 'inherit', background: B.card, minHeight: 40 }
 const btn = (variant = 'primary', disabled) => ({
   ...(variant === 'primary' ? { background: `linear-gradient(135deg, ${B.green}, ${B.greenMid})`, color: '#fff', border: 'none' }
     : variant === 'danger' ? { background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fecaca' }
     : variant === 'gold' ? { background: `linear-gradient(135deg, ${B.gold}, #ffb300)`, color: B.greenDark, border: 'none' }
-    : { background: '#fff', color: B.text, border: `1.5px solid ${B.border}` }),
+    : { background: B.card, color: B.text, border: `1.5px solid ${B.border}` }),
   borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1,
   display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 38, fontFamily: 'inherit', whiteSpace: 'nowrap',
 })
@@ -49,7 +46,7 @@ function Badge({ s }) {
 function Sheet({ title, onClose, children, isMobile }) {
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(13,59,15,0.5)', zIndex: 9000, display: 'flex', alignItems: isMobile ? 'flex-end' : 'center', justifyContent: 'center', padding: isMobile ? 0 : 16 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', width: '100%', maxWidth: 440, borderRadius: isMobile ? '20px 20px 0 0' : 18, boxShadow: '0 32px 80px rgba(0,0,0,0.3)', maxHeight: '92vh', overflow: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: B.card, width: '100%', maxWidth: 440, borderRadius: isMobile ? '20px 20px 0 0' : 18, boxShadow: '0 32px 80px rgba(0,0,0,0.3)', maxHeight: '92vh', overflow: 'auto' }}>
         <div style={{ padding: '14px 20px', borderBottom: `2px solid ${B.greenLight}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 16, fontWeight: 800, color: B.text }}>{title}</span>
           <button onClick={onClose} aria-label="Close" style={{ background: B.greenLight, border: `1px solid ${B.border}`, borderRadius: 8, width: 32, height: 32, cursor: 'pointer', color: B.greenDark, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="x" size={16} /></button>
@@ -62,7 +59,8 @@ function Sheet({ title, onClose, children, isMobile }) {
 
 const Lbl = ({ children }) => <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: B.textMid, marginBottom: 6 }}>{children}</label>
 
-export default function PaymentsPage({ families, user, canManage, toast, isMobile }) {
+export default function PaymentsPage({ families, user, canManage, toast, isMobile, childCounts = {}, rates = DEFAULT_RATES }) {
+  const calc = f => monthlyFor(rates, childCounts[f.id] || 0)
   const [month, setMonth] = useState(monthKey(new Date()))
   const [payments, setPayments] = useState({})
   const [loading, setLoading] = useState(true)
@@ -100,11 +98,12 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
       .filter(f => !q || f.mother_name.toLowerCase().includes(q) || (f.family_code || '').toLowerCase().includes(q) || (f.account_number || '').includes(q))
       .map(f => {
         const p = payments[f.id]
-        return { f, p, status: p?.status || 'pending', amount: p?.amount ?? f.monthly_support ?? null }
+        const status = p?.status || 'pending'
+        return { f, p, status, amount: status === 'paid' ? (p.amount ?? calc(f)) : calc(f) }
       })
       .filter(r => statusF === 'All' || r.status === statusF)
       .sort((a, b) => (a.f.mother_name || '').localeCompare(b.f.mother_name || ''))
-  }, [eligible, payments, project, branch, bank, statusF, search])
+  }, [eligible, payments, project, branch, bank, statusF, search, rates, childCounts]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const stats = useMemo(() => {
     const s = { total: rows.length, paid: 0, pending: 0, failed: 0, on_hold: 0, paidAmt: 0, expectedAmt: 0 }
@@ -121,7 +120,7 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
     const single = targets.length === 1 ? targets[0] : null
     const p = single ? payments[single.id] : null
     setForm({
-      amount: single ? String(p?.amount ?? single.monthly_support ?? '') : '',
+      amount: single ? String(p?.status === 'paid' ? (p.amount ?? calc(single)) : calc(single)) : '',
       paid_on: p?.paid_on || todayStr(),
       reference: p?.reference || '',
       notes: p?.notes || '',
@@ -140,7 +139,7 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
       const period = `${month}-01`
       const payload = targets.map(f => {
         const existing = payments[f.id]
-        const fallbackAmt = existing?.amount ?? f.monthly_support ?? null
+        const fallbackAmt = calc(f)
         const amt = form.amount !== '' ? Number(form.amount) : fallbackAmt
         const base = { family_id: f.id, period, recorded_by: user?.id || null }
         if (kind === 'paid') return { ...base, status: 'paid', amount: amt, paid_on: form.paid_on, reference: form.reference.trim() || null, notes: existing?.notes || null }
@@ -171,7 +170,7 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
   const missingAcct = rows.filter(r => !r.f.account_number).length
 
   const StatTile = ({ icon, label, value, sub, color, bg }) => (
-    <div style={{ background: '#fff', border: `1px solid ${B.border}`, borderRadius: 14, padding: isMobile ? '12px 13px' : '14px 16px', display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, boxShadow: '0 2px 12px rgba(30,125,34,0.06)' }}>
+    <div style={{ background: B.card, border: `1px solid ${B.border}`, borderRadius: 14, padding: isMobile ? '12px 13px' : '14px 16px', display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, boxShadow: '0 2px 12px rgba(30,125,34,0.06)' }}>
       <div style={{ width: 40, height: 40, borderRadius: 11, background: bg, color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon name={icon} size={20} /></div>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 10, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
@@ -205,7 +204,7 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
         <StatTile icon="clock" label="Unpaid" value={stats.pending} sub={`ETB ${money(Math.max(stats.expectedAmt - stats.paidAmt, 0))} outstanding`} color={B.goldDark} bg={B.goldLight} />
         <StatTile icon="alert" label="Issues" value={stats.failed + stats.on_hold} sub={`${stats.failed} failed · ${stats.on_hold} on hold`} color="#dc2626" bg="#fef2f2" />
       </div>
-      <div style={{ background: '#fff', border: `1px solid ${B.border}`, borderRadius: 12, padding: '12px 16px', marginBottom: 14 }}>
+      <div style={{ background: B.card, border: `1px solid ${B.border}`, borderRadius: 12, padding: '12px 16px', marginBottom: 14 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 700, color: B.textMid, marginBottom: 7 }}>
           <span>{monthLabel(month)} completion</span><span style={{ color: B.green }}>{pct}%</span>
         </div>
@@ -216,7 +215,7 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
       </div>
 
       {/* Filters */}
-      <div style={{ background: '#fff', border: `1px solid ${B.border}`, borderRadius: 14, padding: '12px 14px', marginBottom: 14, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+      <div style={{ background: B.card, border: `1px solid ${B.border}`, borderRadius: 14, padding: '12px 14px', marginBottom: 14, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ position: 'relative', flex: isMobile ? '1 1 100%' : '0 1 230px' }}>
           <span style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: B.textLight, display: 'flex' }}><Icon name="search" size={16} /></span>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, code, account…" style={{ ...filterStyle, paddingLeft: 34, width: '100%', fontSize: 16 }} />
@@ -244,7 +243,7 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
       </div>
 
       {/* List */}
-      <div style={{ background: '#fff', border: `1px solid ${B.border}`, borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 20px rgba(30,125,34,0.08)' }}>
+      <div style={{ background: B.card, border: `1px solid ${B.border}`, borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 20px rgba(30,125,34,0.08)' }}>
         {!isMobile && (
           <div style={{ display: 'grid', gridTemplateColumns: `${canManage ? '36px ' : ''}minmax(180px,1.6fr) 1fr 1.2fr 0.8fr 0.9fr ${canManage ? '200px' : '90px'}`, gap: 12, padding: '10px 16px', background: B.greenLight, borderBottom: `1px solid ${B.border}`, fontSize: 11, fontWeight: 700, color: B.textMid, textTransform: 'uppercase', letterSpacing: '0.05em', alignItems: 'center' }}>
             {canManage && <input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label="Select all" style={{ width: 16, height: 16, accentColor: B.green }} />}

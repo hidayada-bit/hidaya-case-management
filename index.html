@@ -15,10 +15,24 @@
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f0f4ff; }
       #root { min-height: 100vh; }
-      /* Night mode: invert the UI, then flip photos/paper back so they look natural */
-      html.dark { filter: invert(1) hue-rotate(180deg); background: #fff; color-scheme: dark; }
-      html.dark img, html.dark video, html.dark canvas, html.dark iframe, html.dark .no-invert { filter: invert(1) hue-rotate(180deg); }
-      html.dark .no-invert img { filter: none; }
+      :root {
+        --c-green:#1e7d22; --c-green-dark:#145717; --c-green-light:#e8f5e9; --c-green-mid:#2e9e33;
+        --c-gold:#f5a800; --c-gold-dark:#c87d00; --c-gold-light:#fff8e1; --c-gold-mid:#ffb300;
+        --c-sidebar:#0d3b0f; --c-sidebar-mid:#145717;
+        --c-card:#ffffff; --c-input:#fafff9; --c-bg:#f0f7f0;
+        --c-border:#c8e6c9; --c-text:#1a2e1a; --c-text-mid:#4a6b4a; --c-text-light:#7a9b7a;
+      }
+      /* Night mode: deep forest-green surfaces, soft off-white text */
+      html.dark {
+        color-scheme: dark;
+        --c-green:#3aa23f; --c-green-dark:#9be0a0; --c-green-light:#1d3322; --c-green-mid:#4cb851;
+        --c-gold:#f5a800; --c-gold-dark:#f2b84b; --c-gold-light:#33290f; --c-gold-mid:#ffb300;
+        --c-sidebar:#08200a; --c-sidebar-mid:#0f3a12;
+        --c-card:#14211a; --c-input:#0f1913; --c-bg:#0c1510;
+        --c-border:#28402d; --c-text:#e4eee5; --c-text-mid:#a8c1aa; --c-text-light:#7d977f;
+      }
+      html.dark body { background: var(--c-bg); }
+      html.dark ::placeholder { color: #6c836e; }
     </style>
   </head>
   <body>

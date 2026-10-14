@@ -180,3 +180,7 @@ To change what a role can do, edit `src/lib/permissions.js` (screens) and the po
 Awash Bank is registered in `src/lib/banks.js`. Drop these files into `public/`:
 - `awash_logo.png` — shown on the registration form (a text badge shows until it exists)
 - `awash_template.png` — letterhead for the Bank List letter (plain paper is used until it exists)
+
+## 💰 Payment rates (migration 004)
+Run `supabase/migrations/004_payment_rates.sql` once in the Supabase SQL Editor. The admin then sets the
+per-mother and per-child rates in Settings → Payment Rates. Monthly amount = mother rate + (children × child rate).

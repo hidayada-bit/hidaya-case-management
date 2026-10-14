@@ -2,16 +2,12 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import Icon from '../components/Icon'
 import { ROLES, ASSIGNABLE_ROLES, roleLabel } from '../lib/permissions'
+import { B } from '../lib/theme'
 
-const B = {
-  green: '#1e7d22', greenDark: '#145717', greenLight: '#e8f5e9', greenMid: '#2e9e33',
-  gold: '#f5a800', goldLight: '#fff8e1', goldDark: '#c87d00', sidebar: '#0d3b0f', sidebarMid: '#145717',
-  border: '#c8e6c9', text: '#1a2e1a', textMid: '#4a6b4a', textLight: '#7a9b7a',
-}
 
 const selectStyle = {
   padding: '9px 10px', border: `1.5px solid ${B.border}`, borderRadius: 8, fontSize: 13,
-  color: B.text, fontFamily: 'inherit', background: '#fafff9', minHeight: 40, maxWidth: '100%',
+  color: B.text, fontFamily: 'inherit', background: B.input, minHeight: 40, maxWidth: '100%',
 }
 const smallBtn = (bg, color, border) => ({
   background: bg, color, border: border || 'none', borderRadius: 8, padding: '8px 14px', fontSize: 12.5,
@@ -90,11 +86,11 @@ export default function UsersPage({ currentUser, toast, isMobile }) {
   const active = users.filter(u => u.status === 'approved')
   const removed = users.filter(u => u.status === 'rejected')
 
-  const card = { background: '#fff', borderRadius: 14, border: `1px solid ${B.border}`, overflow: 'hidden', boxShadow: '0 2px 12px rgba(30,125,34,0.06)', marginBottom: 18 }
+  const card = { background: B.card, borderRadius: 14, border: `1px solid ${B.border}`, overflow: 'hidden', boxShadow: '0 2px 12px rgba(30,125,34,0.06)', marginBottom: 18 }
   const cardHead = (icon, title, count, tint) => (
     <div style={{ padding: '13px 18px', background: tint || B.greenLight, borderBottom: `1px solid ${B.greenLight}`, display: 'flex', alignItems: 'center', gap: 9, fontSize: 12, fontWeight: 800, color: B.textMid, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
       <Icon name={icon} size={15} />{title}
-      <span style={{ marginLeft: 'auto', background: '#fff', border: `1px solid ${B.border}`, borderRadius: 20, padding: '1px 10px', fontSize: 11, color: B.green }}>{count}</span>
+      <span style={{ marginLeft: 'auto', background: B.card, border: `1px solid ${B.border}`, borderRadius: 20, padding: '1px 10px', fontSize: 11, color: B.green }}>{count}</span>
     </div>
   )
 
