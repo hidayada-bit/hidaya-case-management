@@ -327,13 +327,13 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
         }}>
           <img
             src={bank.template} alt="template" onError={e => { e.currentTarget.style.display = 'none' }}
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill' }}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill', filter: 'none' }}
           />
           <div style={{
             position: 'absolute',
             top: '22%', left: '8%', right: '8%', bottom: '10%',
             overflowY: 'auto',
-            fontFamily: "'Times New Roman', serif",
+            fontFamily: "'Times New Roman', serif", color: '#111',
             display: 'flex', flexDirection: 'column',
           }}>
             {issued && <div style={{ fontSize: 13, fontWeight: 'bold' }}>Ref No: {issued.ref}</div>}
@@ -395,13 +395,13 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
             }}>
               <img
                 src={bank.template} alt="template" onError={e => { e.currentTarget.style.display = 'none' }}
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill' }}
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill', filter: 'none' }}
               />
               <div style={{
                 position: 'absolute',
                 top: '22%', left: '8%', right: '8%', bottom: '10%',
                 overflowY: 'auto',
-                fontFamily: "'Times New Roman', serif",
+                fontFamily: "'Times New Roman', serif", color: '#111',
                 display: 'flex', flexDirection: 'column',
               }}>
                 {issued && <div style={{ fontSize: 'clamp(9px, 2.6vw, 13px)', fontWeight: 'bold' }}>Ref No: {issued.ref}</div>}

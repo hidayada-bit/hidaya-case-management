@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { B } from '../lib/theme'
-import { caseState } from '../lib/settings'
+import { caseState, TRANSFER_CATEGORIES } from '../lib/settings'
 import Icon from '../components/Icon'
 
 const REASONS = {
   hold: ['Missing school certificate', 'Missing documents', 'Cannot be reached', 'Under review', 'Other'],
-  transfer: ['Terminated', 'Suspended', 'Transferred to another organization', 'Moved away', 'Other'],
+  transfer: TRANSFER_CATEGORIES,
   release: ['Documents submitted', 'Issue resolved', 'Other'],
   restore: ['Reinstated', 'Transferred by mistake', 'Other'],
 }
@@ -62,7 +62,7 @@ function ReasonDialog({ title, info, categories, initial, busy, onCancel, onSave
 const joinReason = (cat, note) => (cat && cat !== 'Other' ? `${cat} — ${note}` : note)
 
 // Admin-only: change the family's case state and see the full history (with who did what).
-export default function FamilyStatusTab({ family, user, toast, onChanged, isMobile }) {
+export default function FamilyStatusTab({ family, user, toast, onChanged, isMobile, canHold = false, canTransfer = false, canEditEntries = false }) {
   const cs = caseState(family)
   const [log, setLog] = useState([])
   const [loading, setLoading] = useState(true)
@@ -86,9 +86,10 @@ export default function FamilyStatusTab({ family, user, toast, onChanged, isMobi
     setBusy(true)
     try {
       const now = new Date().toISOString()
-      const { error } = await supabase.from('families').update({ case_state: a.to, case_reason: reason, case_changed_at: now, case_changed_by_name: signer }).eq('id', family.id)
+      const category = (action === 'hold' || action === 'transfer') ? cat : null
+      const { error } = await supabase.from('families').update({ case_state: a.to, case_reason: reason, case_category: category, case_changed_at: now, case_changed_by_name: signer }).eq('id', family.id)
       if (error) throw error
-      const { error: e2 } = await supabase.from('family_status_log').insert({ family_id: family.id, action, from_state: cs, to_state: a.to, reason, by_user: user?.id || null, by_name: signer })
+      const { error: e2 } = await supabase.from('family_status_log').insert({ family_id: family.id, action, from_state: cs, to_state: a.to, reason, reason_category: category, by_user: user?.id || null, by_name: signer })
       if (e2) throw e2
       toast(`${a.past}: ${family.mother_name}`)
       setDialog(null)
@@ -114,7 +115,8 @@ export default function FamilyStatusTab({ family, user, toast, onChanged, isMobi
     finally { setBusy(false) }
   }
 
-  const available = cs === 'normal' ? ['hold', 'transfer'] : cs === 'on_hold' ? ['release', 'transfer'] : ['restore']
+  const available = (cs === 'normal' ? ['hold', 'transfer'] : cs === 'on_hold' ? ['release', 'transfer'] : ['restore'])
+    .filter(k => (k === 'hold' || k === 'release') ? canHold : canTransfer)
   const stateColor = cs === 'normal' ? B.okText : cs === 'on_hold' ? B.warnText : B.errText
   const stateBg = cs === 'normal' ? B.greenLight : cs === 'on_hold' ? B.goldLight : B.errBg
 
@@ -124,7 +126,7 @@ export default function FamilyStatusTab({ family, user, toast, onChanged, isMobi
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
           <span style={{ fontSize: 12, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Case state</span>
           <span style={{ background: stateBg, color: stateColor, padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 800 }}>{STATE_LABEL[cs]}</span>
-          <span style={{ fontSize: 11, color: B.textLight, marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}><Icon name="lock" size={12} />Visible to administrators only</span>
+          <span style={{ fontSize: 11, color: B.textLight, marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}><Icon name="lock" size={12} />Hold / transfer details are hidden from data collectors</span>
         </div>
         {cs !== 'normal' && family.case_reason && (
           <div style={{ fontSize: 13, color: B.text, marginBottom: 12 }}>
@@ -132,6 +134,7 @@ export default function FamilyStatusTab({ family, user, toast, onChanged, isMobi
             {family.case_changed_by_name && <span style={{ color: B.textLight }}> · {family.case_changed_by_name}{family.case_changed_at ? `, ${fdate(family.case_changed_at)}` : ''}</span>}
           </div>
         )}
+        {available.length === 0 && <div style={{ fontSize: 12.5, color: B.textLight }}>{cs === 'transferred' ? 'Only an administrator can restore a transferred family.' : 'You can view this history; changes are made by an administrator or director.'}</div>}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {available.map(k => (
             <button key={k} onClick={() => setDialog({ kind: 'action', action: k })} style={btn(ACTIONS[k].bg, ACTIONS[k].color, `1.5px solid ${B.border}`)}>
@@ -155,7 +158,7 @@ export default function FamilyStatusTab({ family, user, toast, onChanged, isMobi
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <span style={{ background: a.bg, color: a.color, padding: '3px 10px', borderRadius: 20, fontSize: 11.5, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 5 }}><Icon name={a.icon} size={12} />{a.past}</span>
                       <span style={{ fontSize: 11.5, color: B.textLight }}>{STATE_LABEL[e.from_state] || '—'} → {STATE_LABEL[e.to_state] || '—'}</span>
-                      <button onClick={() => setDialog({ kind: 'edit', entry: e })} style={{ ...btn(B.greenLight, B.green, `1px solid ${B.border}`), marginLeft: 'auto', padding: '5px 12px', minHeight: 32, fontSize: 12 }}><Icon name="edit" size={13} />Edit</button>
+                      {canEditEntries && <button onClick={() => setDialog({ kind: 'edit', entry: e })} style={{ ...btn(B.greenLight, B.green, `1px solid ${B.border}`), marginLeft: 'auto', padding: '5px 12px', minHeight: 32, fontSize: 12 }}><Icon name="edit" size={13} />Edit</button>}
                     </div>
                     <div style={{ fontSize: 13.5, color: B.text, margin: '8px 0 6px', lineHeight: 1.5 }}>{e.reason}</div>
                     <div style={{ fontSize: 11.5, color: B.textLight }}>

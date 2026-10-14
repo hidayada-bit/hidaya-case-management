@@ -7,7 +7,7 @@ import FamilyPaymentsTab from './pages/FamilyPaymentsTab'
 import FamilyStatusTab from './pages/FamilyStatusTab'
 import ArchivePage from './pages/ArchivePage'
 import { BANKS } from './lib/banks'
-import { DEFAULT_RATES, loadRates, saveRates, monthlyFor, isPayingChild, caseState, MAX_PAYING_AGE } from './lib/settings'
+import { DEFAULT_RATES, loadRates, saveRates, monthlyFor, isPayingChild, caseState, MAX_PAYING_AGE, joinedDate, tenureText } from './lib/settings'
 import PaymentsPage from './pages/PaymentsPage'
 import UsersPage from './pages/UsersPage'
 import { LoginPage, SignupPage, AccessGate } from './pages/AuthPages'
@@ -990,20 +990,20 @@ const StatCard = ({ label, value, icon, bg, color, sub, loading, isMobile }) => 
 )
 
 // ─── DASHBOARD PAGE ───────────────────────────────────────────────────────────
-function DashboardPage({ families, children, loading, onView, onAdd, isMobile, isTablet, canEdit = true, transferredCount = null }) {
+function DashboardPage({ families, children, loading, onView, onAdd, isMobile, isTablet, canEdit = true, transferredCount = null, showCase = true }) {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('All')
   const [pg, setPg] = useState(1)
   const PER = isMobile ? 6 : 8
   // A family on hold is counted as "On hold" only (not also as active/pending/inactive)
-  const isHeld   = f => caseState(f) === 'on_hold'
+  const isHeld   = f => showCase && caseState(f) === 'on_hold'
   const held     = families.filter(isHeld).length
   const active   = families.filter(f => f.status === 'active' && !isHeld(f)).length
   const inactive = families.filter(f => f.status === 'inactive' && !isHeld(f)).length
   const pending  = families.filter(f => f.status === 'pending' && !isHeld(f)).length
   const bar = [
     { k: 'Active', n: active, c: B.green }, { k: 'Pending', n: pending, c: B.gold },
-    { k: 'Inactive', n: inactive, c: B.textLight }, { k: 'On hold', n: held, c: B.orange },
+    { k: 'Inactive', n: inactive, c: B.textLight }, ...(showCase ? [{ k: 'On hold', n: held, c: B.orange }] : []),
   ]
 
   const filtered = families.filter(f => {
@@ -1100,14 +1100,14 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
                 value={filter} onChange={e => { setFilter(e.target.value); setPg(1) }}
                 style={{ padding: '9px 10px', border: `1.5px solid ${B.border}`, borderRadius: 8, fontSize: 13, color: B.text, fontFamily: 'inherit', background: B.input, minHeight: 42 }}
               >
-                {['All', 'Active', 'Inactive', 'Pending', 'On hold'].map(o => <option key={o}>{o}</option>)}
+                {['All', 'Active', 'Inactive', 'Pending', ...(showCase ? ['On hold'] : [])].map(o => <option key={o}>{o}</option>)}
               </select>
             )}
             {!isMobile && canEdit && <Btn onClick={onAdd} variant="gold" size="md"><Icon name="plus" size={16} />Add Family</Btn>}
           </div>
           {isMobile && (
             <div style={{ display: 'flex', gap: 6, width: '100%', overflowX: 'auto' }}>
-              {['All', 'Active', 'Inactive', 'Pending', 'On hold'].map(o => (
+              {['All', 'Active', 'Inactive', 'Pending', ...(showCase ? ['On hold'] : [])].map(o => (
                 <button key={o} onClick={() => { setFilter(o); setPg(1) }}
                   style={{
                     padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700,
@@ -1160,7 +1160,7 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
                   </div>
                   <div style={{ fontSize: 11, color: B.textLight }}>{f.family_code} · {f.district} · {f.children_count?.[0]?.count ?? 0} children</div>
                 </div>
-                <StatusBadge s={f.status} held={caseState(f) === 'on_hold'} />
+                <StatusBadge s={f.status} held={isHeld(f)} />
                 <Icon name="chevron" size={18} color={B.border} />
               </div>
             ))}
@@ -1224,7 +1224,7 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
                         {f.children_count?.[0]?.count ?? 0}
                       </span>
                     </td>
-                    <td style={{ padding: '12px 14px' }}><StatusBadge s={f.status} held={caseState(f) === 'on_hold'} /></td>
+                    <td style={{ padding: '12px 14px' }}><StatusBadge s={f.status} held={isHeld(f)} /></td>
                     <td style={{ padding: '12px 14px' }}>
                       <button
                         onClick={e => { e.stopPropagation(); onView(f) }}
@@ -1412,7 +1412,7 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
 }
 
 // ─── FAMILY DETAIL PAGE ───────────────────────────────────────────────────────
-function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, onDeleteFamily, onAddChild, onEditChild, onDeleteChild, toast, onDocUploaded, isMobile, canEdit = true, canDelete = true, canViewPayments = false, canManagePayments = false, user = null, isAdmin = false, rates = DEFAULT_RATES, staffNames = {}, onCaseChanged = () => {} }) {
+function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, onDeleteFamily, onAddChild, onEditChild, onDeleteChild, toast, onDocUploaded, isMobile, canEdit = true, canDelete = true, canViewPayments = false, canManagePayments = false, user = null, isAdmin = false, rates = DEFAULT_RATES, staffNames = {}, onCaseChanged = () => {}, canSeeCase = false, canHold = false }) {
   const kids = allChildren.filter(c => c.family_id === family.id)
   const payingKids = kids.filter(isPayingChild)
   const cState = caseState(family)
@@ -1422,6 +1422,22 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
   const [tab, setTab] = useState('overview')
   const [uploading, setUploading] = useState(null)
   const [viewingDoc, setViewingDoc] = useState(null)
+  const [joinEdit, setJoinEdit] = useState(null) // date string while the admin edits the joined date
+  const joined = joinedDate(family)
+  const saveJoined = async () => {
+    if (!joinEdit) return
+    const { error } = await supabase.from('families').update({ joined_on: joinEdit }).eq('id', family.id)
+    if (error) { toast(error.message + (/joined_on/.test(error.message) ? ' — run migration 006_case_visibility_tenure.sql' : ''), 'error'); return }
+    toast('Joined date updated'); setJoinEdit(null); onCaseChanged('edit')
+  }
+  const tenureChip = (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 600 }}>
+      <Icon name="calendar" size={13} color={B.gold} />
+      With HDA <b style={{ color: B.gold }}>{tenureText(joined)}</b>
+      <span style={{ opacity: 0.8 }}>· since {joined ? new Date(joined).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</span>
+      {isAdmin && <button onClick={() => setJoinEdit(joined || '')} aria-label="Edit joined date" title="Edit joined date" style={{ background: 'rgba(255,255,255,0.18)', border: 'none', borderRadius: 6, width: 22, height: 22, cursor: 'pointer', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="edit" size={12} /></button>}
+    </span>
+  )
 
   const handleMotherDocUpload = async (file, docType) => {
     setUploading(docType)
@@ -1444,6 +1460,19 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
   return (
     <div style={{ padding: isMobile ? '12px 12px 28px' : '22px 26px', maxWidth: 1040, margin: '0 auto' }}>
       <DocViewer doc={viewingDoc} onClose={() => setViewingDoc(null)} />
+      {joinEdit !== null && (
+        <div onClick={() => setJoinEdit(null)} style={{ position: 'fixed', inset: 0, zIndex: 9500, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: B.card, borderRadius: 16, width: '100%', maxWidth: 380, padding: 20, boxShadow: '0 32px 80px rgba(0,0,0,0.4)' }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: B.text, marginBottom: 4 }}>Date joined HDA</div>
+            <div style={{ fontSize: 12.5, color: B.textMid, marginBottom: 14 }}>Used to show how long {family.mother_name} has been with the organization.</div>
+            <input type="date" value={joinEdit} max={new Date().toISOString().slice(0, 10)} onChange={e => setJoinEdit(e.target.value)} style={{ width: '100%', padding: '10px 12px', border: `1.5px solid ${B.border}`, borderRadius: 9, fontSize: 15, color: B.text, background: B.input, fontFamily: 'inherit', boxSizing: 'border-box', minHeight: 44, marginBottom: 16 }} />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <Btn onClick={() => setJoinEdit(null)} variant="secondary">Cancel</Btn>
+              <Btn onClick={saveJoined} variant="primary" disabled={!joinEdit}>Save</Btn>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Top bar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
         <button
@@ -1457,15 +1486,21 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
         <div style={{ flex: 1 }} />
         {canEdit && <Btn onClick={() => onEditFamily(family)} variant="secondary" size="sm"><Icon name="edit" size={14} />Edit</Btn>}
         {canDelete && <Btn onClick={() => onDeleteFamily(family)} variant="danger" size="sm"><Icon name="trash" size={14} />Delete</Btn>}
-        <StatusBadge s={family.status} held={cState === 'on_hold'} />
-        {cState === 'transferred' && <span style={{ background: B.errBg, color: B.errText, padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700 }}>Transferred</span>}
+        <StatusBadge s={family.status} held={canSeeCase && cState === 'on_hold'} />
+        {canSeeCase && cState === 'transferred' && <span style={{ background: B.errBg, color: B.errText, padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700 }}>Transferred</span>}
       </div>
 
-      {cState !== 'normal' && (
+      {canSeeCase && cState !== 'normal' && (
         <div style={{ background: cState === 'on_hold' ? B.goldLight : B.errBg, color: cState === 'on_hold' ? B.warnText : B.errText, border: `1px solid ${cState === 'on_hold' ? B.goldBorder : B.errBorder}`, borderRadius: 12, padding: '10px 14px', marginBottom: 14, fontSize: 13, lineHeight: 1.5 }}>
           <b>{cState === 'on_hold' ? 'On hold — deposits postponed.' : 'Transferred out of the active lists.'}</b>
           {' '}{cState === 'on_hold' ? 'Not on the bank list; shown as unpaid on the payment list.' : 'Not on the bank list or payment list.'}
-          {isAdmin && family.case_reason && <> Reason: {family.case_reason}</>}
+          {family.case_reason && <><br /><b>Reason:</b> {family.case_reason}</>}
+          {(family.case_changed_by_name || family.case_changed_at) && (
+            <><br /><b>{cState === 'on_hold' ? 'Held' : 'Transferred'}:</b>{' '}
+              {family.case_changed_at ? new Date(family.case_changed_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}
+              {family.case_changed_by_name ? <> · by <b>{family.case_changed_by_name}</b></> : null}
+            </>
+          )}
         </div>
       )}
 
@@ -1510,6 +1545,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', marginBottom: 4 }}>{family.mother_name}</div>
               <div style={{ fontSize: 11, color: B.gold, fontWeight: 600 }}>{family.family_code} · Roll {family.roll_number}</div>
+              <div style={{ marginTop: 8 }}>{tenureChip}</div>
             </div>
           )}
         </div>
@@ -1520,6 +1556,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
             <div style={{ fontSize: 12, color: B.gold, marginBottom: 12, fontWeight: 600 }}>
               ID: {family.mother_id_number} · {family.family_code} · Roll {family.roll_number}
             </div>
+            <div style={{ marginBottom: 12 }}>{tenureChip}</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
               <CallBtn phone={family.phone_number} />
               {family.alternate_phone && <CallBtn phone={family.alternate_phone} label={`Alt: ${family.alternate_phone}`} />}
@@ -1561,7 +1598,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
         border: `1px solid ${B.border}`,
         position: 'sticky', top: isMobile ? 58 : 0, zIndex: 20,
       }}>
-        {['overview', 'children', 'documents', ...(canViewPayments ? ['payment'] : []), ...(isAdmin ? ['notes', 'status'] : [])].map(t => (
+        {['overview', 'children', 'documents', ...(canViewPayments ? ['payment'] : []), ...(isAdmin ? ['notes'] : []), ...(canSeeCase ? ['status'] : [])].map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -1600,7 +1637,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
             { l: 'City', v: family.city },
             { l: 'District', v: family.district },
             { l: 'Monthly Support (ETB)', v: monthlyFor(rates, payingKids.length).toLocaleString() },
-            { l: 'Registered', v: family.created_at?.slice(0, 10) },
+            { l: 'Joined HDA', v: `${joined || '—'} (${tenureText(joined)})` },
           ].map(r => (
             <div key={r.l} style={{
               background: B.card, borderRadius: 11,
@@ -1697,8 +1734,8 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
       )}
 
       {/* STATUS (admin only) */}
-      {tab === 'status' && isAdmin && (
-        <FamilyStatusTab family={family} user={user} toast={toast} onChanged={onCaseChanged} isMobile={isMobile} />
+      {tab === 'status' && canSeeCase && (
+        <FamilyStatusTab family={family} user={user} toast={toast} onChanged={onCaseChanged} isMobile={isMobile} canHold={canHold} canTransfer={isAdmin} canEditEntries={isAdmin} />
       )}
 
       {/* NOTES */}
@@ -2637,10 +2674,10 @@ export default function App() {
           )}
           {allowed && (page === 'dashboard' || page === 'families') && (
             <DashboardPage
-              families={liveFamilies} children={children} loading={dataLoading} transferredCount={role === 'admin' ? transferredFamilies.length : null}
+              families={liveFamilies} children={children} loading={dataLoading} transferredCount={can(role, 'view_case_status') ? transferredFamilies.length : null}
               onView={openFamily}
               onAdd={() => { setEditingFamily(null); setShowFamilyForm(true) }}
-              isMobile={isMobile} isTablet={isTablet} canEdit={canEdit}
+              isMobile={isMobile} isTablet={isTablet} canEdit={canEdit} showCase={can(role, 'view_case_status')}
             />
           )}
           {allowed && page === 'projects' && (
@@ -2663,12 +2700,12 @@ export default function App() {
               children={children} loading={dataLoading}
               onView={openFamily}
               onAdd={() => { setEditingFamily(null); setShowFamilyForm(true) }}
-              isMobile={isMobile} isTablet={isTablet} canEdit={canEdit}
+              isMobile={isMobile} isTablet={isTablet} canEdit={canEdit} showCase={can(role, 'view_case_status')}
             />
           )}
           {allowed && page === 'detail' && selectedFamily && (
             <FamilyDetailPage
-              family={families.find(f => f.id === selectedFamily.id) || selectedFamily} allChildren={children} allDocs={docs} staffNames={staffNames}
+              family={families.find(f => f.id === selectedFamily.id) || selectedFamily} allChildren={children} allDocs={docs} staffNames={staffNames} canSeeCase={can(role, 'view_case_status')} canHold={can(role, 'manage_holds')}
               onCaseChanged={async action => { await loadAll(); if (action === 'transfer') { setPage('archive') } }}
               onBack={closeFamily}
               onEditFamily={f => { setEditingFamily(f); setShowFamilyForm(true) }}

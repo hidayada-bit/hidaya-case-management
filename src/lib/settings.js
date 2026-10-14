@@ -35,3 +35,23 @@ export const isPayingChild = c => { const a = ageOf(c.date_of_birth); return a =
 
 // Family case state: 'normal' | 'on_hold' | 'transferred' (missing column => normal)
 export const caseState = f => f?.case_state || 'normal'
+
+// ── Transfer categories (shown as groups on the Transferred page) ───────────
+export const TRANSFER_CATEGORIES = ['Terminated', 'Suspended', 'Transferred to another organization', 'Moved away', 'Other']
+export const categoryOf = f => {
+  if (f?.case_category) return f.case_category
+  const head = (f?.case_reason || '').split(' — ')[0]
+  return TRANSFER_CATEGORIES.includes(head) ? head : 'Other'
+}
+
+// ── Time with HDA ───────────────────────────────────────────────────────────
+export const joinedDate = f => f?.joined_on || f?.created_at?.slice(0, 10) || null
+export const tenureText = d => {
+  if (!d) return '—'
+  const a = new Date(d), n = new Date()
+  let months = (n.getFullYear() - a.getFullYear()) * 12 + (n.getMonth() - a.getMonth())
+  if (n.getDate() < a.getDate()) months--
+  if (months < 1) { const days = Math.max(0, Math.floor((n - a) / 86400000)); return `${days} day${days === 1 ? '' : 's'}` }
+  const y = Math.floor(months / 12), m = months % 12
+  return [y ? `${y} year${y > 1 ? 's' : ''}` : '', m ? `${m} month${m > 1 ? 's' : ''}` : ''].filter(Boolean).join(' ')
+}

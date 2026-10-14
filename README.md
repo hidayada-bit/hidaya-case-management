@@ -195,3 +195,9 @@ Run `supabase/migrations/005_family_case_state.sql` once. Admins get a **Status*
 This limit is enforced by Supabase, not by the app, so it must be changed in the Supabase dashboard:
 1. **Authentication → Rate Limits** → raise "Rate limit for sending emails" (this needs a custom SMTP provider: **Project Settings → Authentication → SMTP Settings**; Supabase's built-in mailer is capped at a few emails per hour).
 2. Or avoid emails entirely: **Authentication → Providers → Email → turn off "Confirm email"**. New staff still need an admin's approval inside the app.
+
+## 👁️ Visibility, directors, joined date (migration 006 — run after 005)
+- Hold/transfer info, the Status tab, the Transferred page and the Payment tab are visible to every role **except Data Collector**.
+- Director can put a family on hold and release it; only the Administrator can transfer or restore.
+- The Transferred page is grouped by reason (Terminated, Suspended, Transferred to another organization, Moved away, Other).
+- The family hero card shows how long the family has been with HDA; the admin can edit the joined date.

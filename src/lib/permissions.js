@@ -8,7 +8,7 @@
 
 export const ROLES = {
   admin:               { label: 'Administrator',       desc: 'Full access, approves staff, manages roles' },
-  director:            { label: 'Director',            desc: 'Views everything, reports and payments (read-only)' },
+  director:            { label: 'Director',            desc: 'Views everything, reports and payments; can put families on hold' },
   finance:             { label: 'Finance',             desc: 'Manages payments and bank lists; views beneficiaries' },
   project_coordinator: { label: 'Project Coordinator', desc: 'Manages beneficiaries, academics and messaging' },
   data_collector:      { label: 'Data Collector',      desc: 'Registers and updates beneficiaries and documents' },
@@ -18,14 +18,15 @@ export const ASSIGNABLE_ROLES = Object.keys(ROLES)
 
 // Permission keys used across the app
 //  view_families, edit_families, delete_families, view_payments, manage_payments,
-//  view_bank_list, send_messages, view_stats, manage_users
-const ALL = ['view_families', 'edit_families', 'delete_families', 'view_payments', 'manage_payments', 'view_bank_list', 'send_messages', 'view_stats', 'manage_users']
+//  view_bank_list, send_messages, view_stats, manage_users,
+//  view_case_status (see hold/transfer info + Transferred page), manage_holds (put on hold / release)
+const ALL = ['view_families', 'edit_families', 'delete_families', 'view_payments', 'manage_payments', 'view_bank_list', 'send_messages', 'view_stats', 'manage_users', 'view_case_status', 'manage_holds']
 
 export const ROLE_PERMISSIONS = {
   admin: ALL,
-  director: ['view_families', 'view_payments', 'view_bank_list', 'view_stats'],
-  finance: ['view_families', 'view_payments', 'manage_payments', 'view_bank_list', 'view_stats'],
-  project_coordinator: ['view_families', 'edit_families', 'view_payments', 'send_messages', 'view_stats'],
+  director: ['view_families', 'view_payments', 'view_bank_list', 'view_stats', 'view_case_status', 'manage_holds'],
+  finance: ['view_families', 'view_payments', 'manage_payments', 'view_bank_list', 'view_stats', 'view_case_status'],
+  project_coordinator: ['view_families', 'edit_families', 'view_payments', 'send_messages', 'view_stats', 'view_case_status'],
   data_collector: ['view_families', 'edit_families'],
 }
 
@@ -42,7 +43,7 @@ export const PAGE_PERMISSION = {
   banklist: 'view_bank_list',
   payments: 'view_payments',
   users: 'manage_users',
-  archive: 'manage_users', // admin only
+  archive: 'view_case_status', // everyone except data collector
   settings: null, // everyone
 }
 
