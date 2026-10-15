@@ -308,7 +308,7 @@ export function SignupPage({ onSwitchToLogin }) {
 }
 
 // ─── WAITING FOR APPROVAL / ACCESS REVOKED ──────────────────────────────────
-export function AccessGate({ user, rejected, onRefresh, onSignOut, checking }) {
+export function AccessGate({ user, rejected, onRefresh, onSignOut, checking, error = null }) {
   return (
     <Shell>
       <div style={{ textAlign: 'center' }}>
@@ -321,6 +321,11 @@ export function AccessGate({ user, rejected, onRefresh, onSignOut, checking }) {
             ? 'An administrator has declined or removed your access. Please contact the HDA office if you think this is a mistake.'
             : <>Hello{user?.full_name ? <>, <b>{user.full_name}</b></> : ''}. Your account is created but an administrator still needs to approve it and assign your role. This page updates automatically.</>}
         </p>
+        {!rejected && (error || !user) && (
+          <p className="au-desc" style={{ color: '#b91c1c', fontSize: 12.5 }}>
+            {error ? `Could not read your account: ${error}` : 'Your account profile was not found yet. Press "Check again", or ask an administrator to confirm your account exists in Staff.'}
+          </p>
+        )}
         {!rejected && (
           <div className="au-steps" style={{ margin: '0 0 22px' }}>
             <div className="au-step done"><b><Icon name="check" size={14} /></b>Account created</div>

@@ -69,9 +69,11 @@ export default function UsersPage({ currentUser, toast, isMobile }) {
 
   const update = async (u, patch, okMsg) => {
     setBusy(true)
-    const { error } = await supabase.from('users').update(patch).eq('id', u.id)
+    const { data, error } = await supabase.from('users').update(patch).eq('id', u.id).select('id,status,role')
     setBusy(false)
     if (error) { toast(error.message, 'error'); return }
+    // RLS can block an update without raising an error: make sure a row really changed
+    if (!data || data.length === 0) { toast('Not saved — the database refused the change. Make sure you are signed in as an approved administrator.', 'error'); load(); return }
     toast(okMsg)
     load()
   }

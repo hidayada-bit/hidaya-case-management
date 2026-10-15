@@ -2262,6 +2262,7 @@ export default function App() {
   const { isDark, toggle: toggleTheme } = useTheme()
   const [rates, setRates] = useState(DEFAULT_RATES)
   const [staffNames, setStaffNames] = useState({})
+  const [profileError, setProfileError] = useState(null)
 
   const [session, setSession] = useState(null)
   const [user, setUser] = useState(null)
@@ -2384,7 +2385,9 @@ export default function App() {
 }, [])
 
   const loadUserProfile = async (uid) => {
-    const { data } = await supabase.from('users').select('*').eq('id', uid).single()
+    const { data, error } = await supabase.from('users').select('*').eq('id', uid).maybeSingle()
+    if (error) { setProfileError(error.message); setAuthLoading(false); return } // keep the last known profile on a temporary error
+    setProfileError(null)
     const { data: { user: authUser } } = await supabase.auth.getUser()
     setUser(data ? { ...data, email: authUser?.email } : null)
     setAuthLoading(false)
@@ -2405,7 +2408,10 @@ export default function App() {
   useEffect(() => {
     if (!session || user?.status === 'approved') return
     const t = setInterval(() => loadUserProfile(session.user.id), 15000)
-    return () => clearInterval(t)
+    const onVisible = () => { if (document.visibilityState === 'visible') loadUserProfile(session.user.id) }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onVisible)
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVisible); window.removeEventListener('focus', onVisible) }
   }, [session?.user?.id, user?.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadAll = async () => {
@@ -2553,7 +2559,7 @@ export default function App() {
   if (!user || user.status !== 'approved') {
     return (
       <AccessGate
-        user={user} rejected={user?.status === 'rejected'} checking={checking}
+        user={user} rejected={user?.status === 'rejected'} checking={checking} error={profileError}
         onRefresh={async () => { setChecking(true); await loadUserProfile(session.user.id); setChecking(false) }}
         onSignOut={signOut}
       />
