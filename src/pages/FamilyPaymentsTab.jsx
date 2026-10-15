@@ -167,8 +167,8 @@ export default function FamilyPaymentsTab({ family, user, canManage, toast, isMo
               const bk = bankById(family.bank) // card takes the family's bank colours; no bank = status colour as before
               const tint = bk ? `color-mix(in srgb, ${bk.color} 9%, ${B.card})` : B.card
               return (
-                <div key={m.i} style={{ position: 'relative', overflow: 'hidden', background: tint, border: `1px solid ${bk ? bk.color + '66' : B.border}`, borderTop: bk ? undefined : `3px solid ${st.dot}`, borderRadius: 12, padding: bk ? '15px 14px 12px' : '12px 14px', display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
-                  {bk && <div aria-hidden="true" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: `linear-gradient(90deg, ${bk.color} 75%, ${bk.accent} 75%)` }} />}
+                <div key={m.i} style={{ position: 'relative', overflow: 'hidden', background: tint, border: `1px solid ${bk ? bk.color + '66' : B.border}`, borderTop: `3px solid ${st.dot}`, borderRadius: 12, padding: bk ? '12px 14px 12px 18px' : '12px 14px', display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
+                  {bk && <div aria-hidden="true" style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 5, background: `linear-gradient(180deg, ${bk.color} 78%, ${bk.accent} 78%)` }} />}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
                     <span style={{ fontWeight: 800, fontSize: 14, color: B.text }}>{m.name}</span>
                     <span style={{ background: st.bg, color: st.color, padding: '3px 9px', borderRadius: 20, fontSize: 10.5, fontWeight: 700, whiteSpace: 'nowrap' }}>{st.label}</span>
