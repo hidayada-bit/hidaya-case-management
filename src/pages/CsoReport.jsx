@@ -61,7 +61,7 @@ export function compute({ fams, kids, pay, months, rates, onlyEnrolled }) {
 // ── HTML (preview + copy/paste) ──────────────────────────────────────────────
 const TD = 'border:1px solid #444;padding:4px 6px;font-size:11pt;'
 const th = (t, extra = '') => `<td style="${TD}font-weight:bold;text-align:center;background:#e8f5e9;${extra}" ${extra.includes('@') ? '' : ''}>${t}</td>`
-function sectionHtml(sec, r, titleLine) {
+function sectionHtml(sec, r, withPlan) {
   const bt = { M: r.bp.M, F: r.bp.F + 0, U: r.bp.U }
   const T = b => b.M + b.F + b.U
   const rows = [
@@ -71,29 +71,31 @@ function sectionHtml(sec, r, titleLine) {
   const tot = [r.mPlan + r.cPlan, r.mAct + r.cAct, r.mFin + r.cFin, r.mFinAct + r.cFinAct]
   const c = (v, al = 'right') => `<td style="${TD}text-align:${al};">${v}</td>`
   let h = `<h3 style="font-family:Calibri,Arial;margin:14px 0 4px">${sec.title}</h3>`
-  h += `<p style="font-family:Calibri,Arial;font-weight:bold;margin:4px 0">Physical and financial plan vs achievement</p>`
-  h += `<table style="border-collapse:collapse;font-family:Calibri,Arial;width:100%"><tr>
-    <td rowspan="2" style="${TD}font-weight:bold;text-align:center;background:#e8f5e9">S/N</td>
-    <td rowspan="2" style="${TD}font-weight:bold;text-align:center;background:#e8f5e9">Description of Activities</td>
-    <td rowspan="2" style="${TD}font-weight:bold;text-align:center;background:#e8f5e9">Measurement</td>
-    <td colspan="3" style="${TD}font-weight:bold;text-align:center;background:#e8f5e9">Physical</td>
-    <td colspan="3" style="${TD}font-weight:bold;text-align:center;background:#e8f5e9">Financial (ETB)</td></tr><tr>
-    ${['Plan', 'Actual', '%', 'Plan', 'Actual', '%'].map(x => `<td style="${TD}font-weight:bold;text-align:center;background:#e8f5e9">${x}</td>`).join('')}</tr>`
-  rows.forEach(([sn, d, m, pp, pa, fp, fa]) => { h += `<tr>${c(sn, 'center')}${c(d, 'left')}${c(m, 'left')}${c(nf(pp))}${c(nf(pa))}${c(pctOf(pa, pp))}${c(nf(fp))}${c(nf(fa))}${c(pctOf(fa, fp))}</tr>` })
-  h += `<tr>${c('', 'center')}${c('<b>Total</b>', 'left')}${c('')}${c('<b>' + nf(tot[0]) + '</b>')}${c('<b>' + nf(tot[1]) + '</b>')}${c('<b>' + pctOf(tot[1], tot[0]) + '</b>')}${c('<b>' + nf(tot[2]) + '</b>')}${c('<b>' + nf(tot[3]) + '</b>')}${c('<b>' + pctOf(tot[3], tot[2]) + '</b>')}</tr></table>`
-  h += `<p style="font-family:Calibri,Arial;font-weight:bold;margin:12px 0 4px">Beneficiary plan vs actual</p>`
-  const hd = x => `<td style="${TD}font-weight:bold;text-align:center;background:#e8f5e9">${x}</td>`
-  h += `<table style="border-collapse:collapse;font-family:Calibri,Arial;width:100%"><tr>${hd('Name CSO').replace('<td ', '<td rowspan="3" ')}<td colspan="6" style="${TD}font-weight:bold;text-align:center;background:#e8f5e9">Beneficiary</td></tr>
-    <tr><td colspan="3" style="${TD}font-weight:bold;text-align:center">Plan</td><td colspan="3" style="${TD}font-weight:bold;text-align:center">Actual addressed</td></tr>
-    <tr>${['M', 'F', 'T', 'M', 'F', 'T'].map(hd).join('')}</tr>
-    <tr>${c('Hidaya Development Association (HDA) — ' + sec.title, 'left')}${c(r.bp.M)}${c(r.bp.F)}${c(T(r.bp))}${c(r.ba.M)}${c(r.ba.F)}${c(T(r.ba))}</tr></table>`
-  if (r.bp.U || r.ba.U) h += `<p style="font-family:Calibri,Arial;font-size:9pt;color:#555">Note: ${r.bp.U} planned / ${r.ba.U} addressed children have no gender recorded; they are counted in T only.</p>`
+  h += `<p style="font-family:Calibri,Arial;font-weight:bold;margin:4px 0">${withPlan ? 'Physical and financial plan vs achievement' : 'Physical and financial achievement'}</p>`
+  const H = (x, extra = '') => `<td ${extra} style="${TD}font-weight:bold;text-align:center;background:#e8f5e9">${x}</td>`
+  if (withPlan) {
+    h += `<table style="border-collapse:collapse;font-family:Calibri,Arial;width:100%"><tr>${H('S/N', 'rowspan="2"')}${H('Description of Activities', 'rowspan="2"')}${H('Measurement', 'rowspan="2"')}${H('Physical', 'colspan="3"')}${H('Financial (ETB)', 'colspan="3"')}</tr><tr>${['Plan', 'Actual', '%', 'Plan', 'Actual', '%'].map(x => H(x)).join('')}</tr>`
+    rows.forEach(([sn, d, m, pp, pa, fp, fa]) => { h += `<tr>${c(sn, 'center')}${c(d, 'left')}${c(m, 'left')}${c(nf(pp))}${c(nf(pa))}${c(pctOf(pa, pp))}${c(nf(fp))}${c(nf(fa))}${c(pctOf(fa, fp))}</tr>` })
+    h += `<tr>${c('', 'center')}${c('<b>Total</b>', 'left')}${c('')}${c('<b>' + nf(tot[0]) + '</b>')}${c('<b>' + nf(tot[1]) + '</b>')}${c('<b>' + pctOf(tot[1], tot[0]) + '</b>')}${c('<b>' + nf(tot[2]) + '</b>')}${c('<b>' + nf(tot[3]) + '</b>')}${c('<b>' + pctOf(tot[3], tot[2]) + '</b>')}</tr></table>`
+  } else {
+    h += `<table style="border-collapse:collapse;font-family:Calibri,Arial;width:100%"><tr>${H('S/N')}${H('Description of Activities')}${H('Measurement')}${H('Physical (Actual)')}${H('Financial (Actual, ETB)')}</tr>`
+    rows.forEach(([sn, d, m, , pa, , fa]) => { h += `<tr>${c(sn, 'center')}${c(d, 'left')}${c(m, 'left')}${c(nf(pa))}${c(nf(fa))}</tr>` })
+    h += `<tr>${c('', 'center')}${c('<b>Total</b>', 'left')}${c('')}${c('<b>' + nf(tot[1]) + '</b>')}${c('<b>' + nf(tot[3]) + '</b>')}</tr></table>`
+  }
+  h += `<p style="font-family:Calibri,Arial;font-weight:bold;margin:12px 0 4px">Beneficiaries addressed</p>`
+  const name = 'Hidaya Development Association (HDA) — ' + sec.title
+  if (withPlan) {
+    h += `<table style="border-collapse:collapse;font-family:Calibri,Arial;width:100%"><tr>${H('Name CSO', 'rowspan="3"')}${H('Beneficiary', 'colspan="6"')}</tr><tr>${H('Plan', 'colspan="3"')}${H('Actual addressed', 'colspan="3"')}</tr><tr>${['M', 'F', 'T', 'M', 'F', 'T'].map(x => H(x)).join('')}</tr><tr>${c(name, 'left')}${c(r.bp.M)}${c(r.bp.F)}${c(T(r.bp))}${c(r.ba.M)}${c(r.ba.F)}${c(T(r.ba))}</tr></table>`
+  } else {
+    h += `<table style="border-collapse:collapse;font-family:Calibri,Arial;width:100%"><tr>${H('Name CSO', 'rowspan="2"')}${H('Beneficiary — Actual addressed', 'colspan="3"')}</tr><tr>${['M', 'F', 'T'].map(x => H(x)).join('')}</tr><tr>${c(name, 'left')}${c(r.ba.M)}${c(r.ba.F)}${c(T(r.ba))}</tr></table>`
+  }
+  if (r.ba.U || (withPlan && r.bp.U)) h += `<p style="font-family:Calibri,Arial;font-size:9pt;color:#555">Note: ${r.ba.U} addressed children have no gender recorded; they are counted in T only.</p>`
   return h
 }
-export const docHtml = (titleLine, sections) => `<div style="font-family:Calibri,Arial"><h2 style="font-family:Calibri,Arial">${titleLine}</h2>${sections.map(s => sectionHtml(s.sec, s.r)).join('')}<ul style="font-family:Calibri,Arial"><li><i>Please, support your summary report with updated pictures of the project activities</i></li></ul></div>`
+export const docHtml = (titleLine, sections, withPlan = false) => `<div style="font-family:Calibri,Arial"><h2 style="font-family:Calibri,Arial">${titleLine}</h2>${sections.map(s => sectionHtml(s.sec, s.r, withPlan)).join('')}<ul style="font-family:Calibri,Arial"><li><i>Please, support your summary report with updated pictures of the project activities</i></li></ul></div>`
 
 // ── DOCX ─────────────────────────────────────────────────────────────────────
-export async function buildDocxBlob(titleLine, sections) {
+export async function buildDocxBlob(titleLine, sections, withPlan = false) {
   const D = await import('docx')
   const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, PageOrientation, ShadingType, VerticalAlign } = D
   const border = { style: 'single', size: 4, color: '444444' }
@@ -114,27 +116,50 @@ export async function buildDocxBlob(titleLine, sections) {
     ]
     const tot = [r.mPlan + r.cPlan, r.mAct + r.cAct, r.mFin + r.cFin, r.mFinAct + r.cFinAct]
     children.push(new Paragraph({ spacing: { before: 200, after: 60 }, children: [new TextRun({ text: sec.title, bold: true, size: 26 })] }))
-    children.push(new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: 'Physical and financial plan vs achievement', bold: true, size: 22 })] }))
-    children.push(new Table({
-      width: { size: 13000, type: WidthType.DXA }, columnWidths: [600, 3800, 1900, 1000, 1000, 900, 1400, 1400, 900],
-      rows: [
-        new TableRow({ tableHeader: true, children: [cell('S/N', { head: 1, rowSpan: 2 }), cell('Description of Activities', { head: 1, rowSpan: 2 }), cell('Measurement', { head: 1, rowSpan: 2 }), cell('Physical', { head: 1, span: 3 }), cell('Financial (ETB)', { head: 1, span: 3 })] }),
-        new TableRow({ tableHeader: true, children: ['Plan', 'Actual', '%', 'Plan', 'Actual', '%'].map(x => cell(x, { head: 1 })) }),
-        ...rows.map(([sn, d, m, pp, pa, fp, fa]) => new TableRow({ children: [cell(sn, { align: C }), cell(d), cell(m), cell(nf(pp), { align: R }), cell(nf(pa), { align: R }), cell(pctOf(pa, pp), { align: R }), cell(nf(fp), { align: R }), cell(nf(fa), { align: R }), cell(pctOf(fa, fp), { align: R })] })),
-        new TableRow({ children: [cell(''), cell('Total', { bold: 1 }), cell(''), cell(nf(tot[0]), { bold: 1, align: R }), cell(nf(tot[1]), { bold: 1, align: R }), cell(pctOf(tot[1], tot[0]), { bold: 1, align: R }), cell(nf(tot[2]), { bold: 1, align: R }), cell(nf(tot[3]), { bold: 1, align: R }), cell(pctOf(tot[3], tot[2]), { bold: 1, align: R })] }),
-      ],
-    }))
-    children.push(new Paragraph({ spacing: { before: 200, after: 60 }, children: [new TextRun({ text: 'Beneficiary plan vs actual', bold: true, size: 22 })] }))
-    children.push(new Table({
-      width: { size: 13000, type: WidthType.DXA }, columnWidths: [4600, 1400, 1400, 1400, 1400, 1400, 1400],
-      rows: [
-        new TableRow({ tableHeader: true, children: [cell('Name CSO', { head: 1, rowSpan: 3 }), cell('Beneficiary', { head: 1, span: 6 })] }),
-        new TableRow({ tableHeader: true, children: [cell('Plan', { head: 1, span: 3 }), cell('Actual addressed', { head: 1, span: 3 })] }),
-        new TableRow({ tableHeader: true, children: ['M', 'F', 'T', 'M', 'F', 'T'].map(x => cell(x, { head: 1 })) }),
-        new TableRow({ children: [cell('Hidaya Development Association (HDA) — ' + sec.title), ...[r.bp.M, r.bp.F, T(r.bp), r.ba.M, r.ba.F, T(r.ba)].map(v => cell(v, { align: R }))] }),
-      ],
-    }))
-    if (r.bp.U || r.ba.U) children.push(new Paragraph({ spacing: { before: 60 }, children: [new TextRun({ text: `Note: ${r.bp.U} planned / ${r.ba.U} addressed children have no gender recorded; they are counted in T only.`, size: 18, italics: true })] }))
+    children.push(new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: withPlan ? 'Physical and financial plan vs achievement' : 'Physical and financial achievement', bold: true, size: 22 })] }))
+    const name = 'Hidaya Development Association (HDA) — ' + sec.title
+    if (withPlan) {
+      children.push(new Table({
+        width: { size: 13000, type: WidthType.DXA }, columnWidths: [600, 3800, 1900, 1000, 1000, 900, 1400, 1400, 900],
+        rows: [
+          new TableRow({ tableHeader: true, children: [cell('S/N', { head: 1, rowSpan: 2 }), cell('Description of Activities', { head: 1, rowSpan: 2 }), cell('Measurement', { head: 1, rowSpan: 2 }), cell('Physical', { head: 1, span: 3 }), cell('Financial (ETB)', { head: 1, span: 3 })] }),
+          new TableRow({ tableHeader: true, children: ['Plan', 'Actual', '%', 'Plan', 'Actual', '%'].map(x => cell(x, { head: 1 })) }),
+          ...rows.map(([sn, d, m, pp, pa, fp, fa]) => new TableRow({ children: [cell(sn, { align: C }), cell(d), cell(m), cell(nf(pp), { align: R }), cell(nf(pa), { align: R }), cell(pctOf(pa, pp), { align: R }), cell(nf(fp), { align: R }), cell(nf(fa), { align: R }), cell(pctOf(fa, fp), { align: R })] })),
+          new TableRow({ children: [cell(''), cell('Total', { bold: 1 }), cell(''), cell(nf(tot[0]), { bold: 1, align: R }), cell(nf(tot[1]), { bold: 1, align: R }), cell(pctOf(tot[1], tot[0]), { bold: 1, align: R }), cell(nf(tot[2]), { bold: 1, align: R }), cell(nf(tot[3]), { bold: 1, align: R }), cell(pctOf(tot[3], tot[2]), { bold: 1, align: R })] }),
+        ],
+      }))
+    } else {
+      children.push(new Table({
+        width: { size: 13000, type: WidthType.DXA }, columnWidths: [700, 5200, 2600, 2000, 2500],
+        rows: [
+          new TableRow({ tableHeader: true, children: [cell('S/N', { head: 1 }), cell('Description of Activities', { head: 1 }), cell('Measurement', { head: 1 }), cell('Physical (Actual)', { head: 1 }), cell('Financial (Actual, ETB)', { head: 1 })] }),
+          ...rows.map(([sn, d, m, , pa, , fa]) => new TableRow({ children: [cell(sn, { align: C }), cell(d), cell(m), cell(nf(pa), { align: R }), cell(nf(fa), { align: R })] })),
+          new TableRow({ children: [cell(''), cell('Total', { bold: 1 }), cell(''), cell(nf(tot[1]), { bold: 1, align: R }), cell(nf(tot[3]), { bold: 1, align: R })] }),
+        ],
+      }))
+    }
+    children.push(new Paragraph({ spacing: { before: 200, after: 60 }, children: [new TextRun({ text: 'Beneficiaries addressed', bold: true, size: 22 })] }))
+    if (withPlan) {
+      children.push(new Table({
+        width: { size: 13000, type: WidthType.DXA }, columnWidths: [4600, 1400, 1400, 1400, 1400, 1400, 1400],
+        rows: [
+          new TableRow({ tableHeader: true, children: [cell('Name CSO', { head: 1, rowSpan: 3 }), cell('Beneficiary', { head: 1, span: 6 })] }),
+          new TableRow({ tableHeader: true, children: [cell('Plan', { head: 1, span: 3 }), cell('Actual addressed', { head: 1, span: 3 })] }),
+          new TableRow({ tableHeader: true, children: ['M', 'F', 'T', 'M', 'F', 'T'].map(x => cell(x, { head: 1 })) }),
+          new TableRow({ children: [cell(name), ...[r.bp.M, r.bp.F, T(r.bp), r.ba.M, r.ba.F, T(r.ba)].map(v => cell(v, { align: R }))] }),
+        ],
+      }))
+    } else {
+      children.push(new Table({
+        width: { size: 13000, type: WidthType.DXA }, columnWidths: [7000, 2000, 2000, 2000],
+        rows: [
+          new TableRow({ tableHeader: true, children: [cell('Name CSO', { head: 1, rowSpan: 2 }), cell('Beneficiary — Actual addressed', { head: 1, span: 3 })] }),
+          new TableRow({ tableHeader: true, children: ['M', 'F', 'T'].map(x => cell(x, { head: 1 })) }),
+          new TableRow({ children: [cell(name), ...[r.ba.M, r.ba.F, T(r.ba)].map(v => cell(v, { align: R }))] }),
+        ],
+      }))
+    }
+    if (r.ba.U || (withPlan && r.bp.U)) children.push(new Paragraph({ spacing: { before: 60 }, children: [new TextRun({ text: `Note: ${r.ba.U} addressed children have no gender recorded; they are counted in T only.`, size: 18, italics: true })] }))
   })
   children.push(new Paragraph({ spacing: { before: 240 }, bullet: { level: 0 }, children: [new TextRun({ text: 'Please, support your summary report with updated pictures of the project activities', italics: true, bold: true, size: 21 })] }))
   const doc = new Document({
@@ -143,8 +168,8 @@ export async function buildDocxBlob(titleLine, sections) {
   })
   return Packer.toBlob(doc)
 }
-async function downloadDocx(titleLine, sections, fileName) {
-  const blob = await buildDocxBlob(titleLine, sections)
+async function downloadDocx(titleLine, sections, withPlan, fileName) {
+  const blob = await buildDocxBlob(titleLine, sections, withPlan)
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fileName
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000)
 }
@@ -158,6 +183,7 @@ export default function CsoReport({ families, children, rates = DEFAULT_RATES, t
   const [end, setEnd] = useState('2026-06')
   const [scope, setScope] = useState('all')
   const [onlyEnrolled, setOnlyEnrolled] = useState(false)
+  const [withPlan, setWithPlan] = useState(false) // default: actuals only (no Plan columns)
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState(null) // { titleLine, sections }
 
@@ -184,7 +210,7 @@ export default function CsoReport({ families, children, rates = DEFAULT_RATES, t
         page++
       }
       const inScope = (f, id) => id === 'all' ? true : id === 'OVC' ? f.project === 'OVC' : id === 'HF' ? f.project === 'HF' : (f.project === 'HF' && f.branch === id.slice(3))
-      const mk = (title, fams) => ({ sec: { title }, r: compute({ fams, kids: children, pay, months, rates, onlyEnrolled }) })
+      const mk = (title, fams) => ({ sec: { title }, r: compute({ fams, kids: children, pay, months, rates, onlyEnrolled: withPlan && onlyEnrolled }) })
       const sections = []
       if (scope === 'all') {
         sections.push(mk('HDA — All beneficiaries', families))
@@ -208,7 +234,7 @@ export default function CsoReport({ families, children, rates = DEFAULT_RATES, t
     toast(ok ? 'Copied — paste it into Word or email' : 'Copy failed — use Download Word', ok ? undefined : 'error')
   }
   const download = async () => {
-    try { await downloadDocx(result.titleLine, result.sections, `CSO-report-${start}_to_${end}.docx`) }
+    try { await downloadDocx(result.titleLine, result.sections, withPlan, `CSO-report-${start}_to_${end}.docx`) }
     catch (e) { toast('Could not create the Word file: ' + e.message, 'error') }
   }
 
@@ -228,10 +254,14 @@ export default function CsoReport({ families, children, rates = DEFAULT_RATES, t
             <div style={{ gridColumn: isMobile ? '1 / -1' : 'auto' }}><label style={lbl}>Scope</label>
               <select value={scope} onChange={e => setScope(e.target.value)} style={sel}>{scopes.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}</select></div>
           </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: B.textMid, marginBottom: 14, cursor: 'pointer' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: B.textMid, marginBottom: 8, cursor: 'pointer' }}>
+            <input type="checkbox" checked={withPlan} onChange={e => setWithPlan(e.target.checked)} />
+            Also show the Plan columns and % (off = actual only)
+          </label>
+          {withPlan && <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: B.textMid, marginBottom: 14, cursor: 'pointer' }}>
             <input type="checkbox" checked={onlyEnrolled} onChange={e => setOnlyEnrolled(e.target.checked)} />
             Plan only counts months from each family's enrollment date
-          </label>
+          </label>}
           <button onClick={generate} disabled={busy} style={{ ...btn(true), opacity: busy ? 0.6 : 1 }}>{busy ? 'Building…' : 'Generate report'}</button>
 
           {result && (
@@ -241,10 +271,10 @@ export default function CsoReport({ families, children, rates = DEFAULT_RATES, t
                 <button onClick={download} style={btn(true)}><Icon name="download" size={15} /> Download Word (.docx)</button>
               </div>
               <div style={{ background: '#fff', color: '#111', border: `1px solid ${B.border}`, borderRadius: 10, padding: 14, overflowX: 'auto' }}>
-                <div id="cso-report-preview" dangerouslySetInnerHTML={{ __html: docHtml(result.titleLine, result.sections) }} />
+                <div id="cso-report-preview" dangerouslySetInnerHTML={{ __html: docHtml(result.titleLine, result.sections, withPlan) }} />
               </div>
               <div style={{ fontSize: 11.5, color: B.textLight, marginTop: 8, lineHeight: 1.6 }}>
-                Plan = every beneficiary family for every month in the period. Actual = months marked Paid. Mothers are counted as female; children are those 18 and under. Families that were transferred out are not included; families on hold count in the plan but not as paid.
+                Actual = months marked Paid on the Payments page. Mothers are counted as female; children are those 18 and under. Families that were transferred out are not included; families on hold count in the plan but not as paid.
               </div>
             </div>
           )}
