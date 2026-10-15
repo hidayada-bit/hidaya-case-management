@@ -918,7 +918,7 @@ function Sidebar({ page, setPage, collapsed, setCollapsed, user, onSignOut, role
 }
 
 // ─── HEADER ───────────────────────────────────────────────────────────────────
-function Header({ title, breadcrumb, isMobile, user, isDark, onToggleTheme, onOpenFamily }) {
+function Header({ title, breadcrumb, isMobile, user, isDark, onToggleTheme, onOpenFamily, onSignOut }) {
   return (
     <div style={{
       background: B.card, borderBottom: `2px solid ${B.greenLight}`,
@@ -954,6 +954,12 @@ function Header({ title, breadcrumb, isMobile, user, isDark, onToggleTheme, onOp
           <Icon name={isDark ? 'sun' : 'moon'} size={17} />
         </button>
         {user && <Avatar name={user.full_name || user.email} photoUrl={user.profile_photo_url} size={34} radius={10} clickable={true} />}
+        {isMobile && onSignOut && (
+          <button onClick={() => { if (window.confirm('Sign out of HDA Case Management?')) onSignOut() }} aria-label="Sign out" title="Sign out"
+            style={{ background: B.errBg, border: `1px solid ${B.errBorder}`, borderRadius: 10, width: 36, height: 36, cursor: 'pointer', color: B.red, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="logout" size={17} />
+          </button>
+        )}
       </div>
     </div>
   )
@@ -993,7 +999,7 @@ const StatCard = ({ label, value, icon, bg, color, sub, loading, isMobile }) => 
 )
 
 // ─── DASHBOARD PAGE ───────────────────────────────────────────────────────────
-function DashboardPage({ families, children, loading, onView, onAdd, isMobile, isTablet, canEdit = true, transferredCount = null, showCase = true }) {
+function DashboardPage({ families, children, loading, onView, onAdd, isMobile, isTablet, canEdit = true, transferredCount = null, showCase = true, onBack = null, backLabel = 'Back', heading = null }) {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('All')
   // A family on hold is counted as "On hold" only (not also as active/pending/inactive)
@@ -1027,6 +1033,14 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
 
   return (
     <div style={{ padding: isMobile ? '14px 12px 84px' : '22px 26px', maxWidth: 1140, margin: '0 auto', position: 'relative' }}>
+      {onBack && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+          <button onClick={onBack} style={{ background: B.greenLight, border: `1px solid ${B.border}`, borderRadius: 8, padding: '9px 14px', cursor: 'pointer', fontSize: 13, color: B.green, fontWeight: 700, minHeight: 38, fontFamily: 'inherit' }}>
+            <Icon name="back" size={14} /> {backLabel}
+          </button>
+          {heading && <span style={{ fontSize: 15, fontWeight: 800, color: B.text }}>{heading}</span>}
+        </div>
+      )}
       {/* Stats grid */}
       <div style={{
         display: 'grid',
@@ -2568,7 +2582,7 @@ export default function App() {
 
       {/* Main content */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, paddingBottom: isMobile ? 'calc(54px + env(safe-area-inset-bottom))' : 0 }}>
-        <Header title={pageTitle} breadcrumb={breadcrumb} isMobile={isMobile} user={user} isDark={isDark} onToggleTheme={toggleTheme} onOpenFamily={id => { const f = families.find(x => x.id === id); if (f) openFamily(f) }} />
+        <Header title={pageTitle} breadcrumb={breadcrumb} isMobile={isMobile} user={user} isDark={isDark} onToggleTheme={toggleTheme} onSignOut={signOut} onOpenFamily={id => { const f = families.find(x => x.id === id); if (f) openFamily(f) }} />
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {!allowed && (
             <div style={{ padding: '70px 20px', textAlign: 'center', color: B.textMid }}>
@@ -2606,6 +2620,9 @@ export default function App() {
               onView={openFamily}
               onAdd={() => { setEditingFamily(null); setShowFamilyForm(true) }}
               isMobile={isMobile} isTablet={isTablet} canEdit={canEdit} showCase={can(role, 'view_case_status')}
+              onBack={() => setPage(selectedProject === 'HF' ? 'branches' : 'projects')}
+              backLabel={selectedProject === 'HF' ? 'Back to Branches' : 'Back to Projects'}
+              heading={selectedProject === 'HF' ? `HF — ${selectedBranch || ''}` : 'OVC'}
             />
           )}
           {allowed && page === 'detail' && selectedFamily && (

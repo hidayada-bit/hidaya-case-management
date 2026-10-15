@@ -15,6 +15,14 @@ const STATUS = {
   on_hold: { label: 'On hold', bg: B.infoBg, color: B.infoText, dot: '#6366f1' },
 }
 const money = n => (n == null || n === '' || isNaN(n)) ? '—' : Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 })
+// Copy "name / bank / account" for pasting into a bank transfer or chat
+const copyText = async text => {
+  try { await navigator.clipboard.writeText(text); return true } catch { /* fall through */ }
+  try {
+    const t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0'
+    document.body.appendChild(t); t.select(); const ok = document.execCommand('copy'); document.body.removeChild(t); return ok
+  } catch { return false }
+}
 const todayStr = () => new Date().toISOString().slice(0, 10)
 const periodOf = (year, m) => `${year}-${String(m + 1).padStart(2, '0')}-01`
 
@@ -114,13 +122,19 @@ export default function FamilyPaymentsTab({ family, user, canManage, toast, isMo
           <div style={{ minWidth: 150, textAlign: 'center', fontWeight: 800, fontSize: 14, color: B.text }}>January – December {year}</div>
           <button aria-label="Next year" disabled={!canGoNext} onClick={() => setYear(y => y + 1)} style={{ background: 'transparent', border: 'none', cursor: canGoNext ? 'pointer' : 'not-allowed', opacity: canGoNext ? 1 : 0.35, width: 34, height: 34, borderRadius: 8, color: B.greenDark, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="chevron" size={18} /></button>
         </div>
-        <div style={{ fontSize: 12.5, color: B.textMid, display: 'flex', alignItems: 'center', gap: 6 }}>
-          {bankById(family.bank)
-            ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: B.card, border: `1px solid ${B.border}`, borderLeft: `3px solid ${bankById(family.bank).color}`, borderRadius: 20, padding: '4px 12px 4px 5px' }}>
-                <BankMark bank={family.bank} size={24} /><b style={{ color: B.text }}>{bankLabel(family.bank)}</b>
-              </span>
-            : <><Icon name="bank" size={14} /> <b>{bankLabel(family.bank)}</b></>}
-          <span>{family.account_number || <span style={{ color: B.amber }}>No account on file</span>}</span>
+        <div style={{ fontSize: 13, color: B.textMid, display: 'inline-flex', alignItems: 'center', gap: 8, background: B.card, border: `1px solid ${B.border}`, borderRadius: 24, padding: '4px 6px 4px 6px' }}>
+          {bankById(family.bank) ? <BankMark bank={family.bank} size={26} /> : <Icon name="bank" size={16} />}
+          <b style={{ color: B.text, letterSpacing: '0.02em' }}>{family.account_number || <span style={{ color: B.amber, fontWeight: 600 }}>No account on file</span>}</b>
+          {family.account_number && (
+            <button type="button" aria-label="Copy name, bank and account number" title="Copy name, bank and account number"
+              onClick={async () => {
+                const ok = await copyText(`${family.mother_name}\n${bankById(family.bank)?.name || bankLabel(family.bank)}\n${family.account_number}`)
+                toast(ok ? 'Copied: name, bank and account number' : 'Could not copy', ok ? undefined : 'error')
+              }}
+              style={{ background: B.greenLight, border: `1px solid ${B.border}`, color: B.greenDark, borderRadius: '50%', width: 30, height: 30, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="copy" size={14} />
+            </button>
+          )}
         </div>
       </div>
 
