@@ -164,11 +164,8 @@ export default function FamilyPaymentsTab({ family, user, canManage, toast, isMo
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(auto-fill, minmax(200px, 1fr))', gap: isMobile ? 8 : 12 }}>
             {months.map(m => {
               const st = STATUS[m.status]
-              const bk = bankById(family.bank) // card takes the family's bank colours; no bank = status colour as before
-              const tint = bk ? `color-mix(in srgb, ${bk.color} 9%, ${B.card})` : B.card
               return (
-                <div key={m.i} style={{ position: 'relative', overflow: 'hidden', background: tint, border: `1px solid ${bk ? bk.color + '66' : B.border}`, borderTop: `3px solid ${st.dot}`, borderRadius: 12, padding: bk ? '12px 14px 12px 18px' : '12px 14px', display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
-                  {bk && <div aria-hidden="true" style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 5, background: `linear-gradient(180deg, ${bk.color} 78%, ${bk.accent} 78%)` }} />}
+                <div key={m.i} style={{ background: B.card, border: `1px solid ${B.border}`, borderTop: `3px solid ${st.dot}`, borderRadius: 12, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
                     <span style={{ fontWeight: 800, fontSize: 14, color: B.text }}>{m.name}</span>
                     <span style={{ background: st.bg, color: st.color, padding: '3px 9px', borderRadius: 20, fontSize: 10.5, fontWeight: 700, whiteSpace: 'nowrap' }}>{st.label}</span>
@@ -183,7 +180,7 @@ export default function FamilyPaymentsTab({ family, user, canManage, toast, isMo
                     <div style={{ fontSize: 10.5, color: B.textLight }}><Icon name="edit" size={10} /> Signed by {staffNames[m.p.recorded_by]}</div>
                   )}
                   {canManage && (
-                    <button onClick={() => openEdit(m)} style={{ background: bk ? bk.color : B.greenLight, border: `1px solid ${bk ? bk.color : B.border}`, color: bk ? '#fff' : B.green, borderRadius: 8, padding: '7px', fontSize: 12, fontWeight: 700, cursor: 'pointer', minHeight: 34, fontFamily: 'inherit' }}>
+                    <button onClick={() => openEdit(m)} style={{ background: B.greenLight, border: `1px solid ${B.border}`, color: B.green, borderRadius: 8, padding: '7px', fontSize: 12, fontWeight: 700, cursor: 'pointer', minHeight: 34, fontFamily: 'inherit' }}>
                       {m.status === 'pending' ? 'Record payment' : 'Update'}
                     </button>
                   )}
