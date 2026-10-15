@@ -41,6 +41,14 @@
       html.dark ::placeholder { color: #667d69; }
       html.dark img { filter: brightness(0.92); }
       html.dark input, html.dark select, html.dark textarea { color-scheme: dark; }
+      .hide-scroll { scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+      .hide-scroll::-webkit-scrollbar { display: none; }
+      @media (max-width: 640px) {
+        .page-banner { padding: 10px 14px !important; margin-bottom: 12px !important; border-radius: 12px !important; gap: 10px !important; }
+        .page-banner > svg { width: 22px; height: 22px; }
+        .page-banner .pb-sub { display: none; }
+        .page-banner [style*="font-size: 15px"], .page-banner [style*="font-size: 16px"] { font-size: 14px !important; }
+      }
     </style>
   </head>
   <body>

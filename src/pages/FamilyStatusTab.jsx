@@ -230,10 +230,10 @@ export function HoldQuickButton({ family, user, toast, onChanged, isMobile }) {
       <button onClick={() => setDialog(true)} aria-label={a.label}
         style={{
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', fontFamily: 'inherit',
-          width: isMobile ? '100%' : 'auto', padding: '9px 18px', borderRadius: 24, fontSize: 13, fontWeight: 800, letterSpacing: '0.01em',
+          width: isMobile ? '100%' : 'auto', padding: isMobile ? '8px 10px' : '9px 18px', borderRadius: isMobile ? 12 : 24, fontSize: isMobile ? 12.5 : 13, minHeight: isMobile ? 44 : undefined, fontWeight: 800, letterSpacing: '0.01em',
           color: '#fff', border: '1px solid rgba(255,255,255,0.35)', backdropFilter: 'blur(6px)',
           background: holding ? 'linear-gradient(135deg, rgba(245,168,0,0.95), rgba(230,120,0,0.95))' : 'linear-gradient(135deg, rgba(46,158,51,0.95), rgba(30,125,34,0.95))',
-          boxShadow: holding ? '0 6px 18px rgba(245,140,0,0.45)' : '0 6px 18px rgba(30,125,34,0.5)',
+          boxShadow: isMobile ? 'none' : holding ? '0 6px 18px rgba(245,140,0,0.45)' : '0 6px 18px rgba(30,125,34,0.5)',
           textShadow: '0 1px 2px rgba(0,0,0,0.3)', transition: 'transform .18s ease, box-shadow .18s ease',
         }}
         onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)' }}

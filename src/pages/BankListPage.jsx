@@ -470,7 +470,7 @@ export default function BankListPage({ families, isMobile, childCounts, rates, u
   return (
     <div style={{ padding: isMobile ? '14px 12px' : '22px 26px', maxWidth: 900, margin: '0 auto' }}>
       {/* Header banner */}
-      <div style={{
+      <div className="page-banner" style={{
         background: `linear-gradient(135deg, ${B.sidebar}, ${B.greenMid})`,
         borderRadius: 14, padding: '16px 20px', marginBottom: 24,
         position: 'relative', overflow: 'hidden',
@@ -481,7 +481,7 @@ export default function BankListPage({ families, isMobile, childCounts, rates, u
           <Icon name="bank" size={30} color={B.gold} />
           <div>
             <div style={{ fontSize: 16, fontWeight: 800, color: B.gold }}>Bank List</div>
-            <div style={{ fontSize: 12, color: '#a5d6a7' }}>Generate official bank payment letters by project and bank</div>
+            <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>Generate official bank payment letters by project and bank</div>
           </div>
         </div>
       </div>

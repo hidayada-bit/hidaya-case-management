@@ -27,12 +27,12 @@ export default function ArchivePage({ families, onView, isMobile }) {
 
   return (
     <div style={{ padding: isMobile ? '14px 12px 28px' : '22px 26px', maxWidth: 1000, margin: '0 auto' }}>
-      <div style={{ background: `linear-gradient(135deg, ${B.sidebar}, ${B.sidebarMid})`, borderRadius: 14, padding: '16px 20px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', border: '1px solid rgba(245,168,0,0.3)', position: 'relative', overflow: 'hidden' }}>
+      <div className="page-banner" style={{ background: `linear-gradient(135deg, ${B.sidebar}, ${B.sidebarMid})`, borderRadius: 14, padding: '16px 20px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', border: '1px solid rgba(245,168,0,0.3)', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, ${B.gold}, ${B.green})` }} />
         <Icon name="archive" size={28} color={B.gold} />
         <div style={{ flex: 1, minWidth: 180 }}>
           <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>Transferred Families</div>
-          <div style={{ fontSize: 12, color: '#a5d6a7' }}>Removed from the family, bank and payment lists. Not visible to data collectors.</div>
+          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>Removed from the family, bank and payment lists. Not visible to data collectors.</div>
         </div>
         <div style={{ color: '#fff', fontWeight: 800, fontSize: 22 }}>{families.length}</div>
       </div>

@@ -501,7 +501,7 @@ function MessagingPage({ families, isMobile }) {
   return (
     <div style={{ padding: isMobile ? '14px 12px 28px' : '22px 26px', maxWidth: 820, margin: '0 auto' }}>
       {/* Header banner */}
-      <div style={{
+      <div className="page-banner" style={{
         background: `linear-gradient(135deg, ${B.sidebar}, ${B.sidebarMid})`,
         borderRadius: 14, padding: '16px 20px', marginBottom: 20,
         display: 'flex', alignItems: 'center', gap: 14,
@@ -511,7 +511,7 @@ function MessagingPage({ families, isMobile }) {
         <Icon name="message" size={28} color={B.gold} />
         <div>
           <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>Send Announcement</div>
-          <div style={{ fontSize: 12, color: '#a5d6a7' }}>Compose a message and send to beneficiary groups via SMS</div>
+          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>Compose a message and send to beneficiary groups via SMS</div>
         </div>
       </div>
 
@@ -638,7 +638,7 @@ function ProjectsPage({ families, onOpenOVC, onOpenHF, isMobile }) {
   }
   return (
     <div style={{ padding: isMobile ? '14px 12px 28px' : '22px 26px', maxWidth: 900, margin: '0 auto' }}>
-      <div style={{
+      <div className="page-banner" style={{
         background: `linear-gradient(135deg, ${B.sidebar}, ${B.sidebarMid})`,
         borderRadius: 14, padding: '16px 20px', marginBottom: 20,
         display: 'flex', alignItems: 'center', gap: 14,
@@ -648,7 +648,7 @@ function ProjectsPage({ families, onOpenOVC, onOpenHF, isMobile }) {
         <Icon name="folder" size={28} color={B.gold} />
         <div>
           <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>Projects</div>
-          <div style={{ fontSize: 12, color: '#a5d6a7' }}>Choose a project to view its beneficiaries</div>
+          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>Choose a project to view its beneficiaries</div>
         </div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
@@ -708,7 +708,7 @@ function BranchesPage({ families, onOpenBranch, onBack, isMobile }) {
           fontSize: 13, color: B.green, fontWeight: 700, minHeight: 38, marginBottom: 16,
         }}
       ><Icon name="back" size={14} /> Back to Projects</button>
-      <div style={{
+      <div className="page-banner" style={{
         background: `linear-gradient(135deg, ${B.sidebar}, ${B.sidebarMid})`,
         borderRadius: 14, padding: '16px 20px', marginBottom: 20,
         display: 'flex', alignItems: 'center', gap: 14,
@@ -718,7 +718,7 @@ function BranchesPage({ families, onOpenBranch, onBack, isMobile }) {
         <Icon name="globe" size={28} color={B.gold} />
         <div>
           <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>HF — Branches</div>
-          <div style={{ fontSize: 12, color: '#a5d6a7' }}>Choose a branch to view its beneficiaries</div>
+          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>Choose a branch to view its beneficiaries</div>
         </div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 14 }}>
@@ -1276,8 +1276,8 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 8, flexShrink: 0, width: isMobile ? '100%' : 'auto' }}>
-                      {canEdit && <Btn onClick={() => onEditChild(c)} variant="secondary" size="sm" full={isMobile}><Icon name="edit" size={14} />Edit</Btn>}
-                      {canDelete && <Btn onClick={() => onDeleteChild(c)} variant="danger" size="sm" full={isMobile}><Icon name="trash" size={14} />Delete</Btn>}
+                      {canEdit && <Btn onClick={() => onEditChild(c)} variant="secondary" size="sm" full={isMobile}><Icon name="edit" size={14} />{!isMobile && 'Edit'}</Btn>}
+                      {canDelete && <Btn onClick={() => onDeleteChild(c)} variant="danger" size="sm" full={isMobile}><Icon name="trash" size={14} />{!isMobile && 'Delete'}</Btn>}
                     </div>
                   </div>
                   <div style={{ background: B.greenLight, borderRadius: 10, padding: '12px 14px' }}>
@@ -1350,7 +1350,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
     logActivity(user, 'family', `${user?.full_name || 'Admin'} changed the joined date of ${family.mother_name} to ${joinEdit}`, family.id); toast('Joined date updated'); setJoinEdit(null); onCaseChanged('edit')
   }
   const tenureChip = (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 600 }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', borderRadius: 20, padding: isMobile ? '3px 10px' : '4px 12px', fontSize: isMobile ? 11 : 12, fontWeight: 600, whiteSpace: 'nowrap', maxWidth: '100%' }}>
       <Icon name="calendar" size={13} color={B.gold} />
       With HDA <b style={{ color: B.gold }}>{tenureText(joined)}</b>
       <span style={{ opacity: 0.8 }}>· since {joined ? new Date(joined).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</span>
@@ -1394,7 +1394,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
         </div>
       )}
       {/* Top bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 10, marginBottom: 12, flexWrap: 'nowrap' }}>
         <button
           onClick={onBack}
           style={{
@@ -1427,11 +1427,11 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
       {/* Hero banner */}
       <div style={{
         background: `linear-gradient(135deg, ${B.sidebar} 0%, ${B.sidebarMid} 60%, ${B.green} 100%)`,
-        borderRadius: 18, padding: isMobile ? '18px 16px' : '28px',
-        marginBottom: 16,
+        borderRadius: isMobile ? 14 : 18, padding: isMobile ? '14px' : '28px',
+        marginBottom: isMobile ? 12 : 16,
         display: 'flex', flexDirection: isMobile ? 'column' : 'row',
-        alignItems: 'flex-start', gap: isMobile ? 14 : 24,
-        boxShadow: `0 8px 32px rgba(13,59,15,0.35)`,
+        alignItems: 'flex-start', gap: isMobile ? 10 : 24,
+        boxShadow: isMobile ? 'none' : `0 8px 32px rgba(13,59,15,0.35)`,
         position: 'relative', overflow: 'hidden',
       }}>
         {/* Gold accent line */}
@@ -1446,7 +1446,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
             <Avatar
               name={family.mother_name}
               photoUrl={family.mother_photo_url}
-              size={isMobile ? 64 : 90}
+              size={isMobile ? 52 : 90}
               radius={16}
               clickable={true}
             />
@@ -1463,12 +1463,12 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
 
           {isMobile && (
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', marginBottom: 4 }}>{family.mother_name}</div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: '#fff', marginBottom: 2, lineHeight: 1.2 }}>{family.mother_name}</div>
               <div style={{ fontSize: 11, color: B.gold, fontWeight: 600 }}>{family.family_code} · Roll {family.roll_number}</div>
-              <div style={{ marginTop: 8 }}>{tenureChip}</div>
             </div>
           )}
         </div>
+        {isMobile && <div style={{ width: '100%' }}>{tenureChip}</div>}
 
         {!isMobile && (
           <div style={{ flex: 1, minWidth: 180 }}>
@@ -1487,7 +1487,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
         )}
 
         {isMobile && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, width: '100%' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, width: '100%' }}>
             <CallBtn phone={family.phone_number} />
             {family.alternate_phone && <CallBtn phone={family.alternate_phone} label="Alt" />}
             <span style={{ fontSize: 11, color: '#a5d6a7', display: 'flex', alignItems: 'center', gap: 4 }}><Icon name="pin" size={13} /> {family.district}</span>
@@ -1496,27 +1496,27 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
 
         {/* Stats badges */}
         {/* Right column: stats + quick hold button */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flexShrink: 0, alignItems: isMobile ? 'stretch' : 'flex-end', width: isMobile ? '100%' : 'auto', alignSelf: isMobile ? 'auto' : 'stretch', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', gap: 10, flexShrink: 0, width: isMobile ? '100%' : 'auto' }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'row' : 'column', gap: isMobile ? 8 : 12, flexShrink: 0, alignItems: isMobile ? 'stretch' : 'flex-end', width: isMobile ? '100%' : 'auto', alignSelf: isMobile ? 'auto' : 'stretch', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', gap: isMobile ? 6 : 10, flexShrink: 0, width: isMobile ? 'auto' : 'auto' }}>
           {[{ n: kids.length, l: 'Children' }, { n: famDocs.length, l: 'Docs' }].map(s => (
             <div key={s.l} style={{
               background: 'rgba(255,255,255,0.1)',
               border: '1px solid rgba(255,255,255,0.15)',
-              borderRadius: 12, padding: isMobile ? '10px 14px' : '12px 18px', textAlign: 'center',
-              backdropFilter: 'blur(4px)', flex: isMobile ? 1 : 'none',
+              borderRadius: 10, padding: isMobile ? '6px 12px' : '12px 18px', textAlign: 'center',
+              backdropFilter: 'blur(4px)', flex: 'none',
             }}>
-              <div style={{ fontSize: isMobile ? 18 : 24, fontWeight: 800, color: B.gold }}>{s.n}</div>
-              <div style={{ fontSize: 10, color: '#a5d6a7', marginTop: 2 }}>{s.l}</div>
+              <div style={{ fontSize: isMobile ? 16 : 24, fontWeight: 800, color: B.gold, lineHeight: 1.1 }}>{s.n}</div>
+              <div style={{ fontSize: 10, color: '#a5d6a7', marginTop: 1 }}>{s.l}</div>
             </div>
           ))}
         </div>
-          {canHold && <HoldQuickButton family={family} user={user} toast={toast} onChanged={onCaseChanged} isMobile={isMobile} />}
+          {canHold && <div style={{ flex: isMobile ? 1 : 'none', display: 'flex', minWidth: 0 }}><HoldQuickButton family={family} user={user} toast={toast} onChanged={onCaseChanged} isMobile={isMobile} /></div>}
         </div>
       </div>
 
       {/* Tabs */}
-      <div style={{
-        display: 'flex', gap: 2, marginBottom: 16,
+      <div className="hide-scroll" style={{
+        display: 'flex', gap: 2, marginBottom: isMobile ? 12 : 16,
         background: B.greenLight, padding: 4, borderRadius: 12,
         width: '100%', overflowX: 'auto',
         border: `1px solid ${B.border}`,
@@ -1527,7 +1527,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
             key={t}
             onClick={() => setTab(t)}
             style={{
-              flex: 1, padding: isMobile ? '10px 8px' : '8px 18px',
+              flex: '1 0 auto', padding: isMobile ? '9px 14px' : '8px 18px',
               borderRadius: 9, border: 'none', cursor: 'pointer',
               fontSize: isMobile ? 12 : 13, fontWeight: 600,
               fontFamily: 'inherit',
@@ -1833,7 +1833,7 @@ function AnalyticsPage({ families, children, isMobile }) {
   return (
     <div style={{ padding: isMobile ? '14px 12px' : '22px 26px', maxWidth: 900, margin: '0 auto' }}>
       {/* Gold accent banner */}
-      <div style={{
+      <div className="page-banner" style={{
         background: `linear-gradient(135deg, ${B.sidebar}, ${B.sidebarMid})`,
         borderRadius: 14, padding: '16px 20px', marginBottom: 18,
         display: 'flex', alignItems: 'center', gap: 14,
@@ -1844,7 +1844,7 @@ function AnalyticsPage({ families, children, isMobile }) {
         <Icon name="chart" size={28} color={B.gold} />
         <div>
           <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>HDA Statistics Overview</div>
-          <div style={{ fontSize: 12, color: '#a5d6a7' }}>Hidaya Development Association — Case Management Data</div>
+          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>Hidaya Development Association — Case Management Data</div>
         </div>
       </div>
 
@@ -2001,7 +2001,7 @@ function AcademicsPage({ children, isMobile }) {
   return (
     <div style={{ padding: isMobile ? '14px 12px' : '22px 26px', maxWidth: 900, margin: '0 auto' }}>
       {/* Gold accent banner */}
-      <div style={{
+      <div className="page-banner" style={{
         background: `linear-gradient(135deg, ${B.sidebar}, ${B.sidebarMid})`,
         borderRadius: 14, padding: '16px 20px', marginBottom: 18,
         display: 'flex', alignItems: 'center', gap: 14,
@@ -2012,7 +2012,7 @@ function AcademicsPage({ children, isMobile }) {
         <Icon name="graduation" size={28} color={B.gold} />
         <div>
           <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>Academic Overview</div>
-          <div style={{ fontSize: 12, color: '#a5d6a7' }}>Academic status and student breakdown</div>
+          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>Academic status and student breakdown</div>
         </div>
       </div>
 

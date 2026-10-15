@@ -198,12 +198,12 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
   return (
     <div style={{ padding: isMobile ? '14px 12px 28px' : '22px 26px', maxWidth: 1140, margin: '0 auto' }}>
       {/* Banner */}
-      <div style={{ background: `linear-gradient(135deg, ${B.sidebar}, ${B.sidebarMid})`, borderRadius: 14, padding: '16px 20px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', border: '1px solid rgba(245,168,0,0.3)', position: 'relative', overflow: 'hidden' }}>
+      <div className="page-banner" style={{ background: `linear-gradient(135deg, ${B.sidebar}, ${B.sidebarMid})`, borderRadius: 14, padding: '16px 20px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', border: '1px solid rgba(245,168,0,0.3)', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, ${B.gold}, ${B.green})` }} />
         <Icon name="wallet" size={28} color={B.gold} />
         <div style={{ flex: 1, minWidth: 180 }}>
           <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>Payment Follow-up</div>
-          <div style={{ fontSize: 12, color: '#a5d6a7' }}>Track who has been paid each month and chase the rest</div>
+          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>Track who has been paid each month and chase the rest</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 11, padding: 4 }}>
           <button aria-label="Previous month" onClick={() => setMonth(m => shiftMonth(m, -1))} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', width: 34, height: 34, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="chevronLeft" size={18} /></button>

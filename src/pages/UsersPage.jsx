@@ -96,12 +96,12 @@ export default function UsersPage({ currentUser, toast, isMobile }) {
 
   return (
     <div style={{ padding: isMobile ? '14px 12px 28px' : '22px 26px', maxWidth: 940, margin: '0 auto' }}>
-      <div style={{ background: `linear-gradient(135deg, ${B.sidebar}, ${B.sidebarMid})`, borderRadius: 14, padding: '16px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14, border: '1px solid rgba(245,168,0,0.3)', position: 'relative', overflow: 'hidden' }}>
+      <div className="page-banner" style={{ background: `linear-gradient(135deg, ${B.sidebar}, ${B.sidebarMid})`, borderRadius: 14, padding: '16px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14, border: '1px solid rgba(245,168,0,0.3)', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, ${B.gold}, ${B.green})` }} />
         <Icon name="userCog" size={28} color={B.gold} />
         <div>
           <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>Staff & Access</div>
-          <div style={{ fontSize: 12, color: '#a5d6a7' }}>Approve access requests and assign each person a team role</div>
+          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>Approve access requests and assign each person a team role</div>
         </div>
       </div>
 
