@@ -496,13 +496,13 @@ export default function BankListPage({ families, isMobile, childCounts, rates, u
           }}>
             <div style={{
               padding: '14px 20px',
-              background: `linear-gradient(to right, ${B.greenLight}, ${B.card})`,
-              borderBottom: `1px solid ${B.border}`,
+              background: `linear-gradient(135deg, ${bank.color}, color-mix(in srgb, ${bank.color} 78%, #000))`,
+              borderBottom: `3px solid ${bank.accent}`,
               display: 'flex', alignItems: 'center', gap: 12,
             }}>
-              <BankMark bank={bank} size={34} ring />
-              <div style={{ fontSize: 15, fontWeight: 800, color: B.text }}>{bank.name}</div>
-              <div style={{ marginLeft: 'auto', fontSize: 11, color: B.textLight, fontWeight: 600 }}>
+              <BankMark bank={bank} size={36} style={{ boxShadow: '0 0 0 2px rgba(255,255,255,0.9)' }} />
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#fff' }}>{bank.name}</div>
+              <div style={{ marginLeft: 'auto', fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 700 }}>
                 {PROJECTS.reduce((sum, p) => sum + getCount(bank.id, p), 0)} total
               </div>
             </div>
@@ -520,8 +520,8 @@ export default function BankListPage({ families, isMobile, childCounts, rates, u
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       transition: 'all 0.15s', background: 'var(--c-input)',
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = B.green; e.currentTarget.style.background = B.greenLight }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = B.border; e.currentTarget.style.background = 'var(--c-input)' }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = bank.color; e.currentTarget.style.background = `color-mix(in srgb, ${bank.color} 10%, var(--c-card))`; e.currentTarget.style.boxShadow = `inset 4px 0 0 ${bank.accent}` }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = B.border; e.currentTarget.style.background = 'var(--c-input)'; e.currentTarget.style.boxShadow = 'none' }}
                   >
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 800, color: B.text, marginBottom: 4 }}>{project} Project</div>
@@ -529,12 +529,12 @@ export default function BankListPage({ families, isMobile, childCounts, rates, u
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <span style={{
-                        background: count > 0 ? B.greenLight : '#f3f4f6',
-                        color: count > 0 ? B.green : '#9ca3af',
+                        background: count > 0 ? `color-mix(in srgb, ${bank.color} 14%, var(--c-card))` : '#f3f4f6',
+                        color: count > 0 ? `color-mix(in srgb, ${bank.color} 65%, var(--c-text))` : '#9ca3af',
                         fontWeight: 800, fontSize: 18, padding: '4px 14px', borderRadius: 20,
                       }}>{count}</span>
                       <div style={{
-                        background: `linear-gradient(135deg, ${B.green}, #2e9e33)`,
+                        background: bank.color,
                         color: '#fff', borderRadius: 8, padding: '6px 14px',
                         fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5,
                       }}>Generate <Icon name="forward" size={13} /></div>
