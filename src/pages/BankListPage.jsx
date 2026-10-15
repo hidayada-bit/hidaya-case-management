@@ -319,7 +319,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
       }}>
         <div>
           <div style={{ fontSize: 13, fontWeight: 800, color: B.gold }}>{bank.name} — {project}</div>
-          <div style={{ fontSize: 11, color: '#81c784' }}>{filtered.length} beneficiaries{heldRows.length ? ` · ${heldRows.length} on hold (not exported)` : ''} · {today}{totalPages > 1 ? ` · ${totalPages} pages` : ''}</div>
+          <div style={{ fontSize: 11, color: '#81c784' }}>{filtered.length} beneficiaries{heldRows.length ? ` · ${heldRows.length} on hold (not exported)` : ''} · {today}{viewPages.length > 1 ? ` · ${viewPages.length} pages` : ''}</div>
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {!isMobile && <button onClick={() => ask('print')} style={toolBtn('#1e7d22')}><Icon name="print" size={14} />Print</button>}
@@ -337,6 +337,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
         return (
         <div key={pIdx} style={{
           width: '100%', maxWidth: 860,
+          flexShrink: 0, // never let the flex column squash a page: keep true A4 proportions and scroll instead
           borderRadius: 12, overflow: 'hidden',
           boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
           position: 'relative',
@@ -399,13 +400,13 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
 
       {/* ── MOBILE: actual template image, scaled + readable, one block per page ── */}
       {isMobile && (
-        <div style={{ width: '100%', maxWidth: 860 }}>
+        <div style={{ width: '100%', maxWidth: 860, flexShrink: 0 }}>
           {viewPages.map((pageRows, pIdx) => {
             const isFirst = pIdx === 0
             const isLast = pIdx === viewPages.length - 1
             return (
             <div key={pIdx} style={{
-              width: '100%', borderRadius: 12, overflow: 'hidden',
+              width: '100%', borderRadius: 12, overflow: 'hidden', flexShrink: 0,
               boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
               position: 'relative',
               aspectRatio: '1 / 1.414',
