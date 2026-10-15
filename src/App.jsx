@@ -1236,7 +1236,7 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
 }
 
 // ─── CHILDREN TAB (proper component so hooks are legal) ───────────────────────
-function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteChild, toast, onDocUploaded, setViewingDoc, setUploading, uploading, isMobile, canEdit = true, canDelete = true }) {
+function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteChild, toast, onDocUploaded, setViewingDoc, setUploading, uploading, isMobile, canEdit = true, canDelete = true, canRemoveChild = false, user = null }) {
   const statusColor = s => ({ 'Excellent': B.green, 'Good': '#0891b2', 'Average': B.goldDark, 'Needs Support': B.red }[s] || B.textLight)
   const statusBg   = s => ({ 'Excellent': B.greenLight, 'Good': '#e0f2fe', 'Average': B.goldLight, 'Needs Support': B.errBg }[s] || B.neutralBg)
 
@@ -1357,14 +1357,14 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
 }
 
 // ─── FAMILY DETAIL PAGE ───────────────────────────────────────────────────────
-function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, onDeleteFamily, onAddChild, onEditChild, onDeleteChild, toast, onDocUploaded, isMobile, canEdit = true, canDelete = true, canViewPayments = false, canManagePayments = false, user = null, isAdmin = false, rates = DEFAULT_RATES, staffNames = {}, onCaseChanged = () => {}, canSeeCase = false, canHold = false, canRemoveChild = false }) {
+function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, onDeleteFamily, onAddChild, onEditChild, onDeleteChild, toast, onDocUploaded, isMobile, canEdit = true, canDelete = true, canViewPayments = false, canManagePayments = false, user = null, isAdmin = false, rates = DEFAULT_RATES, staffNames = {}, onCaseChanged = () => {}, canSeeCase = false, canHold = false, canRemoveChild = false, initialTab = 'overview' }) {
   const kids = allChildren.filter(c => c.family_id === family.id)
   const payingKids = kids.filter(isPayingChild)
   const cState = caseState(family)
   const famDocs = allDocs.filter(d => d.family_id === family.id)
   // Birth certificates live in each child's tab, so they are not listed with the mother's documents
   const motherDocs = famDocs.filter(d => !(d.document_type === 'Birth Certificate' && !d.child_id))
-  const [tab, setTab] = useState('overview')
+  const [tab, setTab] = useState(initialTab)
   const [uploading, setUploading] = useState(null)
   const [viewingDoc, setViewingDoc] = useState(null)
   const [joinEdit, setJoinEdit] = useState(null) // date string while the admin edits the joined date
@@ -1376,6 +1376,14 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
     if (error) { toast(error.message + (/joined_on/.test(error.message) ? ' — run migration 006_case_visibility_tenure.sql' : ''), 'error'); return }
     logActivity(user, 'family', `${user?.full_name || 'Admin'} changed the joined date of ${family.mother_name} to ${joinEdit}`, family.id); toast('Joined date updated'); setJoinEdit(null); onCaseChanged('edit')
   }
+  const registeredById = family.submitted_by || family.created_by
+  const registeredBy = staffNames[registeredById] || null
+  const registeredChip = registeredBy ? (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', borderRadius: 20, padding: isMobile ? '3px 10px' : '4px 12px', fontSize: isMobile ? 11 : 12, fontWeight: 600, whiteSpace: 'nowrap', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      <Icon name="users" size={13} color={B.gold} />
+      Registered by <b style={{ color: B.gold }}>{registeredBy}</b>
+    </span>
+  ) : null
   const tenureChip = (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', borderRadius: 20, padding: isMobile ? '3px 10px' : '4px 12px', fontSize: isMobile ? 11 : 12, fontWeight: 600, whiteSpace: 'nowrap', maxWidth: '100%' }}>
       <Icon name="calendar" size={13} color={B.gold} />
@@ -1442,6 +1450,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
           {submissionState(family) === 'returned'
             ? <><b>Returned for correction.</b> {family.return_reason && <><br /><b>To fix:</b> {family.return_reason}</>}<br />Edit what is needed — saving sends it back to the administrator.</>
             : <><b>Waiting for approval.</b> Sent by {staffNames[family.submitted_by] || 'a data collector'}{family.submitted_at ? ` on ${new Date(family.submitted_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}` : ''}. It is not in the family, payment or bank lists until the administrator approves it.</>}
+          {canRemoveChild && canEdit && <div style={{ marginTop: 8 }}><Btn onClick={() => { setTab('children'); onAddChild(family.id) }} size="sm" variant="gold"><Icon name="plus" size={14} />Add child</Btn></div>}
         </div>
       )}
 
@@ -1503,7 +1512,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
             </div>
           )}
         </div>
-        {isMobile && <div style={{ width: '100%' }}>{tenureChip}</div>}
+        {isMobile && <div style={{ width: '100%', display: 'flex', flexWrap: 'wrap', gap: 6 }}>{tenureChip}{registeredChip}</div>}
 
         {!isMobile && (
           <div style={{ flex: 1, minWidth: 180 }}>
@@ -1511,7 +1520,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
             <div style={{ fontSize: 12, color: B.gold, marginBottom: 12, fontWeight: 600 }}>
               ID: {family.mother_id_number} · {family.family_code} · Roll {family.roll_number}
             </div>
-            <div style={{ marginBottom: 12 }}>{tenureChip}</div>
+            <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 8 }}>{tenureChip}{registeredChip}</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
               <CallBtn phone={family.phone_number} />
               {family.alternate_phone && <CallBtn phone={family.alternate_phone} label={`Alt: ${family.alternate_phone}`} />}
@@ -1624,7 +1633,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
           onAddChild={onAddChild} onEditChild={onEditChild} onDeleteChild={onDeleteChild}
           toast={toast} onDocUploaded={onDocUploaded}
           setViewingDoc={setViewingDoc} setUploading={setUploading} uploading={uploading}
-          isMobile={isMobile} canEdit={canEdit} canDelete={canDelete}
+          isMobile={isMobile} canEdit={canEdit} canDelete={canDelete} canRemoveChild={canRemoveChild} user={user}
         />
       )}
 
@@ -2684,6 +2693,7 @@ export default function App() {
           )}
           {allowed && page === 'detail' && selectedFamily && (
             <FamilyDetailPage
+              key={selectedFamily.id} initialTab={isCollector ? 'children' : 'overview'}
               family={families.find(f => f.id === selectedFamily.id) || selectedFamily} allChildren={children} allDocs={docs} staffNames={staffNames} canSeeCase={can(role, 'view_case_status')} canHold={can(role, 'manage_holds')}
               onCaseChanged={async action => { await loadAll(); if (action === 'transfer') { setPage('archive') } }}
               onBack={closeFamily}
