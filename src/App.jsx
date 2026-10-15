@@ -2585,8 +2585,10 @@ export default function App() {
   const isCollector = role === 'data_collector'
   const openFam = page === 'detail' && selectedFamily ? (families.find(f => f.id === selectedFamily.id) || selectedFamily) : null
   const canEditDetail = canEdit || (isCollector && !!openFam && submissionState(openFam) !== 'approved')
-  const pageKey = ['detail', 'project-detail', 'branches'].includes(page) ? 'families' : page
-  const allowed = canOpenPage(role, pageKey)
+  // A data collector has no "families" access, but may open the detail page of their OWN open submission (pending / returned).
+  const collectorOwnsOpen = isCollector && page === 'detail' && !!openFam && openFam.submitted_by === user.id && submissionState(openFam) !== 'approved'
+  const pageKey = page === 'detail' && isCollector ? 'mysubs' : (['detail', 'project-detail', 'branches'].includes(page) ? 'families' : page)
+  const allowed = canOpenPage(role, pageKey) && (page !== 'detail' || !isCollector || collectorOwnsOpen)
 
   const breadcrumb = page === 'detail' && selectedFamily
     ? [{ archive: 'Transferred', approvals: 'Approvals', mysubs: 'My Submissions' }[detailOrigin] || 'Families', selectedFamily.mother_name]
