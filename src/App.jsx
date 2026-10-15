@@ -2509,7 +2509,6 @@ export default function App() {
   const liveFamilies = families.filter(f => caseState(f) !== 'transferred')
   const transferredFamilies = families.filter(f => caseState(f) === 'transferred')
   // Families on hold keep their profile but are removed from the bank list.
-  const bankFamilies = liveFamilies.filter(f => caseState(f) !== 'on_hold')
   // Only children aged 18 or under are counted in the payment amount.
   const childCounts = children.filter(isPayingChild).reduce((m, c) => { m[c.family_id] = (m[c.family_id] || 0) + 1; return m }, {})
   const canEdit = can(role, 'edit_families')
@@ -2643,7 +2642,7 @@ export default function App() {
           {allowed && page === 'analytics' && <AnalyticsPage families={liveFamilies} children={children} isMobile={isMobile} />}
           {allowed && page === 'academics' && <AcademicsPage children={children} isMobile={isMobile} />}
           {allowed && page === 'messaging' && <MessagingPage families={liveFamilies} isMobile={isMobile} />}
-          {allowed && page === 'banklist' && <BankListPage families={bankFamilies} childCounts={childCounts} rates={rates} user={user} isAdmin={role === 'admin'} toast={toast} isMobile={isMobile} />}
+          {allowed && page === 'banklist' && <BankListPage families={liveFamilies} childCounts={childCounts} rates={rates} user={user} isAdmin={role === 'admin'} toast={toast} isMobile={isMobile} />}
           {allowed && page === 'payments' && <PaymentsPage allChildren={children} families={liveFamilies} staffNames={staffNames} childCounts={childCounts} rates={rates} user={user} canManage={can(role, 'manage_payments')} toast={toast} isMobile={isMobile} />}
           {allowed && page === 'archive' && <ArchivePage families={transferredFamilies} onView={openFamily} isMobile={isMobile} />}
           {allowed && page === 'users' && <UsersPage currentUser={user} toast={toast} isMobile={isMobile} />}

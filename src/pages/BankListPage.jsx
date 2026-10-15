@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { monthlyFor, DEFAULT_RATES } from '../lib/settings'
+import { monthlyFor, DEFAULT_RATES, caseState } from '../lib/settings'
 import Icon from '../components/Icon'
 import { BANKS } from '../lib/banks'
 import BankMark from '../components/BankMark'
@@ -84,14 +84,24 @@ function ExportDialog({ count, onCancel, onConfirm, busy, bankName, project }) {
 }
 
 // ─── LETTER PREVIEW + EXPORT ─────────────────────────────────────────────────
+const HELD_TD = { padding: '6px 10px', border: '1px solid #f5b5a0', background: '#fff1e6', color: '#c2410c', fontWeight: 700, textDecoration: 'none' }
+
 function BankLetter({ families, bank, project, onClose, isMobile, childCounts = {}, rates = DEFAULT_RATES, user = null, isAdmin = false, toast = () => {} }) {
   const amountOf = f => monthlyFor(rates, childCounts[f.id] || 0)
-  const filtered = families
+  const matching = families
     .filter(f => f.bank === bank.id && f.project === project)
     .sort((a, b) => (a.mother_name || '').localeCompare(b.mother_name || ''))
+  const isHeld = f => caseState(f) === 'on_hold'
+  // payable = what actually goes into print / copy / CSV / Excel / payment records
+  const filtered = matching
+    .filter(f => !isHeld(f))
     .map((f, i) => ({ ...f, _rowNo: f.roll_number || i + 1, _amount: amountOf(f) })) // stable row number, independent of page
+  // preview only: includes held families (shown highlighted, never exported)
+  const heldRows = matching.filter(isHeld).map(f => ({ ...f, _held: true, _rowNo: '—', _amount: amountOf(f) }))
+  const previewRows = [...filtered, ...heldRows].sort((a, b) => (a.mother_name || '').localeCompare(b.mother_name || ''))
 
   const pages = filtered.length ? chunk(filtered, ROWS_PER_PAGE) : [[]]
+  const viewPages = previewRows.length ? chunk(previewRows, ROWS_PER_PAGE) : [[]]
   const totalPages = pages.length
 
   const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })
@@ -309,7 +319,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
       }}>
         <div>
           <div style={{ fontSize: 13, fontWeight: 800, color: B.gold }}>{bank.name} — {project}</div>
-          <div style={{ fontSize: 11, color: '#81c784' }}>{filtered.length} beneficiaries · {today}{totalPages > 1 ? ` · ${totalPages} pages` : ''}</div>
+          <div style={{ fontSize: 11, color: '#81c784' }}>{filtered.length} beneficiaries{heldRows.length ? ` · ${heldRows.length} on hold (not exported)` : ''} · {today}{totalPages > 1 ? ` · ${totalPages} pages` : ''}</div>
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {!isMobile && <button onClick={() => ask('print')} style={toolBtn('#1e7d22')}><Icon name="print" size={14} />Print</button>}
@@ -321,9 +331,9 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
       </div>
 
       {/* ── DESKTOP: full template preview, one box per page ── */}
-      {!isMobile && pages.map((pageRows, pIdx) => {
+      {!isMobile && viewPages.map((pageRows, pIdx) => {
         const isFirst = pIdx === 0
-        const isLast = pIdx === pages.length - 1
+        const isLast = pIdx === viewPages.length - 1
         return (
         <div key={pIdx} style={{
           width: '100%', maxWidth: 860,
@@ -347,7 +357,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
             {issued && <div style={{ fontSize: 13, fontWeight: 'bold' }}>Ref No: {issued.ref}</div>}
             <div style={{ textAlign: 'right', fontSize: 13, marginBottom: 18 }}>{today}</div>
             <div style={{ fontSize: 13, fontWeight: 'bold', textDecoration: 'underline', marginBottom: 14 }}>
-              RE: Payment List — {project} Beneficiaries{issued ? ` for ${monthText(issued.month)}` : ''}{pages.length > 1 ? ` (Page ${pIdx + 1} of ${pages.length})` : ''}
+              RE: Payment List — {project} Beneficiaries{issued ? ` for ${monthText(issued.month)}` : ''}{viewPages.length > 1 ? ` (Page ${pIdx + 1} of ${viewPages.length})` : ''}
             </div>
             <div style={{ fontSize: 12, lineHeight: 1.8, marginBottom: 18 }}>
               {isFirst
@@ -367,9 +377,9 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
                 {pageRows.length === 0
                   ? <tr><td colSpan={5} style={{ padding: 16, textAlign: 'center', color: '#999', border: '1px solid #ccc' }}>No beneficiaries found.</td></tr>
                   : pageRows.map((f, i) => (
-                    <tr key={f.id}>
+                    <tr key={f.id} title={f._held ? 'On hold — not included in export' : undefined}>
                       {cells(f).map((v, j) => (
-                        <td key={j} style={{ padding: '6px 10px', border: '1px solid #ccc', background: i%2===1?'#f9f9f9':'#fff' }}>{v}</td>
+                        <td key={j} style={f._held ? HELD_TD : { padding: '6px 10px', border: '1px solid #ccc', background: i%2===1?'#f9f9f9':'#fff' }}>{f._held && j === 4 ? 'ON HOLD' : v}</td>
                       ))}
                     </tr>
                   ))
@@ -377,9 +387,9 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
               </tbody>
             </table>
             {isLast && <div style={{ fontSize: 13, fontWeight: 700 }}>Total Beneficiaries: {filtered.length} · Total: ETB {fmt(totalAmount)}</div>}
-            {pages.length > 1 && (
+            {viewPages.length > 1 && (
               <div style={{ marginTop: 'auto', paddingTop: 8, textAlign: 'right', fontSize: 10, color: '#888', fontStyle: 'italic' }}>
-                {isLast ? `End of list — Page ${pIdx + 1} of ${pages.length}` : `Continued on next page — Page ${pIdx + 1} of ${pages.length}`}
+                {isLast ? `End of list — Page ${pIdx + 1} of ${viewPages.length}` : `Continued on next page — Page ${pIdx + 1} of ${viewPages.length}`}
               </div>
             )}
           </div>
@@ -390,9 +400,9 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
       {/* ── MOBILE: actual template image, scaled + readable, one block per page ── */}
       {isMobile && (
         <div style={{ width: '100%', maxWidth: 860 }}>
-          {pages.map((pageRows, pIdx) => {
+          {viewPages.map((pageRows, pIdx) => {
             const isFirst = pIdx === 0
-            const isLast = pIdx === pages.length - 1
+            const isLast = pIdx === viewPages.length - 1
             return (
             <div key={pIdx} style={{
               width: '100%', borderRadius: 12, overflow: 'hidden',
@@ -415,7 +425,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
                 {issued && <div style={{ fontSize: 'clamp(9px, 2.6vw, 13px)', fontWeight: 'bold' }}>Ref No: {issued.ref}</div>}
             <div style={{ textAlign: 'right', fontSize: 'clamp(9px, 2.6vw, 13px)', marginBottom: '3vw' }}>{today}</div>
                 <div style={{ fontSize: 'clamp(9px, 2.7vw, 13px)', fontWeight: 'bold', textDecoration: 'underline', marginBottom: '3vw' }}>
-                  RE: Payment List — {project} Beneficiaries{issued ? ` for ${monthText(issued.month)}` : ''}{pages.length > 1 ? ` (Page ${pIdx + 1}/${pages.length})` : ''}
+                  RE: Payment List — {project} Beneficiaries{issued ? ` for ${monthText(issued.month)}` : ''}{viewPages.length > 1 ? ` (Page ${pIdx + 1}/${viewPages.length})` : ''}
                 </div>
                 <div style={{ fontSize: 'clamp(8px, 2.3vw, 12px)', lineHeight: 1.6, marginBottom: '3vw' }}>
                   {isFirst
@@ -437,7 +447,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
                       : pageRows.map((f, i) => (
                         <tr key={f.id}>
                           {cells(f).map((v, j) => (
-                            <td key={j} style={{ padding: '1.2vw 1.5vw', border: '1px solid #ccc', background: i%2===1?'#f9f9f9':'#fff' }}>{v}</td>
+                            <td key={j} style={f._held ? { ...HELD_TD, padding: '1.2vw 1.5vw' } : { padding: '1.2vw 1.5vw', border: '1px solid #ccc', background: i%2===1?'#f9f9f9':'#fff' }}>{f._held && j === 4 ? 'ON HOLD' : v}</td>
                           ))}
                         </tr>
                       ))
@@ -445,9 +455,9 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
                   </tbody>
                 </table>
                 {isLast && <div style={{ fontSize: 'clamp(9px, 2.6vw, 13px)', fontWeight: 700 }}>Total Beneficiaries: {filtered.length} · Total: ETB {fmt(totalAmount)}</div>}
-                {pages.length > 1 && (
+                {viewPages.length > 1 && (
                   <div style={{ marginTop: 'auto', paddingTop: 6, textAlign: 'right', fontSize: 'clamp(7px, 2vw, 10px)', color: '#888', fontStyle: 'italic' }}>
-                    {isLast ? `End of list — Page ${pIdx + 1}/${pages.length}` : `Continued — Page ${pIdx + 1}/${pages.length}`}
+                    {isLast ? `End of list — Page ${pIdx + 1}/${viewPages.length}` : `Continued — Page ${pIdx + 1}/${viewPages.length}`}
                   </div>
                 )}
               </div>
@@ -465,7 +475,7 @@ export default function BankListPage({ families, isMobile, childCounts, rates, u
   const [viewing, setViewing] = useState(null)
 
   const getCount = (bankId, project) =>
-    families.filter(f => f.bank === bankId && f.project === project).length
+    families.filter(f => f.bank === bankId && f.project === project && caseState(f) !== 'on_hold').length
 
   return (
     <div style={{ padding: isMobile ? '14px 12px' : '22px 26px', maxWidth: 900, margin: '0 auto' }}>
