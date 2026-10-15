@@ -2,8 +2,10 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import Icon from '../components/Icon'
 import { BANKS, bankLabel } from '../lib/banks'
+import BankMark from '../components/BankMark'
 import { DEFAULT_RATES, monthlyFor, caseState } from '../lib/settings'
 import { B } from '../lib/theme'
+import { logActivity } from '../lib/activity'
 
 const HF_BRANCHES = ['Addis Ababa', 'Bishoftu', 'Dangla', 'Bure', 'Dire Dawa', 'Nekemte', 'Chagni']
 
@@ -22,7 +24,7 @@ const filterStyle = { padding: '9px 10px', border: `1.5px solid ${B.border}`, bo
 const btn = (variant = 'primary', disabled) => ({
   ...(variant === 'primary' ? { background: `linear-gradient(135deg, ${B.green}, ${B.greenMid})`, color: '#fff', border: 'none' }
     : variant === 'danger' ? { background: B.errBg, color: B.red, border: '1.5px solid #fecaca' }
-    : variant === 'gold' ? { background: `linear-gradient(135deg, ${B.gold}, #ffb300)`, color: B.greenDark, border: 'none' }
+    : variant === 'gold' ? { background: `linear-gradient(135deg, ${B.gold}, #ffb300)`, color: '#fff', border: 'none', textShadow: '0 1px 2px rgba(0,0,0,0.25)' }
     : { background: B.card, color: B.text, border: `1.5px solid ${B.border}` }),
   borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1,
   display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 38, fontFamily: 'inherit', whiteSpace: 'nowrap',
@@ -158,6 +160,9 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
       })
       const { error } = await supabase.from('payments').upsert(payload, { onConflict: 'family_id,period' })
       if (error) throw error
+      const who = user?.full_name || 'Someone'
+      const names = targets.length === 1 ? targets[0].mother_name : `${targets.length} families`
+      logActivity(user, 'payment', `${who} ${kind === 'paid' ? 'marked paid' : kind === 'issue' ? 'reported a payment issue for' : 'reset to unpaid'} ${names} — ${monthLabel(month)}`, targets.length === 1 ? targets[0].id : null)
       toast(kind === 'paid' ? `${targets.length} payment${targets.length > 1 ? 's' : ''} marked as paid` : kind === 'issue' ? 'Payment issue recorded' : 'Payment reset to unpaid')
       setModal(null)
       await load()
@@ -307,7 +312,7 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
                 <div style={{ fontSize: 11, color: B.textLight }}>{f.family_code}{f.project === 'HF' && f.branch ? ` · ${f.branch}` : ''}{isHeld(f) && <span title={f.case_reason || ''} style={{ marginLeft: 6, background: B.goldLight, color: B.warnText, borderRadius: 10, padding: '1px 7px', fontWeight: 700 }}>On hold</span>}</div>
               </div>
               <div style={{ fontSize: 12.5, color: B.textMid, minWidth: 0 }}>
-                <div style={{ fontWeight: 700 }}>{bankLabel(f.bank)}</div>
+                <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>{f.bank && <BankMark bank={f.bank} size={18} />}{bankLabel(f.bank)}</div>
                 <div style={{ fontSize: 11, color: f.account_number ? B.textLight : B.amber }}>{f.account_number || 'No account'}</div>
               </div>
               <div style={{ minWidth: 0 }}>

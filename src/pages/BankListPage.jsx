@@ -3,7 +3,9 @@ import { supabase } from '../lib/supabase'
 import { monthlyFor, DEFAULT_RATES } from '../lib/settings'
 import Icon from '../components/Icon'
 import { BANKS } from '../lib/banks'
+import BankMark from '../components/BankMark'
 import { B } from '../lib/theme'
+import { logActivity } from '../lib/activity'
 
 
 const PROJECTS = ['OVC', 'HF']
@@ -98,15 +100,15 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
   const [busy, setBusy] = useState(false)
   const [issued, setIssued] = useState(null) // { ref, month } once a bank letter has been issued
   const totalAmount = filtered.reduce((t, f) => t + f._amount, 0)
-  const hdrs = m => m ? ['R.No', 'Family ID', 'Beneficiary Name', 'Account No', 'Amount (ETB)'] : ['R.No', 'Family ID', 'Beneficiary Name', 'Account No']
-  const cells = (f, m) => m ? [f._rowNo, f.family_code || '—', f.mother_name, f.account_number || '—', fmt(f._amount)] : [f._rowNo, f.family_code || '—', f.mother_name, f.account_number || '—']
+  const hdrs = () => ['R.No', 'Family ID', 'Beneficiary Name', 'Account No', 'Amount (ETB)']
+  const cells = f => [f._rowNo, f.family_code || '—', f.mother_name, f.account_number || '—', fmt(f._amount)]
 
   const handleCopy = (meta) => {
     const lines = [
       ...(meta ? [`Ref No: ${meta.ref}`, `Payment for: ${monthText(meta.month)}`, ''] : []),
-      hdrs(meta).join('\t'),
-      ...filtered.map(f => cells(f, meta).join('\t')),
-      ...(meta ? ['', `Total\t\t\t\t${fmt(totalAmount)}`] : []),
+      hdrs().join('\t'),
+      ...filtered.map(f => cells(f).join('\t')),
+      '', `Total\t\t\t\t${fmt(totalAmount)}`,
     ]
     navigator.clipboard.writeText(lines.join('\n')).then(() => {
       setCopied(true)
@@ -133,6 +135,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
       const { error } = await supabase.from('payments').upsert(rows, { onConflict: 'family_id,period' })
       if (error) throw error
     }
+    logActivity(user, 'payment', `${user?.full_name || 'Someone'} recorded ${rows.length} payment(s) as paid for ${monthText(month)} (${ref}, ${bank.name} ${project})`)
     toast(`${rows.length} beneficiar${rows.length === 1 ? 'y' : 'ies'} recorded as paid for ${monthText(month)}${already.size ? ` (${already.size} already paid, skipped)` : ''}`)
   }
 
@@ -144,7 +147,12 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
   }
 
   // Everyone can export "just to have it". Only an admin gets the bank/deposit option.
-  const ask = action => { if (isAdmin) setDialog(action); else runExport(action, null) }
+  const ask = action => {
+    if (isAdmin) { setDialog(action); return }
+    runExport(action, null)
+    const how = { print: 'printed', csv: 'exported (CSV)', excel: 'exported (Excel)', copy: 'copied' }[action]
+    logActivity(user, 'bank', `${user?.full_name || 'Someone'} ${how} the ${bank.name} ${project} list (${filtered.length} families) for records`)
+  }
 
   const confirmExport = async meta => {
     try {
@@ -154,6 +162,8 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
         setIssued(meta)
       }
       runExport(dialog, meta)
+      const how = { print: 'printed', csv: 'exported (CSV)', excel: 'exported (Excel)', copy: 'copied' }[dialog]
+      logActivity(user, 'bank', `${user?.full_name || 'Someone'} ${how} the ${bank.name} ${project} list (${filtered.length} families)${meta ? ` for bank use — ${meta.ref}, ${monthText(meta.month)}` : ' for records'}`)
       setDialog(null)
     } catch (e) { toast(e.message, 'error') }
     finally { setBusy(false) }
@@ -220,24 +230,24 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
                   <th style="width:80pt">Family ID</th>
                   <th>Beneficiary Name</th>
                   <th style="width:110pt">Account No</th>
-                  ${meta ? '<th class="amt" style="width:90pt">Amount (ETB)</th>' : ''}
+                  <th class="amt" style="width:90pt">Amount (ETB)</th>
                 </tr>
               </thead>
               <tbody>
                 ${pageRows.length === 0
-                  ? `<tr><td colspan="${meta ? 5 : 4}" style="padding:16pt;text-align:center;color:#999;">No beneficiaries found.</td></tr>`
+                  ? `<tr><td colspan="5" style="padding:16pt;text-align:center;color:#999;">No beneficiaries found.</td></tr>`
                   : pageRows.map(f => `
                   <tr>
                     <td>${f._rowNo}</td>
                     <td>${f.family_code || '—'}</td>
                     <td>${f.mother_name}</td>
                     <td>${f.account_number || '—'}</td>
-                    ${meta ? `<td class="amt">${fmt(f._amount)}</td>` : ''}
+                    <td class="amt">${fmt(f._amount)}</td>
                   </tr>
                 `).join('')}
               </tbody>
             </table>
-            ${isLast ? `<div class="total">Total Beneficiaries: ${filtered.length}${meta ? ` &nbsp;·&nbsp; Total Amount: ETB ${fmt(totalAmount)}` : ''}</div>` : ''}
+            ${isLast ? `<div class="total">Total Beneficiaries: ${filtered.length} &nbsp;·&nbsp; Total Amount: ETB ${fmt(totalAmount)}</div>` : ''}
             ${totalPages > 1 ? `<div class="pagelabel">${isLast ? `End of list — Page ${pIdx + 1} of ${totalPages}` : `Continued on next page — Page ${pIdx + 1} of ${totalPages}`}</div>` : ''}
           </div>
         </div>`
@@ -252,11 +262,9 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
   const handleExportCSV = (meta) => {
     const rows = [
       ...(meta ? [['Ref No', meta.ref], ['Payment for', monthText(meta.month)], []] : []),
-      hdrs(meta),
-      ...filtered.map(f => meta
-        ? [f._rowNo, f.family_code || '', f.mother_name, f.account_number || '', f._amount]
-        : [f._rowNo, f.family_code || '', f.mother_name, f.account_number || '']),
-      ...(meta ? [[], ['', '', '', 'Total', totalAmount]] : []),
+      hdrs(),
+      ...filtered.map(f => [f._rowNo, f.family_code || '', f.mother_name, f.account_number || '', f._amount]),
+      [], ['', '', '', 'Total', totalAmount],
     ]
     const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n')
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' })
@@ -267,12 +275,12 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
   }
 
   const handleExportExcel = (meta) => {
-    const cols = hdrs(meta).length
+    const cols = hdrs().length
     const html = `<table>
       ${meta ? `<tr><td colspan="${cols}"><b>Ref No: ${esc(meta.ref)}</b> — Payment for ${monthText(meta.month)}</td></tr>` : ''}
-      <tr>${hdrs(meta).map(h => `<th>${h}</th>`).join('')}</tr>
-      ${filtered.map(f => `<tr>${cells(f, meta).map(v => `<td>${esc(v)}</td>`).join('')}</tr>`).join('')}
-      <tr><td colspan="${cols}"><b>Total: ${filtered.length}${meta ? ` — ETB ${fmt(totalAmount)}` : ''}</b></td></tr>
+      <tr>${hdrs().map(h => `<th>${h}</th>`).join('')}</tr>
+      ${filtered.map(f => `<tr>${cells(f).map(v => `<td>${esc(v)}</td>`).join('')}</tr>`).join('')}
+      <tr><td colspan="${cols}"><b>Total: ${filtered.length} — ETB ${fmt(totalAmount)}</b></td></tr>
     </table>`
     const blob = new Blob([html], { type: 'application/vnd.ms-excel' })
     const url = URL.createObjectURL(blob)
@@ -350,17 +358,17 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, marginBottom: 14 }}>
               <thead>
                 <tr>
-                  {hdrs(issued).map(h => (
+                  {hdrs().map(h => (
                     <th key={h} style={{ background: B.green, color: '#fff', padding: '7px 10px', textAlign: 'left', border: '1px solid #999', fontSize: 11 }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {pageRows.length === 0
-                  ? <tr><td colSpan={issued ? 5 : 4} style={{ padding: 16, textAlign: 'center', color: '#999', border: '1px solid #ccc' }}>No beneficiaries found.</td></tr>
+                  ? <tr><td colSpan={5} style={{ padding: 16, textAlign: 'center', color: '#999', border: '1px solid #ccc' }}>No beneficiaries found.</td></tr>
                   : pageRows.map((f, i) => (
                     <tr key={f.id}>
-                      {cells(f, issued).map((v, j) => (
+                      {cells(f).map((v, j) => (
                         <td key={j} style={{ padding: '6px 10px', border: '1px solid #ccc', background: i%2===1?'#f9f9f9':'#fff' }}>{v}</td>
                       ))}
                     </tr>
@@ -368,7 +376,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
                 }
               </tbody>
             </table>
-            {isLast && <div style={{ fontSize: 13, fontWeight: 700 }}>Total Beneficiaries: {filtered.length}{issued ? ` · Total: ETB ${fmt(totalAmount)}` : ''}</div>}
+            {isLast && <div style={{ fontSize: 13, fontWeight: 700 }}>Total Beneficiaries: {filtered.length} · Total: ETB {fmt(totalAmount)}</div>}
             {pages.length > 1 && (
               <div style={{ marginTop: 'auto', paddingTop: 8, textAlign: 'right', fontSize: 10, color: '#888', fontStyle: 'italic' }}>
                 {isLast ? `End of list — Page ${pIdx + 1} of ${pages.length}` : `Continued on next page — Page ${pIdx + 1} of ${pages.length}`}
@@ -418,17 +426,17 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'clamp(7px, 2vw, 12px)', marginBottom: '3vw' }}>
                   <thead>
                     <tr>
-                      {(issued ? ['R.No', 'Family ID', 'Name', 'Account', 'ETB'] : ['R.No', 'Family ID', 'Name', 'Account']).map(h => (
+                      {['R.No', 'Family ID', 'Name', 'Account', 'ETB'].map(h => (
                         <th key={h} style={{ background: B.green, color: '#fff', padding: '1.2vw 1.5vw', textAlign: 'left', border: '1px solid #999' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {pageRows.length === 0
-                      ? <tr><td colSpan={issued ? 5 : 4} style={{ padding: '3vw', textAlign: 'center', color: '#999', border: '1px solid #ccc' }}>No beneficiaries found.</td></tr>
+                      ? <tr><td colSpan={5} style={{ padding: '3vw', textAlign: 'center', color: '#999', border: '1px solid #ccc' }}>No beneficiaries found.</td></tr>
                       : pageRows.map((f, i) => (
                         <tr key={f.id}>
-                          {cells(f, issued).map((v, j) => (
+                          {cells(f).map((v, j) => (
                             <td key={j} style={{ padding: '1.2vw 1.5vw', border: '1px solid #ccc', background: i%2===1?'#f9f9f9':'#fff' }}>{v}</td>
                           ))}
                         </tr>
@@ -436,7 +444,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
                     }
                   </tbody>
                 </table>
-                {isLast && <div style={{ fontSize: 'clamp(9px, 2.6vw, 13px)', fontWeight: 700 }}>Total Beneficiaries: {filtered.length}{issued ? ` · Total: ETB ${fmt(totalAmount)}` : ''}</div>}
+                {isLast && <div style={{ fontSize: 'clamp(9px, 2.6vw, 13px)', fontWeight: 700 }}>Total Beneficiaries: {filtered.length} · Total: ETB {fmt(totalAmount)}</div>}
                 {pages.length > 1 && (
                   <div style={{ marginTop: 'auto', paddingTop: 6, textAlign: 'right', fontSize: 'clamp(7px, 2vw, 10px)', color: '#888', fontStyle: 'italic' }}>
                     {isLast ? `End of list — Page ${pIdx + 1}/${pages.length}` : `Continued — Page ${pIdx + 1}/${pages.length}`}
@@ -492,7 +500,7 @@ export default function BankListPage({ families, isMobile, childCounts, rates, u
               borderBottom: `1px solid ${B.border}`,
               display: 'flex', alignItems: 'center', gap: 12,
             }}>
-              <div style={{ width: 4, height: 22, borderRadius: 2, background: `linear-gradient(to bottom, ${B.gold}, ${B.green})` }} />
+              <BankMark bank={bank} size={34} ring />
               <div style={{ fontSize: 15, fontWeight: 800, color: B.text }}>{bank.name}</div>
               <div style={{ marginLeft: 'auto', fontSize: 11, color: B.textLight, fontWeight: 600 }}>
                 {PROJECTS.reduce((sum, p) => sum + getCount(bank.id, p), 0)} total

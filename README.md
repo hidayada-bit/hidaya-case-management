@@ -201,3 +201,9 @@ This limit is enforced by Supabase, not by the app, so it must be changed in the
 - Director can put a family on hold and release it; only the Administrator can transfer or restore.
 - The Transferred page is grouped by reason (Terminated, Suspended, Transferred to another organization, Moved away, Other).
 - The family hero card shows how long the family has been with HDA; the admin can edit the joined date.
+
+## 🔔 Notifications & logos (migration 007)
+Run `supabase/migrations/007_activity_log.sql` once. Every action (hold/transfer, payments, bank list export/print/copy,
+family/child/document changes, rate changes) is logged and shown in the bell next to the night-mode button
+(red counter = activity by other staff since you last pressed "Mark all read"). Data collectors only see family/document activity.
+Logos live in `public/`: `cbe_logo.png`, `oromia_logo.png`, `awash_logo.png` (+ `awash_template.png`), `ebama_logo.jpg`, `hidaya_logo.jpg`.

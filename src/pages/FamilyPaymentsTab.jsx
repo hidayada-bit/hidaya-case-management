@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import Icon from '../components/Icon'
-import { bankLabel } from '../lib/banks'
+import { bankLabel, bankById } from '../lib/banks'
+import BankMark from '../components/BankMark'
 import { DEFAULT_RATES, monthlyFor } from '../lib/settings'
 import { B } from '../lib/theme'
+import { logActivity } from '../lib/activity'
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 const STATUS = {
@@ -92,6 +94,7 @@ export default function FamilyPaymentsTab({ family, user, canManage, toast, isMo
           : { ...base, status: form.status, amount: amt, paid_on: null, reference: null, notes: form.notes.trim() }
       const { error } = await supabase.from('payments').upsert(payload, { onConflict: 'family_id,period' })
       if (error) throw error
+      logActivity(user, 'payment', `${user?.full_name || 'Someone'} ${resetToUnpaid ? 'reset to unpaid' : form.status === 'paid' ? 'recorded a payment for' : 'marked as ' + form.status.replace('_', ' ') + ' the payment of'} ${family.mother_name} — ${MONTHS[edit]} ${year}`, family.id)
       toast(`${MONTHS[edit]} ${year} updated`)
       setEdit(null)
       await load()
@@ -112,7 +115,12 @@ export default function FamilyPaymentsTab({ family, user, canManage, toast, isMo
           <button aria-label="Next year" disabled={!canGoNext} onClick={() => setYear(y => y + 1)} style={{ background: 'transparent', border: 'none', cursor: canGoNext ? 'pointer' : 'not-allowed', opacity: canGoNext ? 1 : 0.35, width: 34, height: 34, borderRadius: 8, color: B.greenDark, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="chevron" size={18} /></button>
         </div>
         <div style={{ fontSize: 12.5, color: B.textMid, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Icon name="bank" size={14} /> <b>{bankLabel(family.bank)}</b> · {family.account_number || <span style={{ color: B.amber }}>No account on file</span>}
+          {bankById(family.bank)
+            ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: B.card, border: `1px solid ${B.border}`, borderLeft: `3px solid ${bankById(family.bank).color}`, borderRadius: 20, padding: '4px 12px 4px 5px' }}>
+                <BankMark bank={family.bank} size={24} /><b style={{ color: B.text }}>{bankLabel(family.bank)}</b>
+              </span>
+            : <><Icon name="bank" size={14} /> <b>{bankLabel(family.bank)}</b></>}
+          <span>{family.account_number || <span style={{ color: B.amber }}>No account on file</span>}</span>
         </div>
       </div>
 

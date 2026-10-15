@@ -4,7 +4,7 @@ import { supabase, BUCKETS } from './lib/supabase'
 import { uploadFile } from './lib/imageUtils'
 import BankListPage from './pages/BankListPage'
 import FamilyPaymentsTab from './pages/FamilyPaymentsTab'
-import FamilyStatusTab from './pages/FamilyStatusTab'
+import FamilyStatusTab, { HoldQuickButton } from './pages/FamilyStatusTab'
 import ArchivePage from './pages/ArchivePage'
 import { BANKS } from './lib/banks'
 import { DEFAULT_RATES, loadRates, saveRates, monthlyFor, isPayingChild, caseState, MAX_PAYING_AGE, joinedDate, tenureText } from './lib/settings'
@@ -14,6 +14,9 @@ import { LoginPage, SignupPage, AccessGate } from './pages/AuthPages'
 import Icon from './components/Icon'
 import { can, canOpenPage, roleLabel } from './lib/permissions'
 import { B, useTheme } from './lib/theme'
+import BankMark from './components/BankMark'
+import NotificationBell from './components/NotificationBell'
+import { logActivity } from './lib/activity'
 
 // ─── HDA BRAND COLORS ────────────────────────────────────────────────────────
 
@@ -206,7 +209,7 @@ const Btn = ({ children, onClick, variant = 'primary', size = 'md', disabled, fu
     green:     { background: B.greenLight, color: B.greenDark, border: `1.5px solid ${B.border}` },
     gold: {
       background: `linear-gradient(135deg, ${B.gold}, ${B.goldMid})`,
-      color: B.greenDark, border: 'none',
+      color: '#fff', border: 'none', textShadow: '0 1px 2px rgba(0,0,0,0.3)',
       boxShadow: `0 2px 8px rgba(245,168,0,0.4)`,
     },
   }[variant]
@@ -657,10 +660,10 @@ function ProjectsPage({ families, onOpenOVC, onOpenHF, isMobile }) {
           onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = `0 4px 20px rgba(30,125,34,0.08)` }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ width: 54, height: 54, borderRadius: 14, background: B.greenLight, display: 'flex', alignItems: 'center', justifyContent: 'center', color: B.green }}><Icon name="users" size={26} /></div>
+            <img src="/ebama_logo.jpg" alt="EBAMA" title="EBAMA" style={{ width: 54, height: 54, borderRadius: '50%', objectFit: 'cover', background: '#fff', boxShadow: `0 0 0 3px ${B.greenLight}, 0 2px 8px rgba(0,0,0,0.15)`, filter: 'none' }} onError={e => { e.currentTarget.style.display = 'none' }} />
             <div>
               <div style={{ fontSize: 18, fontWeight: 800, color: B.text }}>OVC</div>
-              <div style={{ fontSize: 12, color: B.textLight }}>Orphans & Vulnerable Children — Addis Ababa</div>
+              <div style={{ fontSize: 12, color: B.textLight }}>Orphans & Vulnerable Children — EBAMA</div>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 6 }}>
@@ -677,7 +680,7 @@ function ProjectsPage({ families, onOpenOVC, onOpenHF, isMobile }) {
           onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = `0 4px 20px rgba(30,125,34,0.08)` }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ width: 54, height: 54, borderRadius: 14, background: B.goldLight, display: 'flex', alignItems: 'center', justifyContent: 'center', color: B.goldDark }}><Icon name="globe" size={26} /></div>
+            <img src="/hidaya_logo.jpg" alt="Hidaya Foundation" title="Hidaya Foundation" style={{ width: 54, height: 54, borderRadius: '50%', objectFit: 'cover', background: '#fff', boxShadow: `0 0 0 3px ${B.goldLight}, 0 2px 8px rgba(0,0,0,0.15)`, filter: 'none' }} onError={e => { e.currentTarget.style.display = 'none' }} />
             <div>
               <div style={{ fontSize: 18, fontWeight: 800, color: B.text }}>HF</div>
               <div style={{ fontSize: 12, color: B.textLight }}>Hidaya Foundation — {HF_BRANCHES.length} branches</div>
@@ -916,7 +919,7 @@ function Sidebar({ page, setPage, collapsed, setCollapsed, user, onSignOut, role
 }
 
 // ─── HEADER ───────────────────────────────────────────────────────────────────
-function Header({ title, breadcrumb, isMobile, user, isDark, onToggleTheme }) {
+function Header({ title, breadcrumb, isMobile, user, isDark, onToggleTheme, onOpenFamily }) {
   return (
     <div style={{
       background: B.card, borderBottom: `2px solid ${B.greenLight}`,
@@ -946,6 +949,7 @@ function Header({ title, breadcrumb, isMobile, user, isDark, onToggleTheme }) {
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         {!isMobile && <span style={{ fontSize: 12, color: B.textMid, fontWeight: 600 }}>HDA Staff Portal</span>}
+        <NotificationBell user={user} onOpenFamily={onOpenFamily} isMobile={isMobile} />
         <button onClick={onToggleTheme} aria-label={isDark ? 'Switch to light mode' : 'Switch to night mode'} title={isDark ? 'Light mode' : 'Night mode'}
           style={{ background: B.greenLight, border: `1px solid ${B.border}`, borderRadius: 10, width: 36, height: 36, cursor: 'pointer', color: B.greenDark, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Icon name={isDark ? 'sun' : 'moon'} size={17} />
@@ -993,8 +997,6 @@ const StatCard = ({ label, value, icon, bg, color, sub, loading, isMobile }) => 
 function DashboardPage({ families, children, loading, onView, onAdd, isMobile, isTablet, canEdit = true, transferredCount = null, showCase = true }) {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('All')
-  const [pg, setPg] = useState(1)
-  const PER = isMobile ? 6 : 8
   // A family on hold is counted as "On hold" only (not also as active/pending/inactive)
   const isHeld   = f => showCase && caseState(f) === 'on_hold'
   const held     = families.filter(isHeld).length
@@ -1011,8 +1013,18 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
     return (!q || f.mother_name.toLowerCase().includes(q) || f.family_code.toLowerCase().includes(q) || (f.phone_number || '').includes(q))
       && (filter === 'All' || (filter === 'On hold' ? isHeld(f) : (f.status === filter.toLowerCase() && !isHeld(f))))
   })
-  const paged = filtered.slice((pg - 1) * PER, pg * PER)
-  const pages = Math.ceil(filtered.length / PER)
+  // Infinite scroll: show a batch, load the next one when the bottom sentinel scrolls into view
+  const PAGE = 24
+  const [shown, setShown] = useState(PAGE)
+  const sentinelRef = useRef(null)
+  useEffect(() => { setShown(PAGE) }, [search, filter, families.length]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el) return
+    const io = new IntersectionObserver(es => { if (es[0].isIntersecting) setShown(n => n + PAGE) }, { rootMargin: '400px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [shown, filtered.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div style={{ padding: isMobile ? '14px 12px 84px' : '22px 26px', maxWidth: 1140, margin: '0 auto', position: 'relative' }}>
@@ -1083,7 +1095,7 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
             <div style={{ position: 'relative', flex: isMobile ? 1 : 'none' }}>
               <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: B.textLight, display: 'flex' }}><Icon name="search" size={16} /></span>
               <input
-                value={search} onChange={e => { setSearch(e.target.value); setPg(1) }}
+                value={search} onChange={e => { setSearch(e.target.value) }}
                 placeholder={isMobile ? 'Search families…' : 'Search name, code, phone…'}
                 style={{
                   paddingLeft: 34, paddingRight: 10, paddingTop: 10, paddingBottom: 10,
@@ -1097,7 +1109,7 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
             </div>
             {!isMobile && (
               <select
-                value={filter} onChange={e => { setFilter(e.target.value); setPg(1) }}
+                value={filter} onChange={e => { setFilter(e.target.value) }}
                 style={{ padding: '9px 10px', border: `1.5px solid ${B.border}`, borderRadius: 8, fontSize: 13, color: B.text, fontFamily: 'inherit', background: B.input, minHeight: 42 }}
               >
                 {['All', 'Active', 'Inactive', 'Pending', ...(showCase ? ['On hold'] : [])].map(o => <option key={o}>{o}</option>)}
@@ -1108,7 +1120,7 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
           {isMobile && (
             <div style={{ display: 'flex', gap: 6, width: '100%', overflowX: 'auto' }}>
               {['All', 'Active', 'Inactive', 'Pending', ...(showCase ? ['On hold'] : [])].map(o => (
-                <button key={o} onClick={() => { setFilter(o); setPg(1) }}
+                <button key={o} onClick={() => { setFilter(o) }}
                   style={{
                     padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700,
                     border: `1.5px solid ${filter === o ? B.green : B.border}`,
@@ -1121,154 +1133,61 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
           )}
         </div>
 
-        {/* Mobile card list */}
-        {isMobile ? (
-          <div>
-            {loading && Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} style={{ padding: '14px', borderBottom: `1px solid ${B.greenLight}` }}>
-                <Skeleton h={60} />
-              </div>
-            ))}
-            {!loading && paged.length === 0 && (
-              <div style={{ padding: '48px 20px', textAlign: 'center', color: B.textLight }}>
-                <div style={{ marginBottom: 10 }}><Icon name="search" size={38} /></div>
-                <div style={{ fontWeight: 700, color: B.text, marginBottom: 4 }}>No families found</div>
-                <div style={{ fontSize: 13 }}>Try a different search term or filter.</div>
-              </div>
-            )}
-            {!loading && paged.map(f => (
-              <div
-                key={f.id}
-                onClick={() => onView(f)}
-                style={{
-                  padding: '14px 16px', borderBottom: `1px solid ${B.greenLight}`,
-                  display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer',
-                  transition: 'background 0.15s', minHeight: 64,
-                }}
-              >
-                <Avatar name={f.mother_name} photoUrl={f.mother_photo_url} size={46} radius={11} badge={projectBadge(f)} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: B.text }}>{f.mother_name}</div>
-                    {f.project === 'HF' && f.branch && (
-                      <span style={{
-                        fontSize: 10, fontWeight: 700, color: B.greenDark,
-                        background: B.greenLight, border: `1px solid ${B.border}`,
-                        borderRadius: 8, padding: '1px 6px', whiteSpace: 'nowrap',
-                      }}><Icon name="pin" size={10} /> {f.branch}</span>
-                    )}
-                  </div>
-                  <div style={{ fontSize: 11, color: B.textLight }}>{f.family_code} · {f.district} · {f.children_count?.[0]?.count ?? 0} children</div>
-                </div>
-                <StatusBadge s={f.status} held={isHeld(f)} />
-                <Icon name="chevron" size={18} color={B.border} />
-              </div>
-            ))}
-          </div>
-        ) : (
-          /* Desktop table */
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 580 }}>
-              <thead>
-                <tr style={{ background: B.greenLight }}>
-                  {['Code', 'Roll No', 'Mother', 'Phone', 'District', 'Children', 'Status', ''].map(h => (
-                    <th key={h} style={{
-                      padding: '10px 14px', textAlign: 'left',
-                      fontSize: 11, fontWeight: 700, color: B.textMid,
-                      letterSpacing: '0.05em', textTransform: 'uppercase',
-                      borderBottom: `1px solid ${B.border}`, whiteSpace: 'nowrap',
-                    }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {loading && Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} style={{ borderBottom: `1px solid ${B.greenLight}` }}>
-                    {Array.from({ length: 8 }).map((_, j) => (
-                      <td key={j} style={{ padding: '14px' }}><Skeleton h={14} /></td>
-                    ))}
-                  </tr>
-                ))}
-                {!loading && paged.length === 0 && (
-                  <tr><td colSpan={8} style={{ padding: 40, textAlign: 'center', color: B.textLight }}>
-                    <div style={{ marginBottom: 8 }}><Icon name="search" size={36} /></div>No families found.
-                  </td></tr>
-                )}
-                {!loading && paged.map(f => (
-                  <tr
-                    key={f.id}
-                    style={{ borderBottom: `1px solid ${B.greenLight}`, cursor: 'pointer', transition: 'background 0.12s' }}
-                    onMouseEnter={e => e.currentTarget.style.background = B.greenLight}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                    onClick={() => onView(f)}
-                  >
-                    <td style={{ padding: '12px 14px', fontWeight: 700, color: B.green, fontSize: 13 }}>{f.family_code}</td>
-                    <td style={{ padding: '12px 14px', fontSize: 13, color: B.textMid }}>{f.roll_number}</td>
-                    <td style={{ padding: '12px 14px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <Avatar name={f.mother_name} photoUrl={f.mother_photo_url} size={34} radius={9} badge={projectBadge(f)} />
-                        <div>
-                          <div style={{ fontWeight: 650, fontSize: 13, color: B.text }}>{f.mother_name}</div>
-                          {f.project === 'HF' && f.branch && (
-                            <div style={{ fontSize: 10, color: B.textLight, marginTop: 1 }}><Icon name="pin" size={10} /> {f.branch}</div>
-                          )}
+        {/* Family grid — infinite scroll */}
+        <div style={{ padding: isMobile ? 12 : 18 }}>
+          {loading ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
+              {Array.from({ length: 6 }).map((_, i) => <div key={i} style={{ border: `1px solid ${B.border}`, borderRadius: 16, padding: 16 }}><Skeleton h={110} /></div>)}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div style={{ padding: '48px 20px', textAlign: 'center', color: B.textLight }}>
+              <div style={{ marginBottom: 10 }}><Icon name="search" size={38} /></div>
+              <div style={{ fontWeight: 700, color: B.text, marginBottom: 4 }}>No families found</div>
+              <div style={{ fontSize: 13 }}>Try a different search term or filter.</div>
+            </div>
+          ) : (
+            <>
+              <div style={{ fontSize: 12, color: B.textLight, marginBottom: 12 }}>Showing {Math.min(shown, filtered.length)} of {filtered.length} families</div>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(270px, 1fr))', gap: isMobile ? 12 : 16 }}>
+                {filtered.slice(0, shown).map((f, i) => {
+                  const pb = projectBadge(f)
+                  const kidsN = f.children_count?.[0]?.count ?? 0
+                  return (
+                    <div key={f.id} className="fam-card" onClick={() => onView(f)}
+                      style={{ animationDelay: `${Math.min(i % PAGE, 12) * 35}ms`, background: B.card, border: `1px solid ${B.border}`, borderRadius: 16, padding: '16px 16px 14px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <Avatar name={f.mother_name} photoUrl={f.mother_photo_url} size={56} radius={14} badge={pb} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 800, fontSize: 15, color: B.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.mother_name}</div>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: B.green, marginTop: 2 }}>{f.family_code}</div>
                         </div>
                       </div>
-                    </td>
-                    <td style={{ padding: '12px 14px' }}>
-                      <CallBtn phone={f.phone_number} />
-                    </td>
-                    <td style={{ padding: '12px 14px', fontSize: 13, color: B.textMid }}>{f.district}</td>
-                    <td style={{ padding: '12px 14px' }}>
-                      <span style={{ background: B.greenLight, color: B.green, fontWeight: 700, fontSize: 12, padding: '2px 10px', borderRadius: 20 }}>
-                        {f.children_count?.[0]?.count ?? 0}
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px 14px' }}><StatusBadge s={f.status} held={isHeld(f)} /></td>
-                    <td style={{ padding: '12px 14px' }}>
-                      <button
-                        onClick={e => { e.stopPropagation(); onView(f) }}
-                        style={{
-                          background: B.greenLight, border: `1px solid ${B.border}`,
-                          borderRadius: 7, padding: '5px 12px', cursor: 'pointer',
-                          fontSize: 12, color: B.green, fontWeight: 700,
-                          transition: 'all 0.15s',
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.background = B.green; e.currentTarget.style.color = '#fff' }}
-                        onMouseLeave={e => { e.currentTarget.style.background = B.greenLight; e.currentTarget.style.color = B.green }}
-                      >View <Icon name="forward" size={12} /></button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Pagination */}
-        {!loading && pages > 1 && (
-          <div style={{
-            padding: '12px 16px', borderTop: `1px solid ${B.greenLight}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            background: B.input,
-          }}>
-            <span style={{ fontSize: 12, color: B.textLight }}>
-              {Math.min((pg - 1) * PER + 1, filtered.length)}–{Math.min(pg * PER, filtered.length)} of {filtered.length}
-            </span>
-            <div style={{ display: 'flex', gap: 4 }}>
-              <button onClick={() => setPg(p => Math.max(1, p - 1))} disabled={pg === 1}
-                style={{ padding: '5px 10px', border: `1px solid ${B.border}`, borderRadius: 6, background: B.card, cursor: 'pointer', fontSize: 12, color: B.textMid, opacity: pg === 1 ? .4 : 1 }}><Icon name="chevronLeft" size={12} /> Prev</button>
-              {Array.from({ length: Math.min(pages, 4) }, (_, i) => i + 1).map(p => (
-                <button key={p} onClick={() => setPg(p)}
-                  style={{ width: 28, height: 28, border: '1px solid', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: p === pg ? B.green : '#fff', color: p === pg ? '#fff' : B.textMid, borderColor: p === pg ? B.green : B.border }}>
-                  {p}
-                </button>
-              ))}
-              <button onClick={() => setPg(p => Math.min(pages, p + 1))} disabled={pg === pages}
-                style={{ padding: '5px 10px', border: `1px solid ${B.border}`, borderRadius: 6, background: B.card, cursor: 'pointer', fontSize: 12, color: B.textMid, opacity: pg === pages ? .4 : 1 }}>Next <Icon name="forward" size={12} /></button>
-            </div>
-          </div>
-        )}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                        <StatusBadge s={f.status} held={isHeld(f)} />
+                        {f.project === 'HF' && f.branch && (
+                          <span style={{ fontSize: 11, fontWeight: 700, color: B.greenDark, background: B.greenLight, border: `1px solid ${B.border}`, borderRadius: 20, padding: '3px 9px' }}><Icon name="pin" size={10} /> {f.branch}</span>
+                        )}
+                        <span style={{ fontSize: 11, fontWeight: 700, color: B.goldDark, background: B.goldLight, borderRadius: 20, padding: '3px 9px' }}><Icon name="child" size={11} /> {kidsN} {kidsN === 1 ? 'child' : 'children'}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderTop: `1px solid ${B.greenLight}`, paddingTop: 11 }}>
+                        <div style={{ fontSize: 12, color: B.textMid, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Icon name="phone" size={12} />{f.phone_number || '—'}</div>
+                          {f.district && <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: B.textLight, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><Icon name="pin" size={12} />{f.district}</div>}
+                        </div>
+                        <span style={{ fontSize: 12, fontWeight: 800, color: B.green, display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>View <span className="fam-go" style={{ display: 'inline-flex' }}><Icon name="forward" size={13} /></span></span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              {shown < filtered.length && (
+                <div ref={sentinelRef} style={{ padding: '22px 0 6px', textAlign: 'center', color: B.textLight, fontSize: 12, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+                  <Icon name="spinner" size={16} spin /> Loading more…
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Mobile floating action button — thumb-reachable add */}
@@ -1387,7 +1306,8 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
                                       const file = e.target.files[0]
                                       const path = `${family.family_code}/child-${c.id.slice(0, 8)}-${docType.replace(/\s+/g, '-').toLowerCase()}.jpg`
                                       const url = await uploadFile({ supabase, file, bucket: BUCKETS.DOCUMENTS, path, type: 'document' })
-                                      await supabase.from('documents').insert({ family_id: family.id, child_id: c.id, document_type: docType, file_url: url, file_name: file.name, file_size_kb: Math.round(file.size / 1024) })
+                                      await supabase.from('documents').insert({ family_id: family.id, child_id: c.id, document_type: docType, file_url: url, file_name: file.name, file_size_kb: Math.round(file.size / 1024), uploaded_by: user?.id || null })
+                                      logActivity(user, 'document', `${user?.full_name || 'Someone'} uploaded ${docType} for ${c.child_name} (${family.mother_name})`, family.id)
                                       toast(`${docType} uploaded`)
                                       onDocUploaded()
                                     } catch (err) { toast(err.message, 'error') }
@@ -1428,7 +1348,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
     if (!joinEdit) return
     const { error } = await supabase.from('families').update({ joined_on: joinEdit }).eq('id', family.id)
     if (error) { toast(error.message + (/joined_on/.test(error.message) ? ' — run migration 006_case_visibility_tenure.sql' : ''), 'error'); return }
-    toast('Joined date updated'); setJoinEdit(null); onCaseChanged('edit')
+    logActivity(user, 'family', `${user?.full_name || 'Admin'} changed the joined date of ${family.mother_name} to ${joinEdit}`, family.id); toast('Joined date updated'); setJoinEdit(null); onCaseChanged('edit')
   }
   const tenureChip = (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 600 }}>
@@ -1451,6 +1371,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
         uploaded_by: user?.id || null,
       })
       if (error) throw error
+      logActivity(user, 'document', `${user?.full_name || 'Someone'} uploaded ${docType} for ${family.mother_name}`, family.id)
       toast(`${docType} uploaded`)
       onDocUploaded()
     } catch (e) { toast(e.message, 'error') }
@@ -1575,6 +1496,8 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
         )}
 
         {/* Stats badges */}
+        {/* Right column: stats + quick hold button */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flexShrink: 0, alignItems: isMobile ? 'stretch' : 'flex-end', width: isMobile ? '100%' : 'auto', alignSelf: isMobile ? 'auto' : 'stretch', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', gap: 10, flexShrink: 0, width: isMobile ? '100%' : 'auto' }}>
           {[{ n: kids.length, l: 'Children' }, { n: famDocs.length, l: 'Docs' }].map(s => (
             <div key={s.l} style={{
@@ -1587,6 +1510,8 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
               <div style={{ fontSize: 10, color: '#a5d6a7', marginTop: 2 }}>{s.l}</div>
             </div>
           ))}
+        </div>
+          {canHold && <HoldQuickButton family={family} user={user} toast={toast} onChanged={onCaseChanged} isMobile={isMobile} />}
         </div>
       </div>
 
@@ -1835,36 +1760,28 @@ function FamilyForm({ initial, defaultProject, defaultBranch, families = [], onS
         <div style={{ fontSize: 11, fontWeight: 700, color: '#4a6b4a', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}><Icon name="bank" size={13} /> Bank Information</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
           <div style={{ marginBottom: 14, gridColumn: '1 / -1' }}>
-  <FL>Bank</FL>
-  <div style={{ display: 'flex', gap: 10 }}>
-    {BANKS.map(b => ({ value: b.id, logo: b.logo, name: b.label })).map(b => (
-      <div
-        key={b.value}
-        onClick={() => s('bank')(b.value)}
-        style={{
-          flex: 1, borderRadius: 10, cursor: 'pointer', padding: '10px',
-          border: f.bank === b.value ? `2px solid ${B.green}` : `2px solid ${B.border}`,
-          background: f.bank === b.value ? B.greenLight : '#fafff9',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-          transition: 'all 0.15s',
-          boxShadow: f.bank === b.value ? `0 2px 10px rgba(30,125,34,0.2)` : 'none',
-        }}
-      >
-        <div style={{ width: '100%', height: 60, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, background: '#fff', overflow: 'hidden' }}>
-          <span style={{ position: 'absolute', fontSize: 15, fontWeight: 800, color: B.greenDark, letterSpacing: '0.02em' }}>{b.name}</span>
-          <img
-            src={b.logo} alt={b.name}
-            onError={e => { e.currentTarget.style.display = 'none' }}
-            style={{ position: 'relative', width: '100%', height: '100%', objectFit: 'contain', background: '#fff' }}
-          />
-        </div>
-        <div style={{ fontSize: 11, fontWeight: 700, color: f.bank === b.value ? B.green : B.textMid }}>
-          {f.bank === b.value && <Icon name="check" size={12} />}{' '}{b.name}
-        </div>
-      </div>
-    ))}
-  </div>
-</div>
+            <FL>Bank</FL>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              {BANKS.map(b => {
+                const on = f.bank === b.id
+                return (
+                  <button key={b.id} type="button" onClick={() => s('bank')(b.id)} aria-pressed={on}
+                    style={{
+                      flex: '1 1 96px', maxWidth: 150, cursor: 'pointer', fontFamily: 'inherit', padding: '10px 8px',
+                      borderRadius: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7,
+                      border: `2px solid ${on ? b.color : B.border}`,
+                      background: on ? b.color : B.card,
+                      color: on ? '#fff' : B.textMid,
+                      boxShadow: on ? `0 6px 16px ${b.color}55` : 'none',
+                      transform: on ? 'translateY(-2px)' : 'none', transition: 'all 0.18s',
+                    }}>
+                    <BankMark bank={b} size={44} ring={on} style={on ? { boxShadow: '0 0 0 3px rgba(255,255,255,0.9)' } : undefined} />
+                    <span style={{ fontSize: 12, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 4 }}>{on && <Icon name="check" size={12} />}{b.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
           <FI label="Account Number" value={f.account_number} onChange={s('account_number')} placeholder="1000XXXXXXXXX" />
         </div>
       </div>
@@ -2239,6 +2156,7 @@ function SettingsPage({ user, onUpdateUser, toast, isMobile, rates = DEFAULT_RAT
     setSavingRates(false)
     if (err) { toast('Could not save rates: ' + err.message + ' (run migration 004_payment_rates.sql)', 'error'); return }
     onRatesChange?.(next)
+    logActivity(user, 'settings', `${user?.full_name || 'Admin'} changed payment rates: mother ${next.mother.toLocaleString()} ETB, child ${next.child.toLocaleString()} ETB`)
     toast('Payment rates saved', 'success')
   }
 
@@ -2503,10 +2421,12 @@ export default function App() {
       if (editingFamily) {
         const { error } = await supabase.from('families').update(payload).eq('id', editingFamily.id)
         if (error) throw error
+        logActivity(user, 'family', `${user?.full_name || 'Someone'} updated the profile of ${form.mother_name}`, editingFamily.id)
         toast('Family updated')
       } else {
-        const { error } = await supabase.from('families').insert({ ...payload, created_by: session.user.id })
+        const { data: created, error } = await supabase.from('families').insert({ ...payload, created_by: session.user.id }).select('id').single()
         if (error) throw error
+        logActivity(user, 'family', `${user?.full_name || 'Someone'} registered a new family: ${form.mother_name} (${form.family_code})`, created?.id || null)
         toast('Family registered')
       }
       setShowFamilyForm(false)
@@ -2531,11 +2451,13 @@ export default function App() {
       if (editingChild) {
         const { error } = await supabase.from('children').update(payload).eq('id', editingChild.id)
         if (error) throw error
+        logActivity(user, 'family', `${user?.full_name || 'Someone'} updated child ${form.child_name} (${fam?.mother_name})`, famId)
         toast('Child updated')
       } else {
         const { data, error } = await supabase.from('children').insert(payload).select().single()
         if (error) throw error
         childId = data.id
+        logActivity(user, 'family', `${user?.full_name || 'Someone'} added child ${form.child_name} to ${fam?.mother_name}`, famId)
         toast('Child added')
       }
       const uploadDoc = async (file, docType) => {
@@ -2557,10 +2479,12 @@ export default function App() {
         const { error } = await supabase.from('families').delete().eq('id', confirmDelete.item.id)
         if (error) throw error
         if (page === 'detail') setPage(detailOrigin || 'dashboard')
+        logActivity(user, 'family', `${user?.full_name || 'Someone'} deleted family ${confirmDelete.item.mother_name} (${confirmDelete.item.family_code})`)
         toast('Family deleted', 'info')
       } else {
         const { error } = await supabase.from('children').delete().eq('id', confirmDelete.item.id)
         if (error) throw error
+        logActivity(user, 'family', `${user?.full_name || 'Someone'} removed child ${confirmDelete.item.child_name}`, confirmDelete.item.family_id)
         toast('Child removed', 'info')
       }
       setConfirmDelete(null)
@@ -2634,6 +2558,15 @@ export default function App() {
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
         @keyframes sheetUp { from { transform: translateY(100%) } to { transform: translateY(0) } }
         .toast-enter { animation: fadeIn 0.25s ease; }
+        .fam-card { position: relative; overflow: hidden; animation: fadeIn 0.4s ease both;
+          transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease; }
+        .fam-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+          background: linear-gradient(to right, var(--c-gold), var(--c-green)); transform: scaleX(0); transform-origin: left; transition: transform .3s ease; }
+        .fam-card:hover { transform: translateY(-5px); border-color: var(--c-green) !important; box-shadow: 0 16px 32px rgba(30,125,34,0.2); }
+        .fam-card:hover::before { transform: scaleX(1); }
+        .fam-card:active { transform: translateY(-2px) scale(.99); }
+        .fam-card .fam-go { transition: transform .22s ease; }
+        .fam-card:hover .fam-go { transform: translateX(5px); }
         @media (prefers-reduced-motion: reduce) {
           *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
         }
@@ -2663,7 +2596,7 @@ export default function App() {
 
       {/* Main content */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, paddingBottom: isMobile ? 'calc(54px + env(safe-area-inset-bottom))' : 0 }}>
-        <Header title={pageTitle} breadcrumb={breadcrumb} isMobile={isMobile} user={user} isDark={isDark} onToggleTheme={toggleTheme} />
+        <Header title={pageTitle} breadcrumb={breadcrumb} isMobile={isMobile} user={user} isDark={isDark} onToggleTheme={toggleTheme} onOpenFamily={id => { const f = families.find(x => x.id === id); if (f) openFamily(f) }} />
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {!allowed && (
             <div style={{ padding: '70px 20px', textAlign: 'center', color: B.textMid }}>

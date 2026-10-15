@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { B } from '../lib/theme'
 import { caseState, TRANSFER_CATEGORIES } from '../lib/settings'
 import Icon from '../components/Icon'
+import { logActivity } from '../lib/activity'
 
 const REASONS = {
   hold: ['Missing school certificate', 'Missing documents', 'Cannot be reached', 'Under review', 'Other'],
@@ -91,6 +92,8 @@ export default function FamilyStatusTab({ family, user, toast, onChanged, isMobi
       if (error) throw error
       const { error: e2 } = await supabase.from('family_status_log').insert({ family_id: family.id, action, from_state: cs, to_state: a.to, reason, reason_category: category, by_user: user?.id || null, by_name: signer })
       if (e2) throw e2
+      const verb = { hold: 'put', release: 'released the hold on', transfer: 'transferred out', restore: 'restored' }[action]
+      logActivity(user, 'case', `${signer} ${verb} ${family.mother_name}${action === 'hold' ? ' on hold' : ''} — ${reason}`, family.id)
       toast(`${a.past}: ${family.mother_name}`)
       setDialog(null)
       await onChanged(action)
@@ -191,5 +194,63 @@ export default function FamilyStatusTab({ family, user, toast, onChanged, isMobi
         />
       )}
     </div>
+  )
+}
+
+// Quick hold / release button for the family hero card (admin + director).
+export function HoldQuickButton({ family, user, toast, onChanged, isMobile }) {
+  const cs = caseState(family)
+  const [dialog, setDialog] = useState(null)
+  const [busy, setBusy] = useState(false)
+  if (cs === 'transferred') return null
+  const action = cs === 'on_hold' ? 'release' : 'hold'
+  const a = ACTIONS[action]
+  const signer = user?.full_name || user?.email || 'Admin'
+
+  const run = async ({ cat, note }) => {
+    const reason = joinReason(cat, note)
+    const category = action === 'hold' ? cat : null
+    setBusy(true)
+    try {
+      const { error } = await supabase.from('families').update({ case_state: a.to, case_reason: reason, case_category: category, case_changed_at: new Date().toISOString(), case_changed_by_name: signer }).eq('id', family.id)
+      if (error) throw error
+      const { error: e2 } = await supabase.from('family_status_log').insert({ family_id: family.id, action, from_state: cs, to_state: a.to, reason, reason_category: category, by_user: user?.id || null, by_name: signer })
+      if (e2) throw e2
+      logActivity(user, 'case', `${signer} ${action === 'hold' ? 'put' : 'released the hold on'} ${family.mother_name}${action === 'hold' ? ' on hold' : ''} — ${reason}`, family.id)
+      toast(`${a.past}: ${family.mother_name}`)
+      setDialog(null)
+      await onChanged(action)
+    } catch (e) { toast(e.message + (/case_state|status_log/.test(e.message) ? ' — run migrations 005 and 006' : ''), 'error') }
+    finally { setBusy(false) }
+  }
+
+  const holding = action === 'hold'
+  return (
+    <>
+      <button onClick={() => setDialog(true)} aria-label={a.label}
+        style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', fontFamily: 'inherit',
+          width: isMobile ? '100%' : 'auto', padding: '9px 18px', borderRadius: 24, fontSize: 13, fontWeight: 800, letterSpacing: '0.01em',
+          color: '#fff', border: '1px solid rgba(255,255,255,0.35)', backdropFilter: 'blur(6px)',
+          background: holding ? 'linear-gradient(135deg, rgba(245,168,0,0.95), rgba(230,120,0,0.95))' : 'linear-gradient(135deg, rgba(46,158,51,0.95), rgba(30,125,34,0.95))',
+          boxShadow: holding ? '0 6px 18px rgba(245,140,0,0.45)' : '0 6px 18px rgba(30,125,34,0.5)',
+          textShadow: '0 1px 2px rgba(0,0,0,0.3)', transition: 'transform .18s ease, box-shadow .18s ease',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)' }}
+        onMouseLeave={e => { e.currentTarget.style.transform = 'none' }}>
+        <span style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(255,255,255,0.25)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+          {holding
+            ? <svg width="11" height="11" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><rect x="5" y="4" width="5" height="16" rx="1.5" /><rect x="14" y="4" width="5" height="16" rx="1.5" /></svg>
+            : <Icon name="check" size={13} />}
+        </span>
+        {holding ? 'Put on hold' : 'Release hold'}
+      </button>
+      {dialog && (
+        <ReasonDialog
+          title={`${a.label} — ${family.mother_name}`} info={a.info} categories={REASONS[action]}
+          busy={busy} confirmLabel={a.label} onCancel={() => setDialog(null)} onSave={run}
+        />
+      )}
+    </>
   )
 }
