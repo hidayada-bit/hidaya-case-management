@@ -167,10 +167,10 @@ update public.users set role='admin', status='approved' where email = 'you@examp
 | Role | Can do |
 |------|--------|
 | Administrator | Everything, approves staff and assigns roles |
-| Director | View everything incl. payments (read-only) |
+| Director | View everything incl. payments and data collector submissions; send messages; put families on hold |
 | Finance | Record payments, bank lists, view beneficiaries |
-| Project Coordinator | Add/edit beneficiaries, academics, messaging, view payments |
-| Data Collector | Add/edit beneficiaries and documents |
+| Project Coordinator | Add/edit beneficiaries, academics, messaging, view payments, see data collector submissions |
+| Data Collector | Register families for approval (cannot see stored data); edit own submissions until approved |
 
 To change what a role can do, edit `src/lib/permissions.js` (screens) and the policies in the migration (database).
 
@@ -190,6 +190,21 @@ Run `supabase/migrations/005_family_case_state.sql` once. Admins get a **Status*
 - **Put on hold** – stays in the family list, removed from the bank list, shown *unpaid* on the payment list.
 - **Transfer out** – removed from families, bank list and payment list; moves to the admin-only **Transferred** page with its history.
 - Every action asks for a reason and is signed with the admin's name; admins can edit the reason later.
+
+## ✅ Data collector approval (migration 008 — run after 007)
+Run `supabase/migrations/008_collector_approval.sql` once. Then:
+- A **data collector** registers a family (and its children/documents). It is saved as *pending* with a temporary code
+  (`PENDING-xxxxxxxx`) — no real Family ID or Roll Number yet.
+- The collector's menu is **Register** and **My Submissions** (+ Settings). They only see their own submissions with a
+  status: *Waiting for approval*, *Returned — please fix* (with the admin's reason) or *Approved* (locked: name, date, status only).
+  They cannot open families, payments, bank lists or stats.
+- **Approvals** (sidebar, red counter = pending): visible to Administrator, Director and Project Coordinator. Submissions are
+  grouped by collector with their branches. Possible duplicates (same National ID / phone / account number) are flagged.
+- Only the **Administrator** can *Approve*, *Return* (with a reason) or *Approve all* from a collector. Approval assigns the real
+  Family Code / Roll Number in the database (`HF/0001/26`, roll `0001`), so two collectors can never clash.
+- Pending and returned families are **not** in Families, Payments, Bank List, Stats or reports until approved.
+- Once approved, the collector can no longer read or change the family (enforced by the database, not only the screen).
+- Administrator and Project Coordinator registrations skip approval. Everything that existed before the migration is marked approved.
 
 ## ✉️ Removing the "email rate limit exceeded" error
 This limit is enforced by Supabase, not by the app, so it must be changed in the Supabase dashboard:

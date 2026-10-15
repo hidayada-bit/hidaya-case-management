@@ -40,6 +40,9 @@ export const isPayingChild = c => { const a = ageOf(c.date_of_birth); return a =
 // 'under' | 'over' | null — why a child is not in the payment (null = eligible by age)
 export const ageExclusion = c => { const a = ageOf(c.date_of_birth); return a == null ? null : a < MIN_PAYING_AGE ? 'under' : a > MAX_PAYING_AGE ? 'over' : null }
 
+// Data collector submissions: 'pending' | 'returned' | 'approved' (missing column / old rows => approved)
+export const submissionState = f => f?.submission_status || 'approved'
+
 // Family case state: 'normal' | 'on_hold' | 'transferred' (missing column => normal)
 export const caseState = f => f?.case_state || 'normal'
 

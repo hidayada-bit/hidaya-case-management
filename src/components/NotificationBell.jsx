@@ -3,8 +3,8 @@ import { supabase } from '../lib/supabase'
 import { B } from '../lib/theme'
 import Icon from './Icon'
 
-const ICON = { family: 'users', document: 'attach', payment: 'wallet', bank: 'bank', case: 'pending', settings: 'settings', general: 'info' }
-const COLOR = { family: B.green, document: B.infoText, payment: B.okText, bank: B.goldDark, case: B.orange, settings: B.textMid, general: B.textMid }
+const ICON = { submission: 'clipboard', family: 'users', document: 'attach', payment: 'wallet', bank: 'bank', case: 'pending', settings: 'settings', general: 'info' }
+const COLOR = { submission: B.goldDark, family: B.green, document: B.infoText, payment: B.okText, bank: B.goldDark, case: B.orange, settings: B.textMid, general: B.textMid }
 
 const ago = d => {
   const s = Math.max(0, Math.floor((Date.now() - new Date(d)) / 1000))

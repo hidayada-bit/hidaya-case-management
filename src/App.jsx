@@ -6,13 +6,15 @@ import BankListPage from './pages/BankListPage'
 import FamilyPaymentsTab from './pages/FamilyPaymentsTab'
 import FamilyStatusTab, { HoldQuickButton } from './pages/FamilyStatusTab'
 import ArchivePage from './pages/ArchivePage'
+import ApprovalsPage from './pages/ApprovalsPage'
+import MySubmissionsPage from './pages/MySubmissionsPage'
 import BankPicker from './components/BankPicker'
-import { DEFAULT_RATES, loadRates, saveRates, monthlyFor, isPayingChild, ageExclusion, cappedChildren, caseState, MIN_PAYING_AGE, MAX_PAYING_AGE, MAX_PAYING_CHILDREN, joinedDate, enrollmentFromNotes, tenureText } from './lib/settings'
+import { DEFAULT_RATES, loadRates, saveRates, monthlyFor, isPayingChild, ageExclusion, cappedChildren, caseState, submissionState, MIN_PAYING_AGE, MAX_PAYING_AGE, MAX_PAYING_CHILDREN, joinedDate, enrollmentFromNotes, tenureText } from './lib/settings'
 import PaymentsPage from './pages/PaymentsPage'
 import UsersPage from './pages/UsersPage'
 import { LoginPage, SignupPage, AccessGate } from './pages/AuthPages'
 import Icon from './components/Icon'
-import { can, canOpenPage, roleLabel } from './lib/permissions'
+import { can, canOpenPage, roleLabel, homePage } from './lib/permissions'
 import { B, useTheme } from './lib/theme'
 import NotificationBell from './components/NotificationBell'
 import { logActivity } from './lib/activity'
@@ -461,6 +463,9 @@ const NAV = [
   { id: 'dashboard', label: 'Home',      icon: 'dashboard' },
   { id: 'projects',  label: 'Projects',  icon: 'folder' },
   { id: 'families',  label: 'Families',  icon: 'users' },
+  { id: 'approvals', label: 'Approvals', icon: 'approve' },
+  { id: 'register',  label: 'Register',  icon: 'userPlus' },
+  { id: 'mysubs',    label: 'My Submissions', icon: 'clipboard' },
   { id: 'payments',  label: 'Payments',  icon: 'wallet' },
   { id: 'messaging', label: 'Messages',  icon: 'message' },
   { id: 'analytics', label: 'Stats',     icon: 'chart' },
@@ -748,7 +753,7 @@ function BranchesPage({ families, onOpenBranch, onBack, isMobile }) {
   )
 }
 
-function MobileBottomNav({ page, setPage, role }) {
+function MobileBottomNav({ page, setPage, role, badges = {} }) {
   const activePage = page === 'detail' ? 'families' : ['projects', 'branches', 'project-detail'].includes(page) ? 'projects' : page
   return (
     <nav className="mobile-nav-scroll" style={{
@@ -776,7 +781,10 @@ function MobileBottomNav({ page, setPage, role }) {
               transition: 'all 0.15s', touchAction: 'manipulation',
             }}
           >
-            <Icon name={item.icon} size={17} color={active ? B.gold : '#6b9c6b'} />
+            <span style={{ position: 'relative', display: 'inline-flex' }}>
+              <Icon name={item.icon} size={17} color={active ? B.gold : '#6b9c6b'} />
+              {badges[item.id] > 0 && <span style={{ position: 'absolute', top: -5, right: -9, minWidth: 15, height: 15, padding: '0 4px', borderRadius: 8, background: '#dc2626', color: '#fff', fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{badges[item.id]}</span>}
+            </span>
             <span style={{
               fontSize: 9, fontWeight: active ? 700 : 500, color: active ? B.gold : '#6b9c6b',
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%',
@@ -791,7 +799,7 @@ function MobileBottomNav({ page, setPage, role }) {
 }
 
 // ─── SIDEBAR ─────────────────────────────────────────────────────────────────
-function Sidebar({ page, setPage, collapsed, setCollapsed, user, onSignOut, role }) {
+function Sidebar({ page, setPage, collapsed, setCollapsed, user, onSignOut, role, badges = {} }) {
   const activePage = page === 'detail' ? 'families' : ['projects', 'branches', 'project-detail'].includes(page) ? 'projects' : page
   return (
     <aside style={{
@@ -854,13 +862,17 @@ function Sidebar({ page, setPage, collapsed, setCollapsed, user, onSignOut, role
               onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
               onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
             >
-              <Icon name={item.icon} size={18} color={active ? B.gold : '#81c784'} />
+              <span style={{ position: 'relative', display: 'inline-flex' }}>
+                <Icon name={item.icon} size={18} color={active ? B.gold : '#81c784'} />
+                {collapsed && badges[item.id] > 0 && <span style={{ position: 'absolute', top: -6, right: -8, minWidth: 15, height: 15, padding: '0 4px', borderRadius: 8, background: '#dc2626', color: '#fff', fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{badges[item.id]}</span>}
+              </span>
               {!collapsed && (
                 <span style={{
                   fontSize: 13, fontWeight: active ? 700 : 500,
-                  color: active ? B.gold : '#a5d6a7',
+                  color: active ? B.gold : '#a5d6a7', flex: 1, textAlign: 'left',
                 }}>{item.label}</span>
               )}
+              {!collapsed && badges[item.id] > 0 && <span style={{ minWidth: 20, height: 20, padding: '0 6px', borderRadius: 10, background: '#dc2626', color: '#fff', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{badges[item.id]}</span>}
             </button>
           )
         })}
@@ -1291,7 +1303,7 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
                     </div>
                     <div style={{ display: 'flex', gap: 8, flexShrink: 0, width: isMobile ? '100%' : 'auto' }}>
                       {canEdit && <Btn onClick={() => onEditChild(c)} variant="secondary" size="sm" full={isMobile}><Icon name="edit" size={14} />{!isMobile && 'Edit'}</Btn>}
-                      {canDelete && <Btn onClick={() => onDeleteChild(c)} variant="danger" size="sm" full={isMobile}><Icon name="trash" size={14} />{!isMobile && 'Delete'}</Btn>}
+                      {(canDelete || canRemoveChild) && <Btn onClick={() => onDeleteChild(c)} variant="danger" size="sm" full={isMobile}><Icon name="trash" size={14} />{!isMobile && 'Delete'}</Btn>}
                     </div>
                   </div>
                   <div style={{ background: B.greenLight, borderRadius: 10, padding: '12px 14px' }}>
@@ -1345,7 +1357,7 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
 }
 
 // ─── FAMILY DETAIL PAGE ───────────────────────────────────────────────────────
-function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, onDeleteFamily, onAddChild, onEditChild, onDeleteChild, toast, onDocUploaded, isMobile, canEdit = true, canDelete = true, canViewPayments = false, canManagePayments = false, user = null, isAdmin = false, rates = DEFAULT_RATES, staffNames = {}, onCaseChanged = () => {}, canSeeCase = false, canHold = false }) {
+function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, onDeleteFamily, onAddChild, onEditChild, onDeleteChild, toast, onDocUploaded, isMobile, canEdit = true, canDelete = true, canViewPayments = false, canManagePayments = false, user = null, isAdmin = false, rates = DEFAULT_RATES, staffNames = {}, onCaseChanged = () => {}, canSeeCase = false, canHold = false, canRemoveChild = false }) {
   const kids = allChildren.filter(c => c.family_id === family.id)
   const payingKids = kids.filter(isPayingChild)
   const cState = caseState(family)
@@ -1424,6 +1436,14 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
         <StatusBadge s={family.status} held={canSeeCase && cState === 'on_hold'} />
         {canSeeCase && cState === 'transferred' && <span style={{ background: B.errBg, color: B.errText, padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700 }}>Transferred</span>}
       </div>
+
+      {submissionState(family) !== 'approved' && (
+        <div style={{ background: submissionState(family) === 'returned' ? B.errBg : B.goldLight, color: submissionState(family) === 'returned' ? B.errText : B.warnText, border: `1px solid ${submissionState(family) === 'returned' ? B.errBorder : B.goldBorder}`, borderRadius: 12, padding: '10px 14px', marginBottom: 14, fontSize: 13, lineHeight: 1.5 }}>
+          {submissionState(family) === 'returned'
+            ? <><b>Returned for correction.</b> {family.return_reason && <><br /><b>To fix:</b> {family.return_reason}</>}<br />Edit what is needed — saving sends it back to the administrator.</>
+            : <><b>Waiting for approval.</b> Sent by {staffNames[family.submitted_by] || 'a data collector'}{family.submitted_at ? ` on ${new Date(family.submitted_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}` : ''}. It is not in the family, payment or bank lists until the administrator approves it.</>}
+        </div>
+      )}
 
       {canSeeCase && cState !== 'normal' && (
         <div style={{ background: cState === 'on_hold' ? B.goldLight : B.errBg, color: cState === 'on_hold' ? B.warnText : B.errText, border: `1px solid ${cState === 'on_hold' ? B.goldBorder : B.errBorder}`, borderRadius: 12, padding: '10px 14px', marginBottom: 14, fontSize: 13, lineHeight: 1.5 }}>
@@ -1717,12 +1737,13 @@ function nextIdsForProject(families, project) {
 }
 
 // ─── FAMILY FORM ─────────────────────────────────────────────────────────────
-function FamilyForm({ initial, defaultProject, defaultBranch, families = [], onSave, onCancel, saving }) {
+function FamilyForm({ initial, defaultProject, defaultBranch, families = [], onSave, onCancel, saving, isCollector = false }) {
   const isNew = !initial
   const [f, setF] = useState(() => {
     if (initial) return initial
     const startProject = defaultProject || 'HF'
-    const ids = nextIdsForProject(families, startProject)
+    // Data collectors never get a real ID: it is assigned by the database when the administrator approves.
+    const ids = isCollector ? { family_code: `PENDING-${Math.random().toString(16).slice(2, 10)}`, roll_number: '' } : nextIdsForProject(families, startProject)
     return { family_code: ids.family_code, roll_number: ids.roll_number, mother_name: '', mother_id_number: '', phone_number: '', alternate_phone: '', address: '', city: 'Addis Ababa', district: '', notes: '', status: 'active', mother_photo_url: null, project: startProject, branch: defaultBranch || '', bank: '', account_number: '', monthly_support: '' }
   })
   const [photoFile, setPhotoFile] = useState(null)
@@ -1732,7 +1753,7 @@ function FamilyForm({ initial, defaultProject, defaultBranch, families = [], onS
   const handleProjectChange = v => {
     setF(x => {
       const next = { ...x, project: v, branch: v === 'OVC' ? '' : x.branch }
-      if (isNew) {
+      if (isNew && !isCollector) {
         const ids = nextIdsForProject(families, v)
         next.family_code = ids.family_code
         next.roll_number = ids.roll_number
@@ -1758,7 +1779,7 @@ function FamilyForm({ initial, defaultProject, defaultBranch, families = [], onS
         {f.project === 'HF' && (
           <FS label="Branch" value={f.branch} onChange={s('branch')} options={[{ value: '', label: 'Select branch…' }, ...HF_BRANCHES.map(b => ({ value: b, label: b }))]} />
         )}
-        <FI label="Family Code (system-generated)" value={f.family_code} disabled req />
+        <FI label={isCollector ? 'Family Code' : 'Family Code (system-generated)'} value={isCollector ? 'Assigned after approval' : f.family_code} disabled req />
         <FI label="Mother Full Name" value={f.mother_name} onChange={s('mother_name')} placeholder="Full name" req />
         <FI label="National ID Number" value={f.mother_id_number} onChange={s('mother_id_number')} placeholder="123-456-789" />
         <FI label="Phone Number" value={f.phone_number} onChange={s('phone_number')} type="tel" placeholder="0911-000-000" req />
@@ -1768,7 +1789,7 @@ function FamilyForm({ initial, defaultProject, defaultBranch, families = [], onS
       </div>
       <FT label="Full Address" value={f.address} onChange={s('address')} placeholder="Street, Kebele, Woreda…" />
       <FT label="Case Notes" value={f.notes} onChange={s('notes')} placeholder="Any relevant notes…" />
-      <FS label="Status" value={f.status} onChange={s('status')} options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }, { value: 'pending', label: 'Pending' }]} />
+      {!isCollector && <FS label="Status" value={f.status} onChange={s('status')} options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }, { value: 'pending', label: 'Pending' }]} />}
       {/* Bank Info */}
       <BankPicker bank={f.bank} account={f.account_number} onBank={s('bank')} onAccount={s('account_number')} />
       <div style={{
@@ -1777,7 +1798,7 @@ function FamilyForm({ initial, defaultProject, defaultBranch, families = [], onS
       }}>
         <Btn onClick={onCancel} variant="secondary" disabled={saving} full={isMobile}>Cancel</Btn>
         <Btn onClick={() => onSave(f, photoFile)} disabled={saving} variant="primary" full={isMobile}>
-          {saving ? 'Saving…' : <><Icon name="save" size={16} />Save Family</>}
+          {saving ? 'Saving…' : <><Icon name="save" size={16} />{isCollector ? (isNew ? 'Submit for approval' : 'Save & resubmit') : 'Save Family'}</>}
         </Btn>
       </div>
     </div>
@@ -2249,6 +2270,7 @@ export default function App() {
   const [families, setFamilies] = useState([])
   const [children, setChildren] = useState([])
   const [docs, setDocs] = useState([])
+  const [mySubs, setMySubs] = useState([]) // data collector: their own submissions (name / branch / status only)
   const [dataLoading, setDataLoading] = useState(true)
   const [checking, setChecking] = useState(false)
 
@@ -2263,6 +2285,7 @@ export default function App() {
   const { toasts, show: toast } = useToast()
 
   const handleSetPage = useCallback((p) => {
+    if (p === 'register') { setEditingFamily(null); setShowFamilyForm(true); p = 'mysubs' } // data collector shortcut
     setPage(p)
     setSelectedFamily(null)
     setSelectedProject(null)
@@ -2310,6 +2333,11 @@ export default function App() {
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
   }, [])
+
+  // A data collector has no dashboard: land on My Submissions
+  useEffect(() => {
+    if (user?.status === 'approved' && homePage(user.role) !== 'dashboard' && page === 'dashboard') setPage(homePage(user.role))
+  }, [user?.id, user?.role, user?.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Collapse sidebar on tablet automatically
   useEffect(() => { setCollapsed(isTablet) }, [isTablet])
@@ -2380,6 +2408,10 @@ export default function App() {
       setFamilies(fams || [])
       setChildren(kids || [])
       setDocs(docData || [])
+      if (user?.role === 'data_collector') {
+        const { data: mine } = await supabase.from('my_submissions').select('*').order('submitted_at', { ascending: false })
+        setMySubs(mine || [])
+      }
     } catch (e) { toast('Failed to load data: ' + e.message, 'error') }
     finally { setDataLoading(false) }
   }
@@ -2391,12 +2423,14 @@ export default function App() {
 
   const signOut = async () => {
     await supabase.auth.signOut()
-    setFamilies([]); setChildren([]); setDocs([])
+    setFamilies([]); setChildren([]); setDocs([]); setMySubs([])
   }
 
   const saveFamily = async (form, photoFile) => {
     if (!form.family_code || !form.mother_name) { toast('Family code and mother name are required', 'error'); return }
+    if (isCollector && form.project === 'HF' && !form.branch) { toast('Please choose the branch', 'error'); return }
     setSaving(true)
+    let newFamilyId = null
     try {
       let mother_photo_url = form.mother_photo_url
       if (photoFile) {
@@ -2407,16 +2441,29 @@ export default function App() {
       if (editingFamily) {
         const { error } = await supabase.from('families').update(payload).eq('id', editingFamily.id)
         if (error) throw error
-        logActivity(user, 'family', `${user?.full_name || 'Someone'} updated the profile of ${form.mother_name}`, editingFamily.id)
-        toast('Family updated')
+        if (isCollector) {
+          logActivity(user, 'submission', `${user?.full_name || 'A data collector'} ${submissionState(editingFamily) === 'returned' ? 'corrected and resubmitted' : 'updated'} ${form.mother_name} (${form.project}${form.branch ? ' · ' + form.branch : ''}) — waiting for approval`, editingFamily.id)
+          toast(submissionState(editingFamily) === 'returned' ? 'Resubmitted for approval' : 'Submission updated')
+        } else {
+          logActivity(user, 'family', `${user?.full_name || 'Someone'} updated the profile of ${form.mother_name}`, editingFamily.id)
+          toast('Family updated')
+        }
       } else {
         const { data: created, error } = await supabase.from('families').insert({ ...payload, created_by: session.user.id }).select('id').single()
         if (error) throw error
-        logActivity(user, 'family', `${user?.full_name || 'Someone'} registered a new family: ${form.mother_name} (${form.family_code})`, created?.id || null)
-        toast('Family registered')
+        if (isCollector) {
+          logActivity(user, 'submission', `${user?.full_name || 'A data collector'} sent a new family for approval: ${form.mother_name} (${form.project}${form.branch ? ' · ' + form.branch : ''})`, created?.id || null)
+          toast('Submitted for approval — now add the children')
+        } else {
+          logActivity(user, 'family', `${user?.full_name || 'Someone'} registered a new family: ${form.mother_name} (${form.family_code})`, created?.id || null)
+          toast('Family registered')
+        }
+        newFamilyId = created?.id || null
       }
       setShowFamilyForm(false)
       await loadAll()
+      // a data collector continues straight to the children / documents of the family they just sent
+      if (isCollector && newFamilyId) { setDetailOrigin('mysubs'); setSelectedFamily({ id: newFamilyId, mother_name: form.mother_name }); setPage('detail') }
     } catch (e) { toast(e.message, 'error') }
     finally { setSaving(false) }
   }
@@ -2506,22 +2553,32 @@ export default function App() {
 
   const role = user.role
   // Lists: transferred families are hidden everywhere except the admin-only Transferred page.
-  const liveFamilies = families.filter(f => caseState(f) !== 'transferred')
-  const transferredFamilies = families.filter(f => caseState(f) === 'transferred')
+  // Data collector submissions that are not approved yet stay out of EVERY list (families, payments, bank list, stats).
+  const approvedFamilies = families.filter(f => submissionState(f) === 'approved')
+  const liveFamilies = approvedFamilies.filter(f => caseState(f) !== 'transferred')
+  const transferredFamilies = approvedFamilies.filter(f => caseState(f) === 'transferred')
+  const openSubmissions = families.filter(f => submissionState(f) !== 'approved') // pending + returned
+  const approvedIds = new Set(approvedFamilies.map(f => f.id))
+  const liveChildren = children.filter(c => approvedIds.has(c.family_id))
+  const pendingCount = families.filter(f => submissionState(f) === 'pending').length
+  const navBadges = can(role, 'view_approvals') ? { approvals: pendingCount } : {}
   // Families on hold keep their profile but are removed from the bank list.
   // Only children aged 18 or under are counted in the payment amount.
-  const childCounts = Object.fromEntries(Object.entries(children.filter(isPayingChild).reduce((m, c) => { m[c.family_id] = (m[c.family_id] || 0) + 1; return m }, {})).map(([id, n]) => [id, cappedChildren(n)])) // max 4 per family
+  const childCounts = Object.fromEntries(Object.entries(liveChildren.filter(isPayingChild).reduce((m, c) => { m[c.family_id] = (m[c.family_id] || 0) + 1; return m }, {})).map(([id, n]) => [id, cappedChildren(n)])) // max 4 per family
   const canEdit = can(role, 'edit_families')
   const canDelete = can(role, 'delete_families')
+  const isCollector = role === 'data_collector'
+  const openFam = page === 'detail' && selectedFamily ? (families.find(f => f.id === selectedFamily.id) || selectedFamily) : null
+  const canEditDetail = canEdit || (isCollector && !!openFam && submissionState(openFam) !== 'approved')
   const pageKey = ['detail', 'project-detail', 'branches'].includes(page) ? 'families' : page
   const allowed = canOpenPage(role, pageKey)
 
   const breadcrumb = page === 'detail' && selectedFamily
-    ? [detailOrigin === 'archive' ? 'Transferred' : 'Families', selectedFamily.mother_name]
+    ? [{ archive: 'Transferred', approvals: 'Approvals', mysubs: 'My Submissions' }[detailOrigin] || 'Families', selectedFamily.mother_name]
     : page === 'project-detail'
       ? selectedProject === 'HF' ? ['Projects', 'HF', selectedBranch] : ['Projects', 'OVC']
       : page === 'branches' ? ['Projects', 'HF'] : null
-  const pageTitle = { dashboard: 'Dashboard', detail: 'Family Details', analytics: 'Statistics', academics: 'Academics', settings: 'Settings', projects: 'Projects', branches: 'HF Branches', 'project-detail': 'Beneficiaries', messaging: 'Send Message', banklist: 'Bank List', payments: 'Payments', archive: 'Transferred Families', users: 'Staff & Access' }[page]
+  const pageTitle = { dashboard: 'Dashboard', detail: 'Family Details', analytics: 'Statistics', academics: 'Academics', settings: 'Settings', projects: 'Projects', branches: 'HF Branches', 'project-detail': 'Beneficiaries', messaging: 'Send Message', banklist: 'Bank List', approvals: 'Approvals', mysubs: 'My Submissions', payments: 'Payments', archive: 'Transferred Families', users: 'Staff & Access' }[page]
 
   return (
     <div style={{
@@ -2569,8 +2626,9 @@ export default function App() {
       {/* Sidebar — hidden on mobile */}
       {!isMobile && (
         <Sidebar
-          page={page === 'detail' ? (detailOrigin === 'archive' ? 'archive' : 'families') : page}
+          page={page === 'detail' ? (['archive', 'approvals', 'mysubs'].includes(detailOrigin) ? detailOrigin : 'families') : page}
           setPage={handleSetPage}
+          badges={navBadges}
           collapsed={collapsed}
           setCollapsed={setCollapsed}
           user={user}
@@ -2592,7 +2650,7 @@ export default function App() {
           )}
           {allowed && (page === 'dashboard' || page === 'families') && (
             <DashboardPage
-              families={liveFamilies} children={children} loading={dataLoading} transferredCount={can(role, 'view_case_status') ? transferredFamilies.length : null}
+              families={liveFamilies} children={liveChildren} loading={dataLoading} transferredCount={can(role, 'view_case_status') ? transferredFamilies.length : null}
               onView={openFamily}
               onAdd={() => { setEditingFamily(null); setShowFamilyForm(true) }}
               isMobile={isMobile} isTablet={isTablet} canEdit={canEdit} showCase={can(role, 'view_case_status')}
@@ -2615,7 +2673,7 @@ export default function App() {
           {allowed && page === 'project-detail' && (
             <DashboardPage
               families={liveFamilies.filter(f => f.project === selectedProject && (selectedProject === 'OVC' || f.branch === selectedBranch))}
-              children={children} loading={dataLoading}
+              children={liveChildren} loading={dataLoading}
               onView={openFamily}
               onAdd={() => { setEditingFamily(null); setShowFamilyForm(true) }}
               isMobile={isMobile} isTablet={isTablet} canEdit={canEdit} showCase={can(role, 'view_case_status')}
@@ -2635,15 +2693,28 @@ export default function App() {
               onEditChild={c => { setEditingChild(c); setChildFamilyId(c.family_id); setShowChildForm(true) }}
               onDeleteChild={c => setConfirmDelete({ type: 'child', item: c })}
               toast={toast} onDocUploaded={reloadDocs}
-              isMobile={isMobile} canEdit={canEdit} canDelete={canDelete}
+              isMobile={isMobile} canEdit={canEditDetail} canDelete={canDelete} canRemoveChild={isCollector}
               canViewPayments={can(role, 'view_payments')} canManagePayments={can(role, 'manage_payments')} user={user} isAdmin={role === 'admin'} rates={rates}
             />
           )}
-          {allowed && page === 'analytics' && <AnalyticsPage families={liveFamilies} children={children} isMobile={isMobile} />}
-          {allowed && page === 'academics' && <AcademicsPage children={children} isMobile={isMobile} />}
+          {allowed && page === 'analytics' && <AnalyticsPage families={liveFamilies} children={liveChildren} isMobile={isMobile} />}
+          {allowed && page === 'academics' && <AcademicsPage children={liveChildren} isMobile={isMobile} />}
           {allowed && page === 'messaging' && <MessagingPage families={liveFamilies} isMobile={isMobile} />}
           {allowed && page === 'banklist' && <BankListPage families={liveFamilies} childCounts={childCounts} rates={rates} user={user} isAdmin={role === 'admin'} toast={toast} isMobile={isMobile} />}
-          {allowed && page === 'payments' && <PaymentsPage allChildren={children} families={liveFamilies} staffNames={staffNames} childCounts={childCounts} rates={rates} user={user} canManage={can(role, 'manage_payments')} toast={toast} isMobile={isMobile} />}
+          {allowed && page === 'payments' && <PaymentsPage allChildren={liveChildren} families={liveFamilies} staffNames={staffNames} childCounts={childCounts} rates={rates} user={user} canManage={can(role, 'manage_payments')} toast={toast} isMobile={isMobile} />}
+          {allowed && page === 'approvals' && (
+            <ApprovalsPage
+              families={families} children={children} staffNames={staffNames}
+              canApprove={can(role, 'approve_submissions')} user={user} toast={toast}
+              onOpen={openFamily} onChanged={loadAll} isMobile={isMobile}
+            />
+          )}
+          {allowed && page === 'mysubs' && (
+            <MySubmissionsPage
+              submissions={mySubs} openFamilies={openSubmissions} loading={dataLoading}
+              onOpen={openFamily} onRegister={() => { setEditingFamily(null); setShowFamilyForm(true) }} isMobile={isMobile}
+            />
+          )}
           {allowed && page === 'archive' && <ArchivePage families={transferredFamilies} onView={openFamily} isMobile={isMobile} />}
           {allowed && page === 'users' && <UsersPage currentUser={user} toast={toast} isMobile={isMobile} />}
           {allowed && page === 'settings' && (
@@ -2655,15 +2726,16 @@ export default function App() {
       {/* Mobile bottom navigation */}
       {isMobile && (
         <MobileBottomNav
-          page={page}
+          page={page === 'detail' && ['approvals', 'mysubs', 'archive'].includes(detailOrigin) ? detailOrigin : page}
           setPage={handleSetPage}
           role={role}
+          badges={navBadges}
         />
       )}
 
       {/* Modals */}
-      <Modal open={showFamilyForm} onClose={() => !saving && setShowFamilyForm(false)} title={editingFamily ? 'Edit Family' : 'Register New Family'} width={640}>
-        <FamilyForm initial={editingFamily} defaultProject={selectedProject} defaultBranch={selectedBranch} families={families} onSave={saveFamily} onCancel={() => setShowFamilyForm(false)} saving={saving} />
+      <Modal open={showFamilyForm} onClose={() => !saving && setShowFamilyForm(false)} title={editingFamily ? (isCollector ? 'Edit Submission' : 'Edit Family') : (isCollector ? 'Register Family (needs approval)' : 'Register New Family')} width={640}>
+        <FamilyForm key={editingFamily?.id || (showFamilyForm ? 'new' : 'closed')} isCollector={isCollector} initial={editingFamily} defaultProject={selectedProject} defaultBranch={selectedBranch} families={families} onSave={saveFamily} onCancel={() => setShowFamilyForm(false)} saving={saving} />
       </Modal>
 
       <Modal open={showChildForm} onClose={() => !saving && setShowChildForm(false)} title={editingChild ? 'Edit Child' : 'Add Child'} width={560}>
