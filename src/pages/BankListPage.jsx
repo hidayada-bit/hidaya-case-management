@@ -110,20 +110,39 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
   const [busy, setBusy] = useState(false)
   const [issued, setIssued] = useState(null) // { ref, month } once a bank letter has been issued
   const totalAmount = filtered.reduce((t, f) => t + f._amount, 0)
-  const hdrs = () => ['R.No', 'Family ID', 'Beneficiary Name', 'Account No', 'Amount (ETB)']
-  const cells = f => [f._rowNo, f.family_code || '—', f.mother_name, f.account_number || '—', fmt(f._amount)]
+  // EXPORT columns (print / copy / CSV / Excel): no Family ID, Remark left blank for the bank/office to fill.
+  const hdrs = () => ['R.No', 'Parent/Guardian Name', 'Account No', 'Amount (Birr)', 'Remark']
+  const cells = f => [f._rowNo, f.mother_name, f.account_number || '—', fmt(f._amount), '']
+  // ON-SCREEN preview columns: keeps the Family ID for staff.
+  const viewHdrs = () => ['R.No', 'Family ID', 'Beneficiary Name', 'Account No', 'Amount (ETB)']
+  const viewCells = f => [f._rowNo, f.family_code || '—', f.mother_name, f.account_number || '—', fmt(f._amount)]
 
+  // Copies a real table: pastes as a formatted table in Word / Outlook / Google Docs and as cells in Excel / Sheets.
+  // Plain-text (tab-separated) is included as a fallback for apps that only accept text.
   const handleCopy = (meta) => {
-    const lines = [
+    const head = hdrs()
+    const body = filtered.map(f => cells(f))
+    const totalRow = ['', 'Total', '', fmt(totalAmount), '']
+    const tsv = [
       ...(meta ? [`Ref No: ${meta.ref}`, `Payment for: ${monthText(meta.month)}`, ''] : []),
-      hdrs().join('\t'),
-      ...filtered.map(f => cells(f).join('\t')),
-      '', `Total\t\t\t\t${fmt(totalAmount)}`,
-    ]
-    navigator.clipboard.writeText(lines.join('\n')).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
+      head.join('\t'),
+      ...body.map(r => r.join('\t')),
+      totalRow.join('\t'),
+    ].join('\n')
+    const td = (v, j, bold) => `<td style="border:1px solid #999;padding:4px 8px;${j === 3 ? 'text-align:right;' : ''}${bold ? 'font-weight:bold;' : ''}">${esc(v)}</td>`
+    const html = `${meta ? `<p><b>Ref No: ${esc(meta.ref)}</b><br>Payment for: ${esc(monthText(meta.month))}</p>` : ''}` +
+      `<table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:11pt">` +
+      `<thead><tr>${head.map(h => `<th style="border:1px solid #999;padding:4px 8px;background:#1e7d22;color:#fff;text-align:left">${esc(h)}</th>`).join('')}</tr></thead>` +
+      `<tbody>${body.map(r => `<tr>${r.map((v, j) => td(v, j, false)).join('')}</tr>`).join('')}` +
+      `<tr>${totalRow.map((v, j) => td(v, j, true)).join('')}</tr></tbody></table>`
+    const done = () => { setCopied(true); setTimeout(() => setCopied(false), 2000) }
+    const textOnly = () => navigator.clipboard.writeText(tsv).then(done)
+    if (window.ClipboardItem && navigator.clipboard?.write) {
+      navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([tsv], { type: 'text/plain' }),
+      })]).then(done).catch(textOnly)
+    } else textOnly()
   }
 
   // Marks the active beneficiaries on this list as PAID for the month, under the letter Ref No.
@@ -236,11 +255,11 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
             <table>
               <thead>
                 <tr>
-                  <th style="width:55pt">R.No</th>
-                  <th style="width:80pt">Family ID</th>
-                  <th>Beneficiary Name</th>
-                  <th style="width:110pt">Account No</th>
-                  <th class="amt" style="width:90pt">Amount (ETB)</th>
+                  <th style="width:45pt">R.No</th>
+                  <th>Parent/Guardian Name</th>
+                  <th style="width:105pt">Account No</th>
+                  <th class="amt" style="width:80pt">Amount (Birr)</th>
+                  <th style="width:90pt">Remark</th>
                 </tr>
               </thead>
               <tbody>
@@ -248,11 +267,11 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
                   ? `<tr><td colspan="5" style="padding:16pt;text-align:center;color:#999;">No beneficiaries found.</td></tr>`
                   : pageRows.map(f => `
                   <tr>
-                    <td>${f._rowNo}</td>
-                    <td>${f.family_code || '—'}</td>
-                    <td>${f.mother_name}</td>
-                    <td>${f.account_number || '—'}</td>
+                    <td>${esc(f._rowNo)}</td>
+                    <td>${esc(f.mother_name)}</td>
+                    <td>${esc(f.account_number || '—')}</td>
                     <td class="amt">${fmt(f._amount)}</td>
+                    <td>&nbsp;</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -273,8 +292,8 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
     const rows = [
       ...(meta ? [['Ref No', meta.ref], ['Payment for', monthText(meta.month)], []] : []),
       hdrs(),
-      ...filtered.map(f => [f._rowNo, f.family_code || '', f.mother_name, f.account_number || '', f._amount]),
-      [], ['', '', '', 'Total', totalAmount],
+      ...filtered.map(f => [f._rowNo, f.mother_name, f.account_number || '', f._amount, '']),
+      ['', 'Total', '', totalAmount, ''],
     ]
     const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n')
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' })
@@ -369,7 +388,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, marginBottom: 14 }}>
               <thead>
                 <tr>
-                  {hdrs().map(h => (
+                  {viewHdrs().map(h => (
                     <th key={h} style={{ background: B.green, color: '#fff', padding: '7px 10px', textAlign: 'left', border: '1px solid #999', fontSize: 11 }}>{h}</th>
                   ))}
                 </tr>
@@ -379,7 +398,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
                   ? <tr><td colSpan={5} style={{ padding: 16, textAlign: 'center', color: '#999', border: '1px solid #ccc' }}>No beneficiaries found.</td></tr>
                   : pageRows.map((f, i) => (
                     <tr key={f.id} title={f._held ? 'On hold — not included in export' : undefined}>
-                      {cells(f).map((v, j) => (
+                      {viewCells(f).map((v, j) => (
                         <td key={j} style={f._held ? HELD_TD : { padding: '6px 10px', border: '1px solid #ccc', background: i%2===1?'#f9f9f9':'#fff' }}>{f._held && j === 4 ? 'ON HOLD' : v}</td>
                       ))}
                     </tr>
@@ -447,7 +466,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
                       ? <tr><td colSpan={5} style={{ padding: '3vw', textAlign: 'center', color: '#999', border: '1px solid #ccc' }}>No beneficiaries found.</td></tr>
                       : pageRows.map((f, i) => (
                         <tr key={f.id}>
-                          {cells(f).map((v, j) => (
+                          {viewCells(f).map((v, j) => (
                             <td key={j} style={f._held ? { ...HELD_TD, padding: '1.2vw 1.5vw' } : { padding: '1.2vw 1.5vw', border: '1px solid #ccc', background: i%2===1?'#f9f9f9':'#fff' }}>{f._held && j === 4 ? 'ON HOLD' : v}</td>
                           ))}
                         </tr>
