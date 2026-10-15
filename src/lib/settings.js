@@ -45,7 +45,44 @@ export const categoryOf = f => {
 }
 
 // ── Time with HDA ───────────────────────────────────────────────────────────
-export const joinedDate = f => f?.joined_on || f?.created_at?.slice(0, 10) || null
+// ── Enrollment date ─────────────────────────────────────────────────────────
+// The "With HDA" counter uses the Date of Enrollment written in the family's Case Notes
+// (e.g. "Date of enrollment: 12/03/2023", "Enrolled: 12 Mar 2023", "Enrollment date 2023-03-12", "Enrolled Mar 2023").
+// Numeric dates are read day first (dd/mm/yyyy). Gregorian calendar.
+// If the notes have no enrollment date, the counter falls back to the joined date / registration date.
+const MONTH_IDX = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 }
+const iso = (y, m, d) => {
+  y = +y; m = +m; d = +d
+  if (!(y >= 1990 && y <= 2100 && m >= 1 && m <= 12 && d >= 1 && d <= 31)) return null
+  const t = new Date(Date.UTC(y, m - 1, d))
+  if (t.getUTCMonth() !== m - 1) return null // e.g. 31 Feb
+  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+}
+const MON = '(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\.?'
+const DATE_PATTERNS = [
+  [/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/, m => iso(m[1], m[2], m[3])],
+  [/(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/, m => iso(m[3], m[2], m[1])],
+  [new RegExp('(\\d{1,2})(?:st|nd|rd|th)?[\\s,-]+' + MON + '[\\s,-]+(\\d{4})', 'i'), m => iso(m[3], MONTH_IDX[m[2].toLowerCase()], m[1])],
+  [new RegExp(MON + '[\\s,-]+(\\d{1,2})(?:st|nd|rd|th)?[\\s,-]+(\\d{4})', 'i'), m => iso(m[3], MONTH_IDX[m[1].toLowerCase()], m[2])],
+  [new RegExp(MON + '[\\s,-]+(\\d{4})', 'i'), m => iso(m[2], MONTH_IDX[m[1].toLowerCase()], 1)],
+]
+export const enrollmentFromNotes = notes => {
+  if (!notes) return null
+  const text = String(notes)
+  const re = /enrol/gi
+  let hit
+  while ((hit = re.exec(text))) {
+    const seg = text.slice(hit.index, hit.index + 80)
+    for (const [rx, fn] of DATE_PATTERNS) {
+      const m = seg.match(rx)
+      const d = m && fn(m)
+      if (d) return d
+    }
+  }
+  return null
+}
+
+export const joinedDate = f => enrollmentFromNotes(f?.notes) || f?.joined_on || f?.created_at?.slice(0, 10) || null
 export const tenureText = d => {
   if (!d) return '—'
   const a = new Date(d), n = new Date()

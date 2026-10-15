@@ -7,7 +7,7 @@ import FamilyPaymentsTab from './pages/FamilyPaymentsTab'
 import FamilyStatusTab, { HoldQuickButton } from './pages/FamilyStatusTab'
 import ArchivePage from './pages/ArchivePage'
 import BankPicker from './components/BankPicker'
-import { DEFAULT_RATES, loadRates, saveRates, monthlyFor, isPayingChild, caseState, MAX_PAYING_AGE, joinedDate, tenureText } from './lib/settings'
+import { DEFAULT_RATES, loadRates, saveRates, monthlyFor, isPayingChild, caseState, MAX_PAYING_AGE, joinedDate, enrollmentFromNotes, tenureText } from './lib/settings'
 import PaymentsPage from './pages/PaymentsPage'
 import UsersPage from './pages/UsersPage'
 import { LoginPage, SignupPage, AccessGate } from './pages/AuthPages'
@@ -1343,6 +1343,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
   const [viewingDoc, setViewingDoc] = useState(null)
   const [joinEdit, setJoinEdit] = useState(null) // date string while the admin edits the joined date
   const joined = joinedDate(family)
+  const enrolledInNotes = !!enrollmentFromNotes(family.notes) // counter follows the Date of Enrollment written in Case Notes
   const saveJoined = async () => {
     if (!joinEdit) return
     const { error } = await supabase.from('families').update({ joined_on: joinEdit }).eq('id', family.id)
@@ -1353,8 +1354,8 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', borderRadius: 20, padding: isMobile ? '3px 10px' : '4px 12px', fontSize: isMobile ? 11 : 12, fontWeight: 600, whiteSpace: 'nowrap', maxWidth: '100%' }}>
       <Icon name="calendar" size={13} color={B.gold} />
       With HDA <b style={{ color: B.gold }}>{tenureText(joined)}</b>
-      <span style={{ opacity: 0.8 }}>· since {joined ? new Date(joined).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</span>
-      {isAdmin && <button onClick={() => setJoinEdit(joined || '')} aria-label="Edit joined date" title="Edit joined date" style={{ background: 'rgba(255,255,255,0.18)', border: 'none', borderRadius: 6, width: 22, height: 22, cursor: 'pointer', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="edit" size={12} /></button>}
+      <span style={{ opacity: 0.8 }}>· {enrolledInNotes ? 'enrolled' : 'since'} {joined ? new Date(joined).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</span>
+      {isAdmin && !enrolledInNotes && <button onClick={() => setJoinEdit(joined || '')} aria-label="Edit joined date" title="Edit joined date" style={{ background: 'rgba(255,255,255,0.18)', border: 'none', borderRadius: 6, width: 22, height: 22, cursor: 'pointer', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="edit" size={12} /></button>}
     </span>
   )
 
@@ -1561,7 +1562,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
             { l: 'City', v: family.city },
             { l: 'District', v: family.district },
             { l: 'Monthly Support (ETB)', v: monthlyFor(rates, payingKids.length).toLocaleString() },
-            { l: 'Joined HDA', v: `${joined || '—'} (${tenureText(joined)})` },
+            { l: enrolledInNotes ? 'Date of Enrollment' : 'Joined HDA', v: `${joined || '—'} (${tenureText(joined)})` },
           ].map(r => (
             <div key={r.l} style={{
               background: B.card, borderRadius: 11,
