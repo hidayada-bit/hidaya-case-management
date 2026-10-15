@@ -84,7 +84,8 @@ function ExportDialog({ count, onCancel, onConfirm, busy, bankName, project }) {
 }
 
 // ─── LETTER PREVIEW + EXPORT ─────────────────────────────────────────────────
-// Remark for mothers with no eligible children (none registered / none aged 4–18): their amount is the mother rate only.
+// Mothers with no eligible child (none registered / none aged 4–18) are treated like on-hold families:
+// shown highlighted in the preview as a reminder to check the profile, but never printed / copied / exported / paid / totalled. (none registered / none aged 4–18): their amount is the mother rate only.
 const NO_KIDS_REMARK = 'Mother only — no eligible children'
 const REMARK_CSS = 'background:#fff1e6;color:#c2410c;font-weight:700;border:1px solid #f5b5a0;'
 const HELD_TD = { padding: '6px 10px', border: '1px solid #f5b5a0', background: '#fff1e6', color: '#c2410c', fontWeight: 700, textDecoration: 'none' }
@@ -95,13 +96,15 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
     .filter(f => f.bank === bank.id && f.project === project)
     .sort((a, b) => (a.mother_name || '').localeCompare(b.mother_name || ''))
   const isHeld = f => caseState(f) === 'on_hold'
+  const noKids = f => !(childCounts[f.id] > 0)
   // payable = what actually goes into print / copy / CSV / Excel / payment records
   const filtered = matching
-    .filter(f => !isHeld(f))
-    .map((f, i) => ({ ...f, _rowNo: f.roll_number || i + 1, _amount: amountOf(f), _remark: (childCounts[f.id] || 0) > 0 ? '' : NO_KIDS_REMARK })) // stable row number, independent of page
-  // preview only: includes held families (shown highlighted, never exported)
-  const heldRows = matching.filter(isHeld).map(f => ({ ...f, _held: true, _rowNo: '—', _amount: amountOf(f) }))
-  const previewRows = [...filtered, ...heldRows].sort((a, b) => (a.mother_name || '').localeCompare(b.mother_name || ''))
+    .filter(f => !isHeld(f) && !noKids(f))
+    .map((f, i) => ({ ...f, _rowNo: f.roll_number || i + 1, _amount: amountOf(f) })) // stable row number, independent of page
+  // preview only: held families and mothers with no eligible children (shown highlighted, never exported)
+  const heldRows = matching.filter(isHeld).map(f => ({ ...f, _held: true, _tag: 'ON HOLD', _rowNo: '—', _amount: amountOf(f) }))
+  const noKidRows = matching.filter(f => !isHeld(f) && noKids(f)).map(f => ({ ...f, _held: true, _tag: 'NO CHILDREN', _remark: NO_KIDS_REMARK, _rowNo: '—', _amount: amountOf(f) }))
+  const previewRows = [...filtered, ...heldRows, ...noKidRows].sort((a, b) => (a.mother_name || '').localeCompare(b.mother_name || ''))
 
   const pages = filtered.length ? chunk(filtered, ROWS_PER_PAGE) : [[]]
   const viewPages = previewRows.length ? chunk(previewRows, ROWS_PER_PAGE) : [[]]
@@ -115,7 +118,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
   const totalAmount = filtered.reduce((t, f) => t + f._amount, 0)
   // EXPORT columns (print / copy / CSV / Excel): no Family ID, Remark left blank for the bank/office to fill.
   const hdrs = () => ['R.No', 'Parent/Guardian Name', 'Account No', 'Amount (Birr)', 'Remark']
-  const cells = f => [f._rowNo, f.mother_name, f.account_number || '—', fmt(f._amount), f._remark || '']
+  const cells = f => [f._rowNo, f.mother_name, f.account_number || '—', fmt(f._amount), '']
   // ON-SCREEN preview columns: keeps the Family ID for staff.
   const viewHdrs = () => ['R.No', 'Family ID', 'Beneficiary Name', 'Account No', 'Amount (ETB)', 'Remark']
   const viewCells = f => [f._rowNo, f.family_code || '—', f.mother_name, f.account_number || '—', fmt(f._amount), f._remark || '']
@@ -274,7 +277,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
                     <td>${esc(f.mother_name)}</td>
                     <td>${esc(f.account_number || '—')}</td>
                     <td class="amt">${fmt(f._amount)}</td>
-                    <td${f._remark ? ` style="${REMARK_CSS}"` : ''}>${f._remark ? esc(f._remark) : '&nbsp;'}</td>
+                    <td>&nbsp;</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -341,7 +344,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
       }}>
         <div>
           <div style={{ fontSize: 13, fontWeight: 800, color: B.gold }}>{bank.name} — {project}</div>
-          <div style={{ fontSize: 11, color: '#81c784' }}>{filtered.length} beneficiaries{heldRows.length ? ` · ${heldRows.length} on hold (not exported)` : ''} · {today}{viewPages.length > 1 ? ` · ${viewPages.length} pages` : ''}</div>
+          <div style={{ fontSize: 11, color: '#81c784' }}>{filtered.length} beneficiaries{heldRows.length ? ` · ${heldRows.length} on hold` : ''}{noKidRows.length ? ` · ${noKidRows.length} no eligible children` : ''}{heldRows.length + noKidRows.length ? ' (not exported)' : ''} · {today}{viewPages.length > 1 ? ` · ${viewPages.length} pages` : ''}</div>
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {!isMobile && <button onClick={() => ask('print')} style={toolBtn('#1e7d22')}><Icon name="print" size={14} />Print</button>}
@@ -400,9 +403,9 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
                 {pageRows.length === 0
                   ? <tr><td colSpan={6} style={{ padding: 16, textAlign: 'center', color: '#999', border: '1px solid #ccc' }}>No beneficiaries found.</td></tr>
                   : pageRows.map((f, i) => (
-                    <tr key={f.id} title={f._held ? 'On hold — not included in export' : undefined}>
+                    <tr key={f.id} title={f._held ? `${f._tag === 'ON HOLD' ? 'On hold' : 'No eligible children'} — not included in export` : undefined}>
                       {viewCells(f).map((v, j) => (
-                        <td key={j} style={f._held || (j === 5 && v) ? HELD_TD : { padding: '6px 10px', border: '1px solid #ccc', background: i%2===1?'#f9f9f9':'#fff' }}>{f._held && j === 4 ? 'ON HOLD' : v}</td>
+                        <td key={j} style={f._held || (j === 5 && v) ? HELD_TD : { padding: '6px 10px', border: '1px solid #ccc', background: i%2===1?'#f9f9f9':'#fff' }}>{f._held && j === 4 ? f._tag : v}</td>
                       ))}
                     </tr>
                   ))
@@ -470,7 +473,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
                       : pageRows.map((f, i) => (
                         <tr key={f.id}>
                           {viewCells(f).map((v, j) => (
-                            <td key={j} style={f._held || (j === 5 && v) ? { ...HELD_TD, padding: '1.2vw 1.5vw' } : { padding: '1.2vw 1.5vw', border: '1px solid #ccc', background: i%2===1?'#f9f9f9':'#fff' }}>{f._held && j === 4 ? 'ON HOLD' : v}</td>
+                            <td key={j} style={f._held || (j === 5 && v) ? { ...HELD_TD, padding: '1.2vw 1.5vw' } : { padding: '1.2vw 1.5vw', border: '1px solid #ccc', background: i%2===1?'#f9f9f9':'#fff' }}>{f._held && j === 4 ? f._tag : v}</td>
                           ))}
                         </tr>
                       ))
@@ -494,11 +497,11 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
 }
 
 // ─── MAIN BANK LIST PAGE ──────────────────────────────────────────────────────
-export default function BankListPage({ families, isMobile, childCounts, rates, user, isAdmin, toast }) {
+export default function BankListPage({ families, isMobile, childCounts = {}, rates, user, isAdmin, toast }) {
   const [viewing, setViewing] = useState(null)
 
   const getCount = (bankId, project) =>
-    families.filter(f => f.bank === bankId && f.project === project && caseState(f) !== 'on_hold').length
+    families.filter(f => f.bank === bankId && f.project === project && caseState(f) !== 'on_hold' && (childCounts[f.id] || 0) > 0).length
 
   return (
     <div style={{ padding: isMobile ? '14px 12px' : '22px 26px', maxWidth: 900, margin: '0 auto' }}>
