@@ -2644,7 +2644,7 @@ export default function App() {
           {allowed && page === 'academics' && <AcademicsPage children={children} isMobile={isMobile} />}
           {allowed && page === 'messaging' && <MessagingPage families={liveFamilies} isMobile={isMobile} />}
           {allowed && page === 'banklist' && <BankListPage families={bankFamilies} childCounts={childCounts} rates={rates} user={user} isAdmin={role === 'admin'} toast={toast} isMobile={isMobile} />}
-          {allowed && page === 'payments' && <PaymentsPage families={liveFamilies} staffNames={staffNames} childCounts={childCounts} rates={rates} user={user} canManage={can(role, 'manage_payments')} toast={toast} isMobile={isMobile} />}
+          {allowed && page === 'payments' && <PaymentsPage allChildren={children} families={liveFamilies} staffNames={staffNames} childCounts={childCounts} rates={rates} user={user} canManage={can(role, 'manage_payments')} toast={toast} isMobile={isMobile} />}
           {allowed && page === 'archive' && <ArchivePage families={transferredFamilies} onView={openFamily} isMobile={isMobile} />}
           {allowed && page === 'users' && <UsersPage currentUser={user} toast={toast} isMobile={isMobile} />}
           {allowed && page === 'settings' && (

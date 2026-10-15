@@ -6,6 +6,7 @@ import BankMark from '../components/BankMark'
 import { DEFAULT_RATES, monthlyFor, caseState } from '../lib/settings'
 import { B } from '../lib/theme'
 import { logActivity } from '../lib/activity'
+import CsoReport from './CsoReport'
 
 const HF_BRANCHES = ['Addis Ababa', 'Bishoftu', 'Dangla', 'Bure', 'Dire Dawa', 'Nekemte', 'Chagni']
 
@@ -61,7 +62,8 @@ function Sheet({ title, onClose, children, isMobile }) {
 
 const Lbl = ({ children }) => <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: B.textMid, marginBottom: 6 }}>{children}</label>
 
-export default function PaymentsPage({ families, user, canManage, toast, isMobile, childCounts = {}, rates = DEFAULT_RATES, staffNames = {} }) {
+export default function PaymentsPage({ families, user, canManage, toast, isMobile, childCounts = {}, rates = DEFAULT_RATES, staffNames = {}, allChildren = [] }) {
+  const [showReport, setShowReport] = useState(false)
   const isHeld = f => caseState(f) === 'on_hold'
   const signedBy = p => (p?.recorded_by && staffNames[p.recorded_by]) || null
   const calc = f => monthlyFor(rates, childCounts[f.id] || 0)
@@ -197,6 +199,7 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
 
   return (
     <div style={{ padding: isMobile ? '14px 12px 28px' : '22px 26px', maxWidth: 1140, margin: '0 auto' }}>
+      {showReport && <CsoReport families={families} children={allChildren} rates={rates} toast={toast} isMobile={isMobile} onClose={() => setShowReport(false)} />}
       {/* Banner */}
       <div className="page-banner" style={{ background: `linear-gradient(135deg, ${B.sidebar}, ${B.sidebarMid})`, borderRadius: 14, padding: '16px 20px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', border: '1px solid rgba(245,168,0,0.3)', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, ${B.gold}, ${B.green})` }} />
@@ -205,6 +208,7 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
           <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>Payment Follow-up</div>
           <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>Track who has been paid each month and chase the rest</div>
         </div>
+        <button onClick={() => setShowReport(true)} style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: 10, padding: '8px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', minHeight: 40, fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name="file" size={15} /> CSO Report</button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 11, padding: 4 }}>
           <button aria-label="Previous month" onClick={() => setMonth(m => shiftMonth(m, -1))} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', width: 34, height: 34, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="chevronLeft" size={18} /></button>
           <div style={{ minWidth: 128, textAlign: 'center', color: '#fff', fontWeight: 800, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}><Icon name="calendar" size={15} color={B.gold} />{monthLabel(month)}</div>
