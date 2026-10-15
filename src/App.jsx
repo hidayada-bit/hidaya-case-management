@@ -6,7 +6,7 @@ import BankListPage from './pages/BankListPage'
 import FamilyPaymentsTab from './pages/FamilyPaymentsTab'
 import FamilyStatusTab, { HoldQuickButton } from './pages/FamilyStatusTab'
 import ArchivePage from './pages/ArchivePage'
-import { BANKS } from './lib/banks'
+import BankPicker from './components/BankPicker'
 import { DEFAULT_RATES, loadRates, saveRates, monthlyFor, isPayingChild, caseState, MAX_PAYING_AGE, joinedDate, tenureText } from './lib/settings'
 import PaymentsPage from './pages/PaymentsPage'
 import UsersPage from './pages/UsersPage'
@@ -14,7 +14,6 @@ import { LoginPage, SignupPage, AccessGate } from './pages/AuthPages'
 import Icon from './components/Icon'
 import { can, canOpenPage, roleLabel } from './lib/permissions'
 import { B, useTheme } from './lib/theme'
-import BankMark from './components/BankMark'
 import NotificationBell from './components/NotificationBell'
 import { logActivity } from './lib/activity'
 
@@ -1756,35 +1755,7 @@ function FamilyForm({ initial, defaultProject, defaultBranch, families = [], onS
       <FT label="Case Notes" value={f.notes} onChange={s('notes')} placeholder="Any relevant notes…" />
       <FS label="Status" value={f.status} onChange={s('status')} options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }, { value: 'pending', label: 'Pending' }]} />
       {/* Bank Info */}
-      <div style={{ background: B.bg, borderRadius: 10, padding: '14px', marginBottom: 14, border: '1px solid #c8e6c9' }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#4a6b4a', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}><Icon name="bank" size={13} /> Bank Information</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
-          <div style={{ marginBottom: 14, gridColumn: '1 / -1' }}>
-            <FL>Bank</FL>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              {BANKS.map(b => {
-                const on = f.bank === b.id
-                return (
-                  <button key={b.id} type="button" onClick={() => s('bank')(b.id)} aria-pressed={on}
-                    style={{
-                      flex: '1 1 96px', maxWidth: 150, cursor: 'pointer', fontFamily: 'inherit', padding: '10px 8px',
-                      borderRadius: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7,
-                      border: `2px solid ${on ? b.color : B.border}`,
-                      background: on ? b.color : B.card,
-                      color: on ? '#fff' : B.textMid,
-                      boxShadow: on ? `0 6px 16px ${b.color}55` : 'none',
-                      transform: on ? 'translateY(-2px)' : 'none', transition: 'all 0.18s',
-                    }}>
-                    <BankMark bank={b} size={44} ring={on} style={on ? { boxShadow: '0 0 0 3px rgba(255,255,255,0.9)' } : undefined} />
-                    <span style={{ fontSize: 12, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 4 }}>{on && <Icon name="check" size={12} />}{b.label}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-          <FI label="Account Number" value={f.account_number} onChange={s('account_number')} placeholder="1000XXXXXXXXX" />
-        </div>
-      </div>
+      <BankPicker bank={f.bank} account={f.account_number} onBank={s('bank')} onAccount={s('account_number')} />
       <div style={{
         display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8,
         flexDirection: isMobile ? 'column-reverse' : 'row',
