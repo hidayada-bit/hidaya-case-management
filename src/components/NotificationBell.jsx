@@ -22,6 +22,13 @@ export default function NotificationBell({ user, onOpenFamily, isMobile }) {
   const [open, setOpen] = useState(false)
   const [seen, setSeen] = useState(() => { try { return localStorage.getItem(key) || '1970-01-01T00:00:00Z' } catch { return '1970-01-01T00:00:00Z' } })
   const box = useRef(null)
+  const [people, setPeople] = useState({}) // user id -> { name, photo }
+
+  useEffect(() => {
+    supabase.from('users').select('id,full_name,profile_photo_url').then(({ data }) => {
+      const m = {}; (data || []).forEach(u => { m[u.id] = { name: u.full_name, photo: u.profile_photo_url } }); setPeople(m)
+    })
+  }, [])
 
   const load = useCallback(async () => {
     const { data } = await supabase.from('activity_log').select('*').order('created_at', { ascending: false }).limit(60)
@@ -84,7 +91,19 @@ export default function NotificationBell({ user, onOpenFamily, isMobile }) {
                   style={{ display: 'flex', gap: 11, padding: '11px 16px', borderBottom: `1px solid ${B.greenLight}`, cursor: i.family_id ? 'pointer' : 'default', background: un ? B.greenLight : 'transparent', transition: 'background .15s' }}
                   onMouseEnter={e => { if (i.family_id) e.currentTarget.style.background = B.greenLight }}
                   onMouseLeave={e => { e.currentTarget.style.background = un ? B.greenLight : 'transparent' }}>
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: B.card, border: `1.5px solid ${c}`, color: c, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon name={ICON[i.category] || 'info'} size={15} /></div>
+                  {(() => {
+                    const who = people[i.actor_id] || {}
+                    const nm = who.name || i.actor_name || '?'
+                    const initials = nm.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?'
+                    return (
+                      <div style={{ position: 'relative', width: 34, height: 34, flexShrink: 0 }} title={nm}>
+                        {who.photo
+                          ? <img src={who.photo} alt={nm} style={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover', border: `1.5px solid ${B.border}` }} onError={e => { e.currentTarget.style.display = 'none' }} />
+                          : <div style={{ width: 34, height: 34, borderRadius: '50%', background: B.greenLight, color: B.greenDark, border: `1.5px solid ${B.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800 }}>{initials}</div>}
+                        <span style={{ position: 'absolute', right: -3, bottom: -3, width: 16, height: 16, borderRadius: '50%', background: B.card, border: `1.5px solid ${c}`, color: c, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={ICON[i.category] || 'info'} size={9} /></span>
+                      </div>
+                    )
+                  })()}
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontSize: 13, color: B.text, lineHeight: 1.4 }}>{i.message}</div>
                     <div style={{ fontSize: 11, color: B.textLight, marginTop: 2 }}>{ago(i.created_at)}</div>

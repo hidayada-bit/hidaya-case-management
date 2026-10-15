@@ -1786,7 +1786,7 @@ function FamilyForm({ initial, defaultProject, defaultBranch, families = [], onS
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '0 16px' }}>
         <FS label="Project" value={f.project} onChange={handleProjectChange} options={[{ value: 'OVC', label: 'OVC' }, { value: 'HF', label: 'HF' }]} />
         {f.project === 'HF' && (
-          <FS label="Branch" value={f.branch} onChange={s('branch')} options={[{ value: '', label: 'Select branch…' }, ...HF_BRANCHES.map(b => ({ value: b, label: b }))]} />
+          <FS label="Branch" value={f.branch} onChange={v => setF(x => ({ ...x, branch: v, city: v || x.city }))} options={[{ value: '', label: 'Select branch…' }, ...HF_BRANCHES.map(b => ({ value: b, label: b }))]} />
         )}
         <FI label={isCollector ? 'Family Code' : 'Family Code (system-generated)'} value={isCollector ? 'Assigned after approval' : f.family_code} disabled req />
         <FI label="Mother Full Name" value={f.mother_name} onChange={s('mother_name')} placeholder="Full name" req />
