@@ -3,8 +3,14 @@ import { supabase } from './supabase'
 // Monthly amount for one family = mother rate + (children x child rate). Rates are set by the admin.
 export const DEFAULT_RATES = { mother: 3500, child: 1500 }
 
+// Payment rule: only children aged MIN_PAYING_AGE..MAX_PAYING_AGE are paid, and at most MAX_PAYING_CHILDREN per family.
+export const MIN_PAYING_AGE = 4
+export const MAX_PAYING_AGE = 18
+export const MAX_PAYING_CHILDREN = 4
+export const cappedChildren = n => Math.min(Math.max(Number(n) || 0, 0), MAX_PAYING_CHILDREN)
+
 export const monthlyFor = (rates, childCount) =>
-  (Number(rates.mother) || 0) + (Number(childCount) || 0) * (Number(rates.child) || 0)
+  (Number(rates.mother) || 0) + cappedChildren(childCount) * (Number(rates.child) || 0)
 
 export async function loadRates() {
   const { data, error } = await supabase.from('app_settings').select('value').eq('key', 'payment_rates').maybeSingle()
@@ -21,8 +27,8 @@ export async function saveRates(rates, userId) {
 }
 
 // ── Child age rule for payments ─────────────────────────────────────────────
-// Children aged 18 or under are paid for; from their 19th birthday they stay on the
-// profile (children tab) but are no longer counted in the payment. No birth date = counted.
+// Children aged 4 to 18 are paid for. Under 4 (not yet 4) and 19+ stay on the profile (children tab)
+// but are not counted in the payment. No birth date = counted. Max 4 children per family (see monthlyFor).
 export const ageOf = dob => {
   if (!dob) return null
   const b = new Date(dob), n = new Date()
@@ -30,8 +36,9 @@ export const ageOf = dob => {
   if (n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate())) a--
   return a
 }
-export const MAX_PAYING_AGE = 18
-export const isPayingChild = c => { const a = ageOf(c.date_of_birth); return a == null || a <= MAX_PAYING_AGE }
+export const isPayingChild = c => { const a = ageOf(c.date_of_birth); return a == null || (a >= MIN_PAYING_AGE && a <= MAX_PAYING_AGE) }
+// 'under' | 'over' | null — why a child is not in the payment (null = eligible by age)
+export const ageExclusion = c => { const a = ageOf(c.date_of_birth); return a == null ? null : a < MIN_PAYING_AGE ? 'under' : a > MAX_PAYING_AGE ? 'over' : null }
 
 // Family case state: 'normal' | 'on_hold' | 'transferred' (missing column => normal)
 export const caseState = f => f?.case_state || 'normal'

@@ -7,7 +7,7 @@ import FamilyPaymentsTab from './pages/FamilyPaymentsTab'
 import FamilyStatusTab, { HoldQuickButton } from './pages/FamilyStatusTab'
 import ArchivePage from './pages/ArchivePage'
 import BankPicker from './components/BankPicker'
-import { DEFAULT_RATES, loadRates, saveRates, monthlyFor, isPayingChild, caseState, MAX_PAYING_AGE, joinedDate, enrollmentFromNotes, tenureText } from './lib/settings'
+import { DEFAULT_RATES, loadRates, saveRates, monthlyFor, isPayingChild, ageExclusion, cappedChildren, caseState, MIN_PAYING_AGE, MAX_PAYING_AGE, MAX_PAYING_CHILDREN, joinedDate, enrollmentFromNotes, tenureText } from './lib/settings'
 import PaymentsPage from './pages/PaymentsPage'
 import UsersPage from './pages/UsersPage'
 import { LoginPage, SignupPage, AccessGate } from './pages/AuthPages'
@@ -1233,7 +1233,7 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
-        <span style={{ fontSize: 14, color: B.textMid }}>{kids.length} children registered{kids.some(k => !isPayingChild(k)) && <> · <b>{kids.filter(isPayingChild).length}</b> in payment · {kids.filter(k => !isPayingChild(k)).length} over {MAX_PAYING_AGE}</>}</span>
+        <span style={{ fontSize: 14, color: B.textMid }}>{kids.length} children registered{kids.some(k => !isPayingChild(k)) && <> · <b>{Math.min(kids.filter(isPayingChild).length, MAX_PAYING_CHILDREN)}</b> in payment · {kids.filter(k => !isPayingChild(k)).length} outside age {MIN_PAYING_AGE}–{MAX_PAYING_AGE}</>}{kids.filter(isPayingChild).length > MAX_PAYING_CHILDREN && <> · <b>max {MAX_PAYING_CHILDREN} children paid</b></>}</span>
         {canEdit && <Btn onClick={() => onAddChild(family.id)} size="sm" variant="gold"><Icon name="plus" size={15} />Add Child</Btn>}
       </div>
 
@@ -1258,7 +1258,7 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
                 <div key={c.id} style={{ background: aged ? B.neutralBg : B.card, borderRadius: 14, border: aged ? `1.5px dashed ${B.textLight}` : `1px solid ${B.border}`, padding: isMobile ? '14px' : '16px 18px', boxShadow: aged ? 'none' : `0 2px 8px rgba(30,125,34,0.05)` }}>
                   {aged && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, fontSize: 11.5, fontWeight: 700, color: B.neutralText }}>
-                      <Icon name="info" size={13} /> Over {MAX_PAYING_AGE} — kept for records, not included in the payment
+                      <Icon name="info" size={13} /> {ageExclusion(c) === 'under' ? `Under ${MIN_PAYING_AGE}` : `Over ${MAX_PAYING_AGE}`} — kept for records, not included in the payment
                     </div>
                   )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
@@ -1669,7 +1669,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
 
       {/* PAYMENT */}
       {tab === 'payment' && canViewPayments && (
-        <FamilyPaymentsTab family={family} childCount={payingKids.length} excludedCount={kids.length - payingKids.length} rates={rates} user={user} canManage={isAdmin} staffNames={staffNames} caseState={cState} toast={toast} isMobile={isMobile} />
+        <FamilyPaymentsTab family={family} childCount={cappedChildren(payingKids.length)} excludedCount={kids.length - cappedChildren(payingKids.length)} rates={rates} user={user} canManage={isAdmin} staffNames={staffNames} caseState={cState} toast={toast} isMobile={isMobile} />
       )}
 
       {/* STATUS (admin only) */}
@@ -2510,7 +2510,7 @@ export default function App() {
   const transferredFamilies = families.filter(f => caseState(f) === 'transferred')
   // Families on hold keep their profile but are removed from the bank list.
   // Only children aged 18 or under are counted in the payment amount.
-  const childCounts = children.filter(isPayingChild).reduce((m, c) => { m[c.family_id] = (m[c.family_id] || 0) + 1; return m }, {})
+  const childCounts = Object.fromEntries(Object.entries(children.filter(isPayingChild).reduce((m, c) => { m[c.family_id] = (m[c.family_id] || 0) + 1; return m }, {})).map(([id, n]) => [id, cappedChildren(n)])) // max 4 per family
   const canEdit = can(role, 'edit_families')
   const canDelete = can(role, 'delete_families')
   const pageKey = ['detail', 'project-detail', 'branches'].includes(page) ? 'families' : page

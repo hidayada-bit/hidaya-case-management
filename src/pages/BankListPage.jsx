@@ -84,6 +84,9 @@ function ExportDialog({ count, onCancel, onConfirm, busy, bankName, project }) {
 }
 
 // ─── LETTER PREVIEW + EXPORT ─────────────────────────────────────────────────
+// Remark for mothers with no eligible children (none registered / none aged 4–18): their amount is the mother rate only.
+const NO_KIDS_REMARK = 'Mother only — no eligible children'
+const REMARK_CSS = 'background:#fff1e6;color:#c2410c;font-weight:700;border:1px solid #f5b5a0;'
 const HELD_TD = { padding: '6px 10px', border: '1px solid #f5b5a0', background: '#fff1e6', color: '#c2410c', fontWeight: 700, textDecoration: 'none' }
 
 function BankLetter({ families, bank, project, onClose, isMobile, childCounts = {}, rates = DEFAULT_RATES, user = null, isAdmin = false, toast = () => {} }) {
@@ -95,7 +98,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
   // payable = what actually goes into print / copy / CSV / Excel / payment records
   const filtered = matching
     .filter(f => !isHeld(f))
-    .map((f, i) => ({ ...f, _rowNo: f.roll_number || i + 1, _amount: amountOf(f) })) // stable row number, independent of page
+    .map((f, i) => ({ ...f, _rowNo: f.roll_number || i + 1, _amount: amountOf(f), _remark: (childCounts[f.id] || 0) > 0 ? '' : NO_KIDS_REMARK })) // stable row number, independent of page
   // preview only: includes held families (shown highlighted, never exported)
   const heldRows = matching.filter(isHeld).map(f => ({ ...f, _held: true, _rowNo: '—', _amount: amountOf(f) }))
   const previewRows = [...filtered, ...heldRows].sort((a, b) => (a.mother_name || '').localeCompare(b.mother_name || ''))
@@ -112,10 +115,10 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
   const totalAmount = filtered.reduce((t, f) => t + f._amount, 0)
   // EXPORT columns (print / copy / CSV / Excel): no Family ID, Remark left blank for the bank/office to fill.
   const hdrs = () => ['R.No', 'Parent/Guardian Name', 'Account No', 'Amount (Birr)', 'Remark']
-  const cells = f => [f._rowNo, f.mother_name, f.account_number || '—', fmt(f._amount), '']
+  const cells = f => [f._rowNo, f.mother_name, f.account_number || '—', fmt(f._amount), f._remark || '']
   // ON-SCREEN preview columns: keeps the Family ID for staff.
-  const viewHdrs = () => ['R.No', 'Family ID', 'Beneficiary Name', 'Account No', 'Amount (ETB)']
-  const viewCells = f => [f._rowNo, f.family_code || '—', f.mother_name, f.account_number || '—', fmt(f._amount)]
+  const viewHdrs = () => ['R.No', 'Family ID', 'Beneficiary Name', 'Account No', 'Amount (ETB)', 'Remark']
+  const viewCells = f => [f._rowNo, f.family_code || '—', f.mother_name, f.account_number || '—', fmt(f._amount), f._remark || '']
 
   // Copies a real table: pastes as a formatted table in Word / Outlook / Google Docs and as cells in Excel / Sheets.
   // Plain-text (tab-separated) is included as a fallback for apps that only accept text.
@@ -129,7 +132,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
       ...body.map(r => r.join('\t')),
       totalRow.join('\t'),
     ].join('\n')
-    const td = (v, j, bold) => `<td style="border:1px solid #999;padding:4px 8px;${j === 3 ? 'text-align:right;' : ''}${bold ? 'font-weight:bold;' : ''}">${esc(v)}</td>`
+    const td = (v, j, bold) => `<td style="border:1px solid #999;padding:4px 8px;${j === 3 ? 'text-align:right;' : ''}${bold ? 'font-weight:bold;' : ''}${j === 4 && v ? REMARK_CSS : ''}">${esc(v)}</td>`
     const html = `${meta ? `<p><b>Ref No: ${esc(meta.ref)}</b><br>Payment for: ${esc(monthText(meta.month))}</p>` : ''}` +
       `<table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:11pt">` +
       `<thead><tr>${head.map(h => `<th style="border:1px solid #999;padding:4px 8px;background:#1e7d22;color:#fff;text-align:left">${esc(h)}</th>`).join('')}</tr></thead>` +
@@ -259,7 +262,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
                   <th>Parent/Guardian Name</th>
                   <th style="width:105pt">Account No</th>
                   <th class="amt" style="width:80pt">Amount (Birr)</th>
-                  <th style="width:90pt">Remark</th>
+                  <th style="width:120pt">Remark</th>
                 </tr>
               </thead>
               <tbody>
@@ -271,7 +274,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
                     <td>${esc(f.mother_name)}</td>
                     <td>${esc(f.account_number || '—')}</td>
                     <td class="amt">${fmt(f._amount)}</td>
-                    <td>&nbsp;</td>
+                    <td${f._remark ? ` style="${REMARK_CSS}"` : ''}>${f._remark ? esc(f._remark) : '&nbsp;'}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -308,7 +311,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
     const html = `<table>
       ${meta ? `<tr><td colspan="${cols}"><b>Ref No: ${esc(meta.ref)}</b> — Payment for ${monthText(meta.month)}</td></tr>` : ''}
       <tr>${hdrs().map(h => `<th>${h}</th>`).join('')}</tr>
-      ${filtered.map(f => `<tr>${cells(f).map(v => `<td>${esc(v)}</td>`).join('')}</tr>`).join('')}
+      ${filtered.map(f => `<tr>${cells(f).map((v, j) => `<td${j === 4 && v ? ` style="${REMARK_CSS}"` : ''}>${esc(v)}</td>`).join('')}</tr>`).join('')}
       <tr><td colspan="${cols}"><b>Total: ${filtered.length} — ETB ${fmt(totalAmount)}</b></td></tr>
     </table>`
     const blob = new Blob([html], { type: 'application/vnd.ms-excel' })
@@ -395,11 +398,11 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
               </thead>
               <tbody>
                 {pageRows.length === 0
-                  ? <tr><td colSpan={5} style={{ padding: 16, textAlign: 'center', color: '#999', border: '1px solid #ccc' }}>No beneficiaries found.</td></tr>
+                  ? <tr><td colSpan={6} style={{ padding: 16, textAlign: 'center', color: '#999', border: '1px solid #ccc' }}>No beneficiaries found.</td></tr>
                   : pageRows.map((f, i) => (
                     <tr key={f.id} title={f._held ? 'On hold — not included in export' : undefined}>
                       {viewCells(f).map((v, j) => (
-                        <td key={j} style={f._held ? HELD_TD : { padding: '6px 10px', border: '1px solid #ccc', background: i%2===1?'#f9f9f9':'#fff' }}>{f._held && j === 4 ? 'ON HOLD' : v}</td>
+                        <td key={j} style={f._held || (j === 5 && v) ? HELD_TD : { padding: '6px 10px', border: '1px solid #ccc', background: i%2===1?'#f9f9f9':'#fff' }}>{f._held && j === 4 ? 'ON HOLD' : v}</td>
                       ))}
                     </tr>
                   ))
@@ -456,18 +459,18 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'clamp(7px, 2vw, 12px)', marginBottom: '3vw' }}>
                   <thead>
                     <tr>
-                      {['R.No', 'Family ID', 'Name', 'Account', 'ETB'].map(h => (
+                      {['R.No', 'Family ID', 'Name', 'Account', 'ETB', 'Remark'].map(h => (
                         <th key={h} style={{ background: B.green, color: '#fff', padding: '1.2vw 1.5vw', textAlign: 'left', border: '1px solid #999' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {pageRows.length === 0
-                      ? <tr><td colSpan={5} style={{ padding: '3vw', textAlign: 'center', color: '#999', border: '1px solid #ccc' }}>No beneficiaries found.</td></tr>
+                      ? <tr><td colSpan={6} style={{ padding: '3vw', textAlign: 'center', color: '#999', border: '1px solid #ccc' }}>No beneficiaries found.</td></tr>
                       : pageRows.map((f, i) => (
                         <tr key={f.id}>
                           {viewCells(f).map((v, j) => (
-                            <td key={j} style={f._held ? { ...HELD_TD, padding: '1.2vw 1.5vw' } : { padding: '1.2vw 1.5vw', border: '1px solid #ccc', background: i%2===1?'#f9f9f9':'#fff' }}>{f._held && j === 4 ? 'ON HOLD' : v}</td>
+                            <td key={j} style={f._held || (j === 5 && v) ? { ...HELD_TD, padding: '1.2vw 1.5vw' } : { padding: '1.2vw 1.5vw', border: '1px solid #ccc', background: i%2===1?'#f9f9f9':'#fff' }}>{f._held && j === 4 ? 'ON HOLD' : v}</td>
                           ))}
                         </tr>
                       ))
