@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import Icon from '../components/Icon'
 import { BANKS, bankLabel } from '../lib/banks'
 import BankMark from '../components/BankMark'
-import { DEFAULT_RATES, monthlyFor, caseState } from '../lib/settings'
+import { DEFAULT_RATES, monthlyFor, caseState, joinedDate } from '../lib/settings'
 import { B } from '../lib/theme'
 import { logActivity } from '../lib/activity'
 import CsoReport from './CsoReport'
@@ -70,6 +70,7 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
   const [month, setMonth] = useState(monthKey(new Date()))
   const [payments, setPayments] = useState({})
   const [loading, setLoading] = useState(true)
+  const [overview, setOverview] = useState([]) // last 12 months: [{ m, paid, total }]
   const [saving, setSaving] = useState(false)
   const [project, setProject] = useState('All')
   const [branch, setBranch] = useState('All')
@@ -93,7 +94,24 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
 
   useEffect(() => { load() }, [load])
 
-  const eligible = useMemo(() => families.filter(f => f.status === 'active'), [families])
+  // Only families that had already joined by the end of the chosen month count for that month
+  const joinedBy = (f, m) => { const j = joinedDate(f); return !j || j.slice(0, 7) <= m }
+  const eligible = useMemo(() => families.filter(f => f.status === 'active' && joinedBy(f, month)), [families, month]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 12-month overview strip (paid vs expected for each month)
+  const loadOverview = useCallback(async () => {
+    const months = Array.from({ length: 12 }, (_, i) => shiftMonth(monthKey(new Date()), i - 11))
+    const { data } = await supabase.from('payments').select('family_id,period,status').gte('period', `${months[0]}-01`).lte('period', `${months[11]}-01`)
+    const paidBy = {}
+    ;(data || []).forEach(p => { if (p.status === 'paid') (paidBy[p.period.slice(0, 7)] ||= new Set()).add(p.family_id) })
+    const active = families.filter(f => f.status === 'active')
+    setOverview(months.map(m => {
+      const ids = new Set(active.filter(f => joinedBy(f, m)).map(f => f.id))
+      const paid = [...(paidBy[m] || [])].filter(id => ids.has(id)).length
+      return { m, paid, total: ids.size }
+    }))
+  }, [families, payments]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { loadOverview() }, [loadOverview])
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -211,9 +229,28 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
         <button onClick={() => setShowReport(true)} style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: 10, padding: '8px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', minHeight: 40, fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name="file" size={15} /> CSO Report</button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 11, padding: 4 }}>
           <button aria-label="Previous month" onClick={() => setMonth(m => shiftMonth(m, -1))} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', width: 34, height: 34, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="chevronLeft" size={18} /></button>
-          <div style={{ minWidth: 128, textAlign: 'center', color: '#fff', fontWeight: 800, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}><Icon name="calendar" size={15} color={B.gold} />{monthLabel(month)}</div>
+          <label style={{ position: 'relative', minWidth: 150, color: '#fff', fontWeight: 800, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, cursor: 'pointer' }}>
+            <Icon name="calendar" size={15} color={B.gold} />{monthLabel(month)}
+            <input type="month" value={month} onChange={e => e.target.value && setMonth(e.target.value)} aria-label="Choose month"
+              onClick={e => e.target.showPicker?.()} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%' }} />
+          </label>
           <button aria-label="Next month" onClick={() => setMonth(m => shiftMonth(m, 1))} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', width: 34, height: 34, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="chevron" size={18} /></button>
         </div>
+      </div>
+
+      {/* Months overview */}
+      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 6, marginBottom: 12 }}>
+        {overview.map(o => {
+          const pc = o.total ? Math.round(o.paid / o.total * 100) : 0
+          const on = o.m === month
+          return (
+            <button key={o.m} onClick={() => setMonth(o.m)} style={{ flex: '0 0 auto', minWidth: 96, textAlign: 'left', background: on ? B.green : B.card, color: on ? '#fff' : B.text, border: `1px solid ${on ? B.green : B.border}`, borderRadius: 11, padding: '8px 11px', cursor: 'pointer', fontFamily: 'inherit' }}>
+              <div style={{ fontSize: 12, fontWeight: 800 }}>{new Date(...o.m.split('-').map((v, i) => i ? v - 1 : +v), 1).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, opacity: .85 }}>{o.paid}/{o.total} paid · {o.total - o.paid} unpaid</div>
+              <div style={{ height: 4, borderRadius: 3, background: on ? 'rgba(255,255,255,.3)' : B.greenLight, marginTop: 5, overflow: 'hidden' }}><div style={{ width: `${pc}%`, height: '100%', background: on ? B.gold : B.green }} /></div>
+            </button>
+          )
+        })}
       </div>
 
       {/* Summary */}
