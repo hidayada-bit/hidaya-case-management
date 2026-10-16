@@ -254,3 +254,67 @@ export function HoldQuickButton({ family, user, toast, onChanged, isMobile }) {
     </>
   )
 }
+
+// Hold / release a WHOLE HF branch (admin + director). Applies the same per-family hold to every
+// approved, non-transferred family in the branch and writes one history entry per family.
+export function BranchHoldButton({ branch, families, user, toast, onChanged, isMobile }) {
+  const [dialog, setDialog] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const eligible = families.filter(f => caseState(f) !== 'transferred')
+  if (!branch || eligible.length === 0) return null
+  const heldCount = eligible.filter(f => caseState(f) === 'on_hold').length
+  const allHeld = heldCount === eligible.length
+  const action = allHeld ? 'release' : 'hold'
+  const a = ACTIONS[action]
+  const targets = eligible.filter(f => caseState(f) === (allHeld ? 'on_hold' : 'normal'))
+  const signer = user?.full_name || user?.email || 'Admin'
+  const holding = action === 'hold'
+  const label = `${holding ? 'Hold' : 'Release'} ${branch}`
+
+  const run = async ({ cat, note }) => {
+    const reason = joinReason(cat, note)
+    const category = holding ? cat : null
+    const now = new Date().toISOString()
+    setBusy(true)
+    try {
+      for (let i = 0; i < targets.length; i += 100) {
+        const chunk = targets.slice(i, i + 100)
+        const { error } = await supabase.from('families').update({ case_state: a.to, case_reason: reason, case_category: category, case_changed_at: now, case_changed_by_name: signer }).in('id', chunk.map(f => f.id))
+        if (error) throw error
+        const { error: e2 } = await supabase.from('family_status_log').insert(chunk.map(f => ({ family_id: f.id, action, from_state: caseState(f), to_state: a.to, reason, reason_category: category, by_user: user?.id || null, by_name: signer })))
+        if (e2) throw e2
+      }
+      logActivity(user, 'case', `${signer} ${holding ? 'put the whole' : 'released the hold on the whole'} ${branch} branch${holding ? ' on hold' : ''} (${targets.length} families) — ${reason}`, null)
+      toast(`${label}: ${targets.length} famil${targets.length === 1 ? 'y' : 'ies'} ${holding ? 'put on hold' : 'released'}`)
+      setDialog(false)
+      await onChanged(action)
+    } catch (e) { toast(e.message + (/case_state|status_log/.test(e.message) ? ' — run migrations 005 and 006' : ''), 'error') }
+    finally { setBusy(false) }
+  }
+
+  return (
+    <>
+      <button onClick={() => setDialog(true)} aria-label={label}
+        style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', fontFamily: 'inherit',
+          marginLeft: isMobile ? 0 : 'auto', width: isMobile ? '100%' : 'auto', padding: '9px 18px', borderRadius: 12, fontSize: 13, minHeight: 42, fontWeight: 800,
+          color: '#fff', border: '1px solid rgba(255,255,255,0.35)',
+          background: holding ? 'linear-gradient(135deg, rgba(245,168,0,0.95), rgba(230,120,0,0.95))' : 'linear-gradient(135deg, rgba(46,158,51,0.95), rgba(30,125,34,0.95))',
+          textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+        }}>
+        {holding
+          ? <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><rect x="5" y="4" width="5" height="16" rx="1.5" /><rect x="14" y="4" width="5" height="16" rx="1.5" /></svg>
+          : <Icon name="check" size={14} />}
+        {label}
+      </button>
+      {dialog && (
+        <ReasonDialog
+          title={`${label} (${targets.length} ${targets.length === 1 ? 'family' : 'families'})`}
+          info={`This applies to every ${holding ? 'active' : 'held'} family in the ${branch} branch (${targets.length}). ${a.info}`}
+          categories={REASONS[action]}
+          busy={busy} confirmLabel={label} onCancel={() => setDialog(false)} onSave={run}
+        />
+      )}
+    </>
+  )
+}

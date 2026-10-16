@@ -4,7 +4,7 @@ import { supabase, BUCKETS } from './lib/supabase'
 import { uploadFile } from './lib/imageUtils'
 import BankListPage from './pages/BankListPage'
 import FamilyPaymentsTab from './pages/FamilyPaymentsTab'
-import FamilyStatusTab, { HoldQuickButton } from './pages/FamilyStatusTab'
+import FamilyStatusTab, { HoldQuickButton, BranchHoldButton } from './pages/FamilyStatusTab'
 import ArchivePage from './pages/ArchivePage'
 import ApprovalsPage from './pages/ApprovalsPage'
 import CallerIdSettings from './pages/CallerIdSettings'
@@ -1041,7 +1041,7 @@ const StatCard = ({ label, value, icon, bg, color, sub, loading, isMobile }) => 
 )
 
 // ─── DASHBOARD PAGE ───────────────────────────────────────────────────────────
-function DashboardPage({ families, children, loading, onView, onAdd, isMobile, isTablet, canEdit = true, canAdd = canEdit, transferredCount = null, showCase = true, onBack = null, backLabel = 'Back', heading = null }) {
+function DashboardPage({ families, children, loading, onView, onAdd, isMobile, isTablet, canEdit = true, canAdd = canEdit, transferredCount = null, showCase = true, onBack = null, backLabel = 'Back', heading = null, headerAction = null }) {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('All')
   // A family on hold is counted as "On hold" only (not also as active/pending/inactive)
@@ -1076,11 +1076,12 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
   return (
     <div style={{ padding: isMobile ? '14px 12px 84px' : '22px 26px', maxWidth: 1140, margin: '0 auto', position: 'relative' }}>
       {onBack && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
           <button onClick={onBack} style={{ background: B.greenLight, border: `1px solid ${B.border}`, borderRadius: 8, padding: '9px 14px', cursor: 'pointer', fontSize: 13, color: B.green, fontWeight: 700, minHeight: 38, fontFamily: 'inherit' }}>
             <Icon name="back" size={14} /> {backLabel}
           </button>
           {heading && <span style={{ fontSize: 15, fontWeight: 800, color: B.text }}>{heading}</span>}
+          {headerAction}
         </div>
       )}
       {/* Stats grid */}
@@ -2806,6 +2807,9 @@ export default function App() {
               onBack={() => setPage(selectedProject === 'HF' ? 'branches' : 'projects')}
               backLabel={selectedProject === 'HF' ? 'Back to Branches' : 'Back to Projects'}
               heading={selectedProject === 'HF' ? `HF — ${selectedBranch || ''}` : 'OVC'}
+              headerAction={selectedProject === 'HF' && selectedBranch && can(role, 'manage_holds')
+                ? <BranchHoldButton branch={selectedBranch} families={liveFamilies.filter(f => f.project === 'HF' && f.branch === selectedBranch)} user={user} toast={toast} isMobile={isMobile} onChanged={() => loadAll()} />
+                : null}
             />
           )}
           {allowed && page === 'detail' && selectedFamily && (
