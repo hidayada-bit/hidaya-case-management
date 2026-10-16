@@ -14,6 +14,7 @@ import BankMark from './components/BankMark'
 import { BANKS } from './lib/banks'
 import { DEFAULT_RATES, loadRates, saveRates, loadBranches, saveBranches, DEFAULT_HF_BRANCHES, monthlyFor, isPayingChild, ageExclusion, cappedChildren, caseState, submissionState, MIN_PAYING_AGE, MAX_PAYING_AGE, MAX_PAYING_CHILDREN, joinedDate, enrollmentFromNotes, tenureText } from './lib/settings'
 import PaymentsPage from './pages/PaymentsPage'
+import HomePage from './pages/HomePage'
 import UsersPage from './pages/UsersPage'
 import AgreementsPage from './pages/AgreementsPage'
 import { DEFAULT_LETTER_SETTINGS, loadLetterSettings, saveLetterSettings } from './lib/letter'
@@ -2774,7 +2775,15 @@ export default function App() {
               <div style={{ fontSize: 13 }}>Your role ({roleLabel(role)}) does not include this area. Ask an administrator if you need it.</div>
             </div>
           )}
-          {allowed && (page === 'dashboard' || page === 'families') && (
+          {allowed && page === 'dashboard' && (
+            <HomePage
+              user={user} families={liveFamilies} allFamilies={families} children={liveChildren} childCounts={childCounts} rates={rates} monthlyFor={monthlyFor}
+              canPayments={can(role, 'view_payments')} canApprovals={can(role, 'view_approvals')} canCase={can(role, 'view_case_status')} canAdd={canAdd}
+              transferredCount={can(role, 'view_case_status') ? transferredFamilies.length : null} isMobile={isMobile}
+              onNavigate={setPage} onView={openFamily} onAdd={() => { setEditingFamily(null); setShowFamilyForm(true) }}
+            />
+          )}
+          {allowed && page === 'families' && (
             <DashboardPage
               families={liveFamilies} children={liveChildren} loading={dataLoading} transferredCount={can(role, 'view_case_status') ? transferredFamilies.length : null}
               onView={openFamily}
