@@ -236,3 +236,11 @@ Run `supabase/migrations/010_agreements_letters_director.sql` once. Then:
 - **Projects → HF → Add branch** (admin) adds a branch to the list used by the registration form, filters and projects.
 - The registration form no longer asks for a city (the branch is used) and shows the account-number box only after a bank is chosen.
 - Each profile's Overview ends with **Form filled by / Approved by**.
+
+## 📞 Caller ID phones (migration 011 — run after 010)
+Run `supabase/migrations/011_caller_id.sql` once. Then, in the web app (**admin only**) go to **Settings → Caller ID phones → Pair phone**:
+name the phone → a **pairing token** appears **once** → paste it in the Hidaya Caller ID Android app (`android/`).
+- When a registered family calls, the phone shows her name, Family ID, project/branch and photo, with an **ON HOLD / TRANSFERRED OUT** tag if it applies.
+- The phone refreshes its list **every 15 minutes** (and has a "Sync now" button); lookups work offline.
+- Only **approved** families are sent; **Revoke** erases the list from a phone on its next sync. Only a hash of the secret is stored.
+- Build the app with Android Studio — see `android/README.md`.

@@ -7,6 +7,7 @@ import FamilyPaymentsTab from './pages/FamilyPaymentsTab'
 import FamilyStatusTab, { HoldQuickButton } from './pages/FamilyStatusTab'
 import ArchivePage from './pages/ArchivePage'
 import ApprovalsPage from './pages/ApprovalsPage'
+import CallerIdSettings from './pages/CallerIdSettings'
 import MySubmissionsPage from './pages/MySubmissionsPage'
 import BankPicker from './components/BankPicker'
 import BankMark from './components/BankMark'
@@ -2337,6 +2338,8 @@ function SettingsPage({ user, onUpdateUser, toast, isMobile, rates = DEFAULT_RAT
           <Btn onClick={handleSaveLetter} variant="primary" full disabled={savingLetter}>{savingLetter ? 'Saving…' : 'Save Bank Letter Details'}</Btn>
         </div>
       )}
+
+      {user?.role === 'admin' && <CallerIdSettings toast={toast} isMobile={isMobile} />}
     </div>
   )
 }
