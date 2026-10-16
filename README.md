@@ -222,3 +222,17 @@ Run `supabase/migrations/007_activity_log.sql` once. Every action (hold/transfer
 family/child/document changes, rate changes) is logged and shown in the bell next to the night-mode button
 (red counter = activity by other staff since you last pressed "Mark all read"). Data collectors only see family/document activity.
 Logos live in `public/`: `cbe_logo.png`, `oromia_logo.png`, `awash_logo.png` (+ `awash_template.png`), `ebama_logo.jpg`, `hidaya_logo.jpg`.
+
+
+## 📄 Bank letters, agreements, director registration (migration 010 — run after 009)
+Run `supabase/migrations/010_agreements_letters_director.sql` once. Then:
+- **Bank letter** — every export (Print / CSV / Excel / Copy) asks **"Just to have it"** or **"For bank use (deposit)"** for admin, director and finance.
+  *For bank use* asks the letter Ref No and month, prints the full letter (To / Subject / body with the total in words and figures, HDA's account number, closing and signatories) and, for admin and finance, records the payments.
+  *Just to have it* downloads a **locked PDF** (cannot be edited or copied; printing allowed) with a diagonal **FOR RECORDS ONLY — NOT FOR BANK USE** watermark.
+  Pasted/copied text cannot be locked, so a copy made "just to have it" starts with the line *FOR RECORDS ONLY — NOT FOR BANK USE*.
+- **Bank letter details** (bank name, branch, address, HDA's own account number, signatories) are edited by the admin in **Settings → Bank Letter Details**.
+- **Agreements** (sidebar) — scanned agreements, stored in a private bucket. Admin, director, finance and project coordinator can view; admin and director upload; admin deletes.
+- **Director** can now register a family directly (no approval needed) and add children/documents to the families he registered.
+- **Projects → HF → Add branch** (admin) adds a branch to the list used by the registration form, filters and projects.
+- The registration form no longer asks for a city (the branch is used) and shows the account-number box only after a bank is chosen.
+- Each profile's Overview ends with **Form filled by / Approved by**.

@@ -9,9 +9,13 @@ import ArchivePage from './pages/ArchivePage'
 import ApprovalsPage from './pages/ApprovalsPage'
 import MySubmissionsPage from './pages/MySubmissionsPage'
 import BankPicker from './components/BankPicker'
-import { DEFAULT_RATES, loadRates, saveRates, monthlyFor, isPayingChild, ageExclusion, cappedChildren, caseState, submissionState, MIN_PAYING_AGE, MAX_PAYING_AGE, MAX_PAYING_CHILDREN, joinedDate, enrollmentFromNotes, tenureText } from './lib/settings'
+import BankMark from './components/BankMark'
+import { BANKS } from './lib/banks'
+import { DEFAULT_RATES, loadRates, saveRates, loadBranches, saveBranches, DEFAULT_HF_BRANCHES, monthlyFor, isPayingChild, ageExclusion, cappedChildren, caseState, submissionState, MIN_PAYING_AGE, MAX_PAYING_AGE, MAX_PAYING_CHILDREN, joinedDate, enrollmentFromNotes, tenureText } from './lib/settings'
 import PaymentsPage from './pages/PaymentsPage'
 import UsersPage from './pages/UsersPage'
+import AgreementsPage from './pages/AgreementsPage'
+import { DEFAULT_LETTER_SETTINGS, loadLetterSettings, saveLetterSettings } from './lib/letter'
 import { LoginPage, SignupPage, AccessGate } from './pages/AuthPages'
 import Icon from './components/Icon'
 import { can, canOpenPage, roleLabel, homePage } from './lib/permissions'
@@ -471,6 +475,7 @@ const NAV = [
   { id: 'analytics', label: 'Stats',     icon: 'chart' },
   { id: 'academics', label: 'Academics', icon: 'graduation' },
   { id: 'banklist',  label: 'Bank List', icon: 'bank' },
+  { id: 'agreements', label: 'Agreements', icon: 'agreement' },
   { id: 'archive',   label: 'Transferred', icon: 'archive' },
   { id: 'users',     label: 'Staff',     icon: 'userCog' },
   { id: 'settings',  label: 'Settings',  icon: 'settings' },
@@ -630,7 +635,8 @@ function MessagingPage({ families, isMobile }) {
 }
 
 // ─── PROJECTS ─────────────────────────────────────────────────────────────────
-const HF_BRANCHES = ['Addis Ababa', 'Bishoftu', 'Dangla', 'Bure', 'Dire Dawa', 'Nekemte', 'Chagni']
+// The branch list is kept in the database (admin can add branches). This array is updated in place when it loads.
+const HF_BRANCHES = [...DEFAULT_HF_BRANCHES]
 
 function ProjectsPage({ families, onOpenOVC, onOpenHF, isMobile }) {
   const ovcCount = families.filter(f => f.project === 'OVC').length
@@ -701,8 +707,17 @@ function ProjectsPage({ families, onOpenOVC, onOpenHF, isMobile }) {
   )
 }
 
-function BranchesPage({ families, onOpenBranch, onBack, isMobile }) {
+function BranchesPage({ families, onOpenBranch, onBack, isMobile, canAddBranch = false, onAddBranch = async () => {} }) {
   const hfFamilies = families.filter(f => f.project === 'HF')
+  const [adding, setAdding] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [busy, setBusy] = useState(false)
+  const submitBranch = async () => {
+    setBusy(true)
+    const ok = await onAddBranch(newName)
+    setBusy(false)
+    if (ok) { setNewName(''); setAdding(false) }
+  }
   return (
     <div style={{ padding: isMobile ? '14px 12px 28px' : '22px 26px', maxWidth: 1000, margin: '0 auto' }}>
       <button
@@ -725,7 +740,21 @@ function BranchesPage({ families, onOpenBranch, onBack, isMobile }) {
           <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>HF — Branches</div>
           <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>Choose a branch to view its beneficiaries</div>
         </div>
+        {canAddBranch && (
+          <div style={{ marginLeft: 'auto' }}>
+            <Btn onClick={() => setAdding(a => !a)} variant="gold" size="sm"><Icon name={adding ? 'x' : 'plus'} size={15} />{adding ? 'Cancel' : 'Add branch'}</Btn>
+          </div>
+        )}
       </div>
+      {canAddBranch && adding && (
+        <div style={{ background: B.card, border: `1.5px solid ${B.gold}`, borderRadius: 12, padding: 14, marginBottom: 16, display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 220px' }}>
+            <FL>New branch name</FL>
+            <input autoFocus value={newName} onChange={e => setNewName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && newName.trim() && !busy) submitBranch() }} placeholder="e.g. Jimma" maxLength={40} style={{ ...inputBase, marginBottom: 0 }} />
+          </div>
+          <Btn onClick={submitBranch} variant="primary" disabled={busy || !newName.trim()}><Icon name="save" size={15} />{busy ? 'Saving…' : 'Save branch'}</Btn>
+        </div>
+      )}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 14 }}>
         {HF_BRANCHES.map(branch => {
           const count = hfFamilies.filter(f => f.branch === branch).length
@@ -1011,7 +1040,7 @@ const StatCard = ({ label, value, icon, bg, color, sub, loading, isMobile }) => 
 )
 
 // ─── DASHBOARD PAGE ───────────────────────────────────────────────────────────
-function DashboardPage({ families, children, loading, onView, onAdd, isMobile, isTablet, canEdit = true, transferredCount = null, showCase = true, onBack = null, backLabel = 'Back', heading = null }) {
+function DashboardPage({ families, children, loading, onView, onAdd, isMobile, isTablet, canEdit = true, canAdd = canEdit, transferredCount = null, showCase = true, onBack = null, backLabel = 'Back', heading = null }) {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('All')
   // A family on hold is counted as "On hold" only (not also as active/pending/inactive)
@@ -1140,7 +1169,7 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
                 {['All', 'Active', 'Inactive', 'Pending', ...(showCase ? ['On hold'] : [])].map(o => <option key={o}>{o}</option>)}
               </select>
             )}
-            {!isMobile && canEdit && <Btn onClick={onAdd} variant="gold" size="md"><Icon name="plus" size={16} />Add Family</Btn>}
+            {!isMobile && canAdd && <Btn onClick={onAdd} variant="gold" size="md"><Icon name="plus" size={16} />Add Family</Btn>}
           </div>
           {isMobile && (
             <div style={{ display: 'flex', gap: 6, width: '100%', overflowX: 'auto' }}>
@@ -1216,7 +1245,7 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
       </div>
 
       {/* Mobile floating action button — thumb-reachable add */}
-      {isMobile && canEdit && (
+      {isMobile && canAdd && (
         <button
           onClick={onAdd}
           style={{
@@ -1623,6 +1652,23 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
             <div style={{ fontSize: 10, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Full Address</div>
             <div style={{ fontSize: 14, color: B.text }}>{family.address}</div>
           </div>
+          <div style={{ gridColumn: '1/-1', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 8 : 12 }}>
+            {[
+              { l: 'Form filled by', icon: 'clipboard', who: staffNames[family.submitted_by || family.created_by] || '—', when: family.submitted_at || family.created_at },
+              family.submitted_by
+                ? { l: 'Approved by', icon: 'approve', who: family.reviewed_by_name || (submissionState(family) === 'approved' ? '—' : 'Waiting for approval'), when: family.reviewed_by_name ? family.reviewed_at : null }
+                : { l: 'Approved by', icon: 'approve', who: 'Entered directly by staff — no approval needed', when: null },
+            ].map(r => (
+              <div key={r.l} style={{ background: B.greenLight, borderRadius: 11, border: `1px solid ${B.border}`, padding: isMobile ? '11px 13px' : '13px 16px', display: 'flex', gap: 10, alignItems: 'center' }}>
+                <span style={{ color: B.green }}><Icon name={r.icon} size={20} /></span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 3 }}>{r.l}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: B.text }}>{r.who}</div>
+                  {r.when && <div style={{ fontSize: 11, color: B.textLight, marginTop: 2 }}>{new Date(r.when).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -1761,7 +1807,7 @@ function FamilyForm({ initial, defaultProject, defaultBranch, families = [], onS
   // Family Code is never hand-typed — it's always derived from the project's sequence.
   const handleProjectChange = v => {
     setF(x => {
-      const next = { ...x, project: v, branch: v === 'OVC' ? '' : x.branch }
+      const next = { ...x, project: v, branch: v === 'OVC' ? '' : x.branch, city: v === 'OVC' ? 'Addis Ababa' : (x.branch || x.city || 'Addis Ababa') }
       if (isNew && !isCollector) {
         const ids = nextIdsForProject(families, v)
         next.family_code = ids.family_code
@@ -1786,14 +1832,13 @@ function FamilyForm({ initial, defaultProject, defaultBranch, families = [], onS
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '0 16px' }}>
         <FS label="Project" value={f.project} onChange={handleProjectChange} options={[{ value: 'OVC', label: 'OVC' }, { value: 'HF', label: 'HF' }]} />
         {f.project === 'HF' && (
-          <FS label="Branch" value={f.branch} onChange={v => setF(x => ({ ...x, branch: v, city: v || x.city }))} options={[{ value: '', label: 'Select branch…' }, ...HF_BRANCHES.map(b => ({ value: b, label: b }))]} />
+          <FS label="Branch" value={f.branch} onChange={v => setF(x => ({ ...x, branch: v, city: v || 'Addis Ababa' }))} options={[{ value: '', label: 'Select branch…' }, ...HF_BRANCHES.map(b => ({ value: b, label: b }))]} />
         )}
         <FI label={isCollector ? 'Family Code' : 'Family Code (system-generated)'} value={isCollector ? 'Assigned after approval' : f.family_code} disabled req />
         <FI label="Mother Full Name" value={f.mother_name} onChange={s('mother_name')} placeholder="Full name" req />
         <FI label="National ID Number" value={f.mother_id_number} onChange={s('mother_id_number')} placeholder="123-456-789" />
         <FI label="Phone Number" value={f.phone_number} onChange={s('phone_number')} type="tel" placeholder="0911-000-000" req />
         <FI label="Alternate Phone" value={f.alternate_phone} onChange={s('alternate_phone')} type="tel" placeholder="0922-000-000" />
-        <FI label="City" value={f.city} onChange={s('city')} placeholder="Addis Ababa" />
         <FI label="District / Sub-City" value={f.district} onChange={s('district')} placeholder="Bole" />
       </div>
       <FT label="Full Address" value={f.address} onChange={s('address')} placeholder="Street, Kebele, Woreda…" />
@@ -2159,7 +2204,22 @@ function AcademicsPage({ children, isMobile }) {
 }
 
 // ─── SETTINGS PAGE ────────────────────────────────────────────────────────────
-function SettingsPage({ user, onUpdateUser, toast, isMobile, rates = DEFAULT_RATES, onRatesChange }) {
+function SettingsPage({ user, onUpdateUser, toast, isMobile, rates = DEFAULT_RATES, onRatesChange, letterSettings = DEFAULT_LETTER_SETTINGS, onLetterChange }) {
+  const [lset, setLset] = useState(letterSettings)
+  const [savingLetter, setSavingLetter] = useState(false)
+  useEffect(() => { setLset(letterSettings) }, [letterSettings])
+  const setBankField = (id, k, v) => setLset(x => ({ ...x, banks: { ...x.banks, [id]: { ...x.banks[id], [k]: v } } }))
+  const setSig = (i, k, v) => setLset(x => ({ ...x, signatories: x.signatories.map((sg, j) => j === i ? { ...sg, [k]: v } : sg) }))
+  const handleSaveLetter = async () => {
+    for (const b of BANKS) { const v = lset.banks[b.id]; if (!v.name.trim() || !v.account.trim()) { toast(`${b.label}: bank name and our account number are required`, 'error'); return } }
+    setSavingLetter(true)
+    const err = await saveLetterSettings(lset, user.id)
+    setSavingLetter(false)
+    if (err) { toast('Could not save: ' + err.message + ' (run migration 010)', 'error'); return }
+    onLetterChange?.(lset)
+    logActivity(user, 'settings', `${user?.full_name || 'Admin'} updated the bank letter details (bank, branch, address, account numbers)`)
+    toast('Bank letter details saved', 'success')
+  }
   const [mRate, setMRate] = useState(String(rates.mother))
   const [cRate, setCRate] = useState(String(rates.child))
   const [savingRates, setSavingRates] = useState(false)
@@ -2250,6 +2310,33 @@ function SettingsPage({ user, onUpdateUser, toast, isMobile, rates = DEFAULT_RAT
           <Btn onClick={handleSaveRates} variant="primary" full disabled={savingRates}>{savingRates ? 'Saving…' : 'Save Payment Rates'}</Btn>
         </div>
       )}
+
+      {user?.role === 'admin' && (
+        <div style={{ background: B.card, borderRadius: 16, border: `1px solid ${B.border}`, padding: isMobile ? 20 : 28, boxShadow: `0 2px 12px rgba(30,125,34,0.06)`, marginTop: 16 }}>
+          <div style={{ fontWeight: 800, fontSize: 16, color: B.text, marginBottom: 4 }}>Bank Letter Details</div>
+          <div style={{ fontSize: 12, color: B.textMid, marginBottom: 16 }}>Printed in the "To" block and the body of every bank letter. HDA's own account number at each bank goes in the sentence "…from our account number …".</div>
+          {BANKS.map(b => (
+            <div key={b.id} style={{ border: `1.5px solid ${B.border}`, borderLeft: `5px solid ${b.color}`, borderRadius: 12, padding: 14, marginBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <BankMark bank={b} size={30} />
+                <div style={{ fontWeight: 800, fontSize: 14, color: B.text }}>{b.label}</div>
+              </div>
+              <FI label="Bank name" value={lset.banks[b.id].name} onChange={v => setBankField(b.id, 'name', v)} placeholder={b.name} />
+              <FI label="Branch name" value={lset.banks[b.id].branch} onChange={v => setBankField(b.id, 'branch', v)} placeholder="e.g. Arada Giorgis" />
+              <FI label="Address" value={lset.banks[b.id].address} onChange={v => setBankField(b.id, 'address', v)} placeholder="Addis Ababa" />
+              <FI label="Our (HDA) account number at this bank" value={lset.banks[b.id].account} onChange={v => setBankField(b.id, 'account', v.replace(/[^\d]/g, ''))} placeholder="Account number" />
+            </div>
+          ))}
+          <div style={{ fontWeight: 700, fontSize: 13, color: B.text, margin: '6px 0 8px' }}>Signatories (bottom of the letter)</div>
+          {lset.signatories.map((sg, i) => (
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
+              <FI label={`Name ${i + 1}`} value={sg.name} onChange={v => setSig(i, 'name', v)} />
+              <FI label="Title" value={sg.title} onChange={v => setSig(i, 'title', v)} />
+            </div>
+          ))}
+          <Btn onClick={handleSaveLetter} variant="primary" full disabled={savingLetter}>{savingLetter ? 'Saving…' : 'Save Bank Letter Details'}</Btn>
+        </div>
+      )}
     </div>
   )
 }
@@ -2261,6 +2348,8 @@ export default function App() {
   const isTablet = bp === 'tablet'
   const { isDark, toggle: toggleTheme } = useTheme()
   const [rates, setRates] = useState(DEFAULT_RATES)
+  const [letterSettings, setLetterSettings] = useState(DEFAULT_LETTER_SETTINGS)
+  const [, setBranchesVer] = useState(0) // bumps when the branch list changes (the list itself lives in HF_BRANCHES)
   const [staffNames, setStaffNames] = useState({})
   const [profileError, setProfileError] = useState(null)
 
@@ -2397,6 +2486,8 @@ export default function App() {
   useEffect(() => {
     if (session && user?.status === 'approved') {
       loadRates().then(r => setRates(r.rates))
+      loadLetterSettings().then(r => setLetterSettings(r.settings))
+      loadBranches().then(r => { HF_BRANCHES.splice(0, HF_BRANCHES.length, ...r.branches); setBranchesVer(v => v + 1) })
       supabase.from('users').select('id,full_name,email').then(({ data }) => {
         const m = {}; (data || []).forEach(u => { m[u.id] = u.full_name || u.email }); setStaffNames(m)
       })
@@ -2439,6 +2530,19 @@ export default function App() {
   const signOut = async () => {
     await supabase.auth.signOut()
     setFamilies([]); setChildren([]); setDocs([]); setMySubs([])
+  }
+
+  const addBranch = async name => {
+    const clean = String(name || '').trim().replace(/\s+/g, ' ')
+    if (!clean) { toast('Enter the branch name', 'error'); return false }
+    if (HF_BRANCHES.some(b => b.toLowerCase() === clean.toLowerCase())) { toast(`"${clean}" already exists`, 'error'); return false }
+    const next = [...HF_BRANCHES, clean]
+    const err = await saveBranches(next, user.id)
+    if (err) { toast('Could not save the branch: ' + err.message + ' (run migration 010)', 'error'); return false }
+    HF_BRANCHES.splice(0, HF_BRANCHES.length, ...next); setBranchesVer(v => v + 1)
+    logActivity(user, 'settings', `${user?.full_name || 'Admin'} added a new HF branch: ${clean}`)
+    toast(`Branch "${clean}" added`)
+    return true
   }
 
   const saveFamily = async (form, photoFile) => {
@@ -2581,10 +2685,11 @@ export default function App() {
   // Only children aged 18 or under are counted in the payment amount.
   const childCounts = Object.fromEntries(Object.entries(liveChildren.filter(isPayingChild).reduce((m, c) => { m[c.family_id] = (m[c.family_id] || 0) + 1; return m }, {})).map(([id, n]) => [id, cappedChildren(n)])) // max 4 per family
   const canEdit = can(role, 'edit_families')
+  const canAdd = canEdit || can(role, 'add_families')
   const canDelete = can(role, 'delete_families')
   const isCollector = role === 'data_collector'
   const openFam = page === 'detail' && selectedFamily ? (families.find(f => f.id === selectedFamily.id) || selectedFamily) : null
-  const canEditDetail = canEdit || (isCollector && !!openFam && submissionState(openFam) !== 'approved')
+  const canEditDetail = canEdit || (isCollector && !!openFam && submissionState(openFam) !== 'approved') || (role === 'director' && !!openFam && openFam.created_by === user.id)
   // A data collector has no "families" access, but may open the detail page of their OWN open submission (pending / returned).
   const collectorOwnsOpen = isCollector && page === 'detail' && !!openFam && openFam.submitted_by === user.id && submissionState(openFam) !== 'approved'
   const pageKey = page === 'detail' && isCollector ? 'mysubs' : (['detail', 'project-detail', 'branches'].includes(page) ? 'families' : page)
@@ -2595,7 +2700,7 @@ export default function App() {
     : page === 'project-detail'
       ? selectedProject === 'HF' ? ['Projects', 'HF', selectedBranch] : ['Projects', 'OVC']
       : page === 'branches' ? ['Projects', 'HF'] : null
-  const pageTitle = { dashboard: 'Dashboard', detail: 'Family Details', analytics: 'Statistics', academics: 'Academics', settings: 'Settings', projects: 'Projects', branches: 'HF Branches', 'project-detail': 'Beneficiaries', messaging: 'Send Message', banklist: 'Bank List', approvals: 'Approvals', mysubs: 'My Submissions', payments: 'Payments', archive: 'Transferred Families', users: 'Staff & Access' }[page]
+  const pageTitle = { dashboard: 'Dashboard', detail: 'Family Details', analytics: 'Statistics', academics: 'Academics', settings: 'Settings', projects: 'Projects', branches: 'HF Branches', 'project-detail': 'Beneficiaries', messaging: 'Send Message', banklist: 'Bank List', agreements: 'Agreements', approvals: 'Approvals', mysubs: 'My Submissions', payments: 'Payments', archive: 'Transferred Families', users: 'Staff & Access' }[page]
 
   return (
     <div style={{
@@ -2670,7 +2775,7 @@ export default function App() {
               families={liveFamilies} children={liveChildren} loading={dataLoading} transferredCount={can(role, 'view_case_status') ? transferredFamilies.length : null}
               onView={openFamily}
               onAdd={() => { setEditingFamily(null); setShowFamilyForm(true) }}
-              isMobile={isMobile} isTablet={isTablet} canEdit={canEdit} showCase={can(role, 'view_case_status')}
+              isMobile={isMobile} isTablet={isTablet} canEdit={canEdit} canAdd={canAdd} showCase={can(role, 'view_case_status')}
             />
           )}
           {allowed && page === 'projects' && (
@@ -2684,6 +2789,7 @@ export default function App() {
             <BranchesPage
               families={liveFamilies} isMobile={isMobile}
               onBack={() => setPage('projects')}
+              canAddBranch={role === 'admin'} onAddBranch={addBranch}
               onOpenBranch={branch => { setSelectedProject('HF'); setSelectedBranch(branch); setPage('project-detail') }}
             />
           )}
@@ -2693,7 +2799,7 @@ export default function App() {
               children={liveChildren} loading={dataLoading}
               onView={openFamily}
               onAdd={() => { setEditingFamily(null); setShowFamilyForm(true) }}
-              isMobile={isMobile} isTablet={isTablet} canEdit={canEdit} showCase={can(role, 'view_case_status')}
+              isMobile={isMobile} isTablet={isTablet} canEdit={canEdit} canAdd={canAdd} showCase={can(role, 'view_case_status')}
               onBack={() => setPage(selectedProject === 'HF' ? 'branches' : 'projects')}
               backLabel={selectedProject === 'HF' ? 'Back to Branches' : 'Back to Projects'}
               heading={selectedProject === 'HF' ? `HF — ${selectedBranch || ''}` : 'OVC'}
@@ -2718,7 +2824,8 @@ export default function App() {
           {allowed && page === 'analytics' && <AnalyticsPage families={liveFamilies} children={liveChildren} isMobile={isMobile} />}
           {allowed && page === 'academics' && <AcademicsPage children={liveChildren} isMobile={isMobile} />}
           {allowed && page === 'messaging' && <MessagingPage families={liveFamilies} isMobile={isMobile} />}
-          {allowed && page === 'banklist' && <BankListPage families={liveFamilies} childCounts={childCounts} rates={rates} user={user} isAdmin={role === 'admin'} toast={toast} isMobile={isMobile} />}
+          {allowed && page === 'banklist' && <BankListPage families={liveFamilies} childCounts={childCounts} rates={rates} user={user} isAdmin={role === 'admin'} canRecord={can(role, 'manage_payments')} letterSettings={letterSettings} toast={toast} isMobile={isMobile} />}
+          {allowed && page === 'agreements' && <AgreementsPage user={user} canUpload={can(role, 'manage_agreements')} canDelete={role === 'admin'} toast={toast} isMobile={isMobile} />}
           {allowed && page === 'payments' && <PaymentsPage allChildren={liveChildren} families={liveFamilies} staffNames={staffNames} childCounts={childCounts} rates={rates} user={user} canManage={can(role, 'manage_payments')} toast={toast} isMobile={isMobile} />}
           {allowed && page === 'approvals' && (
             <ApprovalsPage
@@ -2736,7 +2843,7 @@ export default function App() {
           {allowed && page === 'archive' && <ArchivePage families={transferredFamilies} onView={openFamily} isMobile={isMobile} />}
           {allowed && page === 'users' && <UsersPage currentUser={user} toast={toast} isMobile={isMobile} />}
           {allowed && page === 'settings' && (
-            <SettingsPage user={user} onUpdateUser={setUser} toast={toast} isMobile={isMobile} rates={rates} onRatesChange={setRates} />
+            <SettingsPage user={user} onUpdateUser={setUser} toast={toast} isMobile={isMobile} rates={rates} onRatesChange={setRates} letterSettings={letterSettings} onLetterChange={setLetterSettings} />
           )}
         </div>
       </main>

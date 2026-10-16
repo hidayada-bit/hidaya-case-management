@@ -8,7 +8,7 @@
 
 export const ROLES = {
   admin:               { label: 'Administrator',       desc: 'Full access, approves staff and data collector submissions, manages roles' },
-  director:            { label: 'Director',            desc: 'Views everything, reports, payments and submissions; can send messages and put families on hold' },
+  director:            { label: 'Director',            desc: 'Views everything, reports, payments and submissions; can register families, send messages, put families on hold and upload agreements' },
   finance:             { label: 'Finance',             desc: 'Manages payments and bank lists; views approved beneficiaries' },
   project_coordinator: { label: 'Project Coordinator', desc: 'Manages beneficiaries, academics and messaging; sees data collector submissions' },
   data_collector:      { label: 'Data Collector',      desc: 'Registers new families for approval; cannot see stored data. Can edit a submission only until it is approved' },
@@ -22,13 +22,14 @@ export const ASSIGNABLE_ROLES = Object.keys(ROLES)
 //  view_case_status (see hold/transfer info + Transferred page), manage_holds (put on hold / release),
 //  view_approvals (see data collector submissions), approve_submissions (approve / return them — admin only),
 //  submit_data (data collector: register families for approval + "My Submissions")
-const ALL = ['view_families', 'edit_families', 'delete_families', 'view_payments', 'manage_payments', 'view_bank_list', 'send_messages', 'view_stats', 'manage_users', 'view_case_status', 'manage_holds', 'view_approvals', 'approve_submissions']
+//  add_families (director: register a new family directly), view_agreements / manage_agreements (scanned agreements page: view / upload)
+const ALL = ['view_families', 'edit_families', 'delete_families', 'view_payments', 'manage_payments', 'view_bank_list', 'send_messages', 'view_stats', 'manage_users', 'view_case_status', 'manage_holds', 'view_approvals', 'approve_submissions', 'add_families', 'view_agreements', 'manage_agreements']
 
 export const ROLE_PERMISSIONS = {
   admin: ALL,
-  director: ['view_families', 'view_payments', 'view_bank_list', 'send_messages', 'view_stats', 'view_case_status', 'manage_holds', 'view_approvals'],
-  finance: ['view_families', 'view_payments', 'manage_payments', 'view_bank_list', 'view_stats', 'view_case_status'],
-  project_coordinator: ['view_families', 'edit_families', 'view_payments', 'send_messages', 'view_stats', 'view_case_status', 'view_approvals'],
+  director: ['view_families', 'add_families', 'view_payments', 'view_bank_list', 'send_messages', 'view_stats', 'view_case_status', 'manage_holds', 'view_approvals', 'view_agreements', 'manage_agreements'],
+  finance: ['view_families', 'view_payments', 'manage_payments', 'view_bank_list', 'view_stats', 'view_case_status', 'view_agreements'],
+  project_coordinator: ['view_families', 'edit_families', 'view_payments', 'send_messages', 'view_stats', 'view_case_status', 'view_approvals', 'view_agreements'],
   // Data collectors never see stored data: they only register families and follow their own submissions.
   data_collector: ['submit_data'],
 }
@@ -47,6 +48,7 @@ export const PAGE_PERMISSION = {
   payments: 'view_payments',
   users: 'manage_users',
   archive: 'view_case_status', // everyone except data collector
+  agreements: 'view_agreements', // admin, director, finance, project coordinator (only admin + director upload)
   approvals: 'view_approvals', // admin, director, project coordinator (only admin can approve)
   register: 'submit_data',     // data collector
   mysubs: 'submit_data',       // data collector

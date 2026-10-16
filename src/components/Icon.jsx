@@ -6,7 +6,7 @@ import {
   ThumbsUp, TrendingUp, CircleCheck, Map, GraduationCap, LockKeyhole, Printer, FileSpreadsheet,
   Copy, ShieldCheck, UserCheck, UserX, UserCog, UserPlus, Wallet, Receipt, CalendarDays, House,
   Settings, LogOut, Loader2, Eye, EyeOff, Mail, KeyRound, Clock, RefreshCw, Banknote,
-  CircleAlert, CircleX, Filter, Send, LayoutDashboard, Moon, Sun, Archive,
+  CircleAlert, CircleX, Filter, Send, LayoutDashboard, Moon, Sun, Archive, FileSignature,
 } from 'lucide-react'
 
 // One place to map semantic names -> vector icons (Lucide). Use: <Icon name="search" size={16} />
@@ -25,7 +25,7 @@ const ICONS = {
   calendar: CalendarDays, home: House, settings: Settings, logout: LogOut, spinner: Loader2,
   eye: Eye, eyeOff: EyeOff, mail: Mail, key: KeyRound, clock: Clock, refresh: RefreshCw,
   cash: Banknote, warn: CircleAlert, fail: CircleX, filter: Filter, send: Send,
-  dashboard: LayoutDashboard, moon: Moon, sun: Sun, archive: Archive,
+  dashboard: LayoutDashboard, moon: Moon, sun: Sun, archive: Archive, agreement: FileSignature,
 }
 
 export default function Icon({ name, size = 16, color = 'currentColor', strokeWidth = 2, style, spin = false, ...rest }) {

@@ -124,7 +124,7 @@ export default function FamilyPaymentsTab({ family, user, canManage, toast, isMo
         </div>
         <div style={{ fontSize: 13, color: B.textMid, display: 'inline-flex', alignItems: 'center', gap: 8, background: B.card, border: `1px solid ${B.border}`, borderRadius: 24, padding: '4px 6px 4px 6px' }}>
           {bankById(family.bank) ? <BankMark bank={family.bank} size={26} /> : <Icon name="bank" size={16} />}
-          <b style={{ color: B.text, letterSpacing: '0.02em' }}>{family.account_number || <span style={{ color: B.amber, fontWeight: 600 }}>No account on file</span>}</b>
+          <b style={{ color: bankById(family.bank) ? `color-mix(in srgb, ${bankById(family.bank).color} 72%, var(--c-text))` : B.text, letterSpacing: '0.02em' }}>{family.account_number || <span style={{ color: B.amber, fontWeight: 600 }}>No account on file</span>}</b>
           {family.account_number && (
             <button type="button" aria-label="Copy name, bank and account number" title="Copy name, bank and account number"
               onClick={async () => {

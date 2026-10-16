@@ -25,7 +25,7 @@ export default function BankPicker({ bank, account, onBank, onAccount }) {
         @media (prefers-reduced-motion:reduce){.bp-logo,.bp-tick,.bp-acc{transition:none}.bp-opt[aria-checked=true] .bp-logo{transform:none}}
       `}</style>
       <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: B.textMid, marginBottom: 6 }}>
-        Bank &amp; Account Number{sel ? ` — ${sel.name}` : ''}
+        {sel ? `Bank & Account Number — ${sel.name}` : 'Bank (choose one to enter the account number)'}
       </label>
       <div role="radiogroup" aria-label="Bank" className="bp-row" style={{ '--bc': sel?.color, '--ba': sel?.accent }}>
         <div style={{ display: 'flex', gap: 6 }}>
@@ -39,10 +39,11 @@ export default function BankPicker({ bank, account, onBank, onAccount }) {
             </button>
           ))}
         </div>
-        <input id="bp-account" className="bp-acc" inputMode="numeric" value={account || ''} aria-label="Account number"
-          onChange={e => onAccount(e.target.value)}
-          placeholder={sel ? sel.placeholder : 'Select a bank first'}
-          aria-invalid={!!warn} aria-describedby="bp-account-msg" />
+        {sel && (
+          <input id="bp-account" className="bp-acc" inputMode="numeric" value={account || ''} aria-label={`${sel.label} account number`}
+            onChange={e => onAccount(e.target.value)} placeholder={sel.placeholder}
+            aria-invalid={!!warn} aria-describedby="bp-account-msg" />
+        )}
       </div>
       <div id="bp-account-msg" role="status" style={{ minHeight: warn ? 18 : 0, marginTop: 6, fontSize: 12, fontWeight: 600, color: B.warnText }}>
         {warn ? `⚠ ${warn} Nothing was changed — check the bank or the number.` : ''}

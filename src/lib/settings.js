@@ -102,3 +102,18 @@ export const tenureText = d => {
   const y = Math.floor(months / 12), m = months % 12
   return [y ? `${y} year${y > 1 ? 's' : ''}` : '', m ? `${m} month${m > 1 ? 's' : ''}` : ''].filter(Boolean).join(' ')
 }
+
+// ── HF branches (admin can add more from Projects → HF) ─────────────────────
+export const DEFAULT_HF_BRANCHES = ['Addis Ababa', 'Bishoftu', 'Dangla', 'Bure', 'Dire Dawa', 'Nekemte', 'Chagni']
+export async function loadBranches() {
+  const { data, error } = await supabase.from('app_settings').select('value').eq('key', 'hf_branches').maybeSingle()
+  const list = Array.isArray(data?.value) ? data.value.map(s => String(s).trim()).filter(Boolean) : null
+  return { branches: list && list.length ? list : DEFAULT_HF_BRANCHES, error }
+}
+export async function saveBranches(list, userId) {
+  const { error } = await supabase.from('app_settings').upsert(
+    { key: 'hf_branches', value: list, updated_by: userId || null, updated_at: new Date().toISOString() },
+    { onConflict: 'key' },
+  )
+  return error
+}
