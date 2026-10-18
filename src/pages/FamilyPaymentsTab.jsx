@@ -32,6 +32,22 @@ const inputStyle = {
 }
 const Lbl = ({ children }) => <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: B.textMid, marginBottom: 6 }}>{children}</label>
 
+// Round graphic for Paid / Unpaid: the family's bank logo with a green check (sent) or red X (not sent).
+// Images live in /public/status/{BANKID}_paid.png and {BANKID}_unpaid.png. Falls back to a plain check / X circle.
+function PayMark({ status, bank, size = 38 }) {
+  const paid = status === 'paid'
+  const b = bankById(bank)
+  const src = b ? `/status/${b.id}_${paid ? 'paid' : 'unpaid'}.png` : null
+  const [broken, setBroken] = useState(false)
+  useEffect(() => { setBroken(false) }, [src])
+  const label = paid ? 'Paid' : 'Unpaid'
+  const box = { width: size, height: size, borderRadius: '50%', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }
+  if (!src || broken) {
+    return <span role="img" aria-label={label} title={label} style={{ ...box, background: paid ? '#1e9e3a' : '#dc2626', color: '#fff' }}><Icon name={paid ? 'check' : 'x'} size={Math.round(size * 0.55)} /></span>
+  }
+  return <img src={src} alt={label} title={`${label} — ${b.name}`} onError={() => setBroken(true)} style={{ ...box, objectFit: 'cover', boxShadow: '0 0 0 1px rgba(0,0,0,0.10)' }} />
+}
+
 // Payment history for one mother, January → December of the chosen year.
 export default function FamilyPaymentsTab({ family, user, canManage, toast, isMobile, childCount = 0, excludedCount = 0, rates = DEFAULT_RATES, staffNames = {}, caseState = 'normal' }) {
   const monthly = monthlyFor(rates, childCount)
@@ -182,7 +198,9 @@ export default function FamilyPaymentsTab({ family, user, canManage, toast, isMo
                 <div key={m.i} style={{ background: B.card, border: `1px solid ${B.border}`, borderTop: `3px solid ${st.dot}`, borderRadius: 12, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
                     <span style={{ fontWeight: 800, fontSize: 14, color: B.text }}>{m.name}</span>
-                    <span style={{ background: st.bg, color: st.color, padding: '3px 9px', borderRadius: 20, fontSize: 10.5, fontWeight: 700, whiteSpace: 'nowrap' }}>{st.label}</span>
+                    {m.status === 'paid' || m.status === 'pending'
+                      ? <PayMark status={m.status} bank={family.bank} size={isMobile ? 40 : 46} />
+                      : <span style={{ background: st.bg, color: st.color, padding: '3px 9px', borderRadius: 20, fontSize: 10.5, fontWeight: 700, whiteSpace: 'nowrap' }}>{st.label}</span>}
                   </div>
                   <div style={{ fontSize: 17, fontWeight: 800, color: B.text }}>ETB {money(m.amount)}</div>
                   <div style={{ fontSize: 11, color: B.textLight, minHeight: 28, overflow: 'hidden', textOverflow: 'ellipsis' }}>
