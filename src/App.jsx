@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import ImageUpload from './components/ImageUpload'
 import { supabase, BUCKETS } from './lib/supabase'
 import { uploadFile } from './lib/imageUtils'
@@ -12,7 +12,7 @@ import MySubmissionsPage from './pages/MySubmissionsPage'
 import BankPicker from './components/BankPicker'
 import BankMark from './components/BankMark'
 import { BANKS } from './lib/banks'
-import { DEFAULT_RATES, loadRates, saveRates, loadBranches, saveBranches, DEFAULT_HF_BRANCHES, monthlyFor, isPayingChild, ageExclusion, cappedChildren, caseState, submissionState, MIN_PAYING_AGE, MAX_PAYING_AGE, MAX_PAYING_CHILDREN, joinedDate, enrollmentFromNotes, tenureText } from './lib/settings'
+import { DEFAULT_RATES, loadRates, saveRates, loadBranches, saveBranches, DEFAULT_HF_BRANCHES, monthlyFor, isPayingChild, ageExclusion, cappedChildren, caseState, submissionState, MIN_PAYING_AGE, MAX_PAYING_AGE, MAX_SCHOOL_AGE, MAX_PAYING_CHILDREN, ageOf, isExtendedAge, needsCertificate, SCHOOL_CERT, joinedDate, enrollmentFromNotes, tenureText } from './lib/settings'
 import PaymentsPage from './pages/PaymentsPage'
 import HomePage from './pages/HomePage'
 import UsersPage from './pages/UsersPage'
@@ -45,7 +45,7 @@ function useBreakpoint() {
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
-const calcAge = d => Math.floor((Date.now() - new Date(d)) / (365.25 * 24 * 3600 * 1000))
+const calcAge = d => ageOf(d) // exact age in whole years (same rule as the payment age policy)
 const initials = n => n.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
 const AVATAR_COLORS = [B.green, B.greenMid, B.greenDark, B.goldDark, '#0891b2', '#7c3aed']
 const getColor = n => AVATAR_COLORS[n.charCodeAt(0) % AVATAR_COLORS.length]
@@ -1042,7 +1042,7 @@ const StatCard = ({ label, value, icon, bg, color, sub, loading, isMobile }) => 
 )
 
 // ─── DASHBOARD PAGE ───────────────────────────────────────────────────────────
-function DashboardPage({ families, children, loading, onView, onAdd, isMobile, isTablet, canEdit = true, canAdd = canEdit, transferredCount = null, showCase = true, onBack = null, backLabel = 'Back', heading = null, headerAction = null }) {
+function DashboardPage({ families, children, docs = [], loading, onView, onAdd, isMobile, isTablet, canEdit = true, canAdd = canEdit, transferredCount = null, showCase = true, onBack = null, backLabel = 'Back', heading = null, headerAction = null }) {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('All')
   // A family on hold is counted as "On hold" only (not also as active/pending/inactive)
@@ -1056,16 +1056,35 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
     { k: 'Inactive', n: inactive, c: B.textLight }, ...(showCase ? [{ k: 'On hold', n: held, c: B.orange }] : []),
   ]
 
+  // Age policy flags per family: children under age / over age / 19-20 in school needing a School Certificate
+  const [ageFilter, setAgeFilter] = useState('all') // 'all' | 'under' | 'over' | 'cert'
+  const ageFlags = useMemo(() => {
+    const m = {}
+    const famIds = new Set(families.map(f => f.id))
+    children.forEach(c => {
+      if (!famIds.has(c.family_id)) return
+      const x = (m[c.family_id] ||= { under: 0, over: 0, cert: 0 })
+      const e = ageExclusion(c)
+      if (e === 'under') x.under++
+      else if (e === 'over') x.over++
+      if (needsCertificate(c, docs)) x.cert++
+    })
+    return m
+  }, [families, children, docs])
+  const ageCounts = { under: 0, over: 0, cert: 0 }
+  Object.values(ageFlags).forEach(x => { if (x.under) ageCounts.under++; if (x.over) ageCounts.over++; if (x.cert) ageCounts.cert++ })
+
   const filtered = families.filter(f => {
     const q = search.toLowerCase()
     return (!q || f.mother_name.toLowerCase().includes(q) || f.family_code.toLowerCase().includes(q) || (f.phone_number || '').includes(q))
       && (filter === 'All' || (filter === 'On hold' ? isHeld(f) : (f.status === filter.toLowerCase() && !isHeld(f))))
+      && (ageFilter === 'all' || !!ageFlags[f.id]?.[ageFilter])
   })
   // Infinite scroll: show a batch, load the next one when the bottom sentinel scrolls into view
   const PAGE = 24
   const [shown, setShown] = useState(PAGE)
   const sentinelRef = useRef(null)
-  useEffect(() => { setShown(PAGE) }, [search, filter, families.length]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setShown(PAGE) }, [search, filter, ageFilter, families.length]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const el = sentinelRef.current
     if (!el) return
@@ -1188,6 +1207,23 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
               ))}
             </div>
           )}
+          {/* Age policy check: see families with under-age / over-age children or missing certificates */}
+          <div style={{ display: 'flex', gap: 6, width: '100%', overflowX: 'auto', alignItems: 'center' }}>
+            <span style={{ fontSize: 10, color: B.textLight, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', marginRight: 2 }}>Age check</span>
+            {[['all', 'All', null], ['under', `Under age (≤${MIN_PAYING_AGE - 1})`, ageCounts.under], ['over', `Over age (${MAX_PAYING_AGE + 1}+)`, ageCounts.over], ['cert', 'Need certificate', ageCounts.cert]].map(([k, label, n]) => {
+              const on = ageFilter === k, red = k !== 'all'
+              return (
+                <button key={k} onClick={() => setAgeFilter(k)}
+                  style={{
+                    padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
+                    border: `1.5px solid ${on ? (red ? B.red : B.green) : (red && n ? B.red : B.border)}`,
+                    background: on ? (red ? B.red : B.green) : '#fff',
+                    color: on ? '#fff' : (red && n ? B.red : B.textMid),
+                    whiteSpace: 'nowrap', flexShrink: 0,
+                  }}>{label}{n != null && ` · ${n}`}</button>
+              )
+            })}
+          </div>
         </div>
 
         {/* Family grid — infinite scroll */}
@@ -1225,6 +1261,9 @@ function DashboardPage({ families, children, loading, onView, onAdd, isMobile, i
                           <span style={{ fontSize: 11, fontWeight: 700, color: B.greenDark, background: B.greenLight, border: `1px solid ${B.border}`, borderRadius: 20, padding: '3px 9px' }}><Icon name="pin" size={10} /> {f.branch}</span>
                         )}
                         <span style={{ fontSize: 11, fontWeight: 700, color: B.goldDark, background: B.goldLight, borderRadius: 20, padding: '3px 9px' }}><Icon name="child" size={11} /> {kidsN} {kidsN === 1 ? 'child' : 'children'}</span>
+                        {ageFlags[f.id]?.under > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: B.red, background: B.errBg, borderRadius: 20, padding: '3px 9px' }}>{ageFlags[f.id].under} under age</span>}
+                        {ageFlags[f.id]?.over > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: B.red, background: B.errBg, borderRadius: 20, padding: '3px 9px' }}>{ageFlags[f.id].over} over age</span>}
+                        {ageFlags[f.id]?.cert > 0 && <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', background: B.red, borderRadius: 20, padding: '3px 9px' }}>Need certificate</span>}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderTop: `1px solid ${B.greenLight}`, paddingTop: 11 }}>
                         <div style={{ fontSize: 12, color: B.textMid, minWidth: 0 }}>
@@ -1277,7 +1316,7 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
-        <span style={{ fontSize: 14, color: B.textMid }}>{kids.length} children registered{kids.some(k => !isPayingChild(k)) && <> · <b>{Math.min(kids.filter(isPayingChild).length, MAX_PAYING_CHILDREN)}</b> in payment · {kids.filter(k => !isPayingChild(k)).length} outside age {MIN_PAYING_AGE}–{MAX_PAYING_AGE}</>}{kids.filter(isPayingChild).length > MAX_PAYING_CHILDREN && <> · <b>max {MAX_PAYING_CHILDREN} children paid</b></>}</span>
+        <span style={{ fontSize: 14, color: B.textMid }}>{kids.length} children registered{kids.some(k => !isPayingChild(k)) && <> · <b>{Math.min(kids.filter(isPayingChild).length, MAX_PAYING_CHILDREN)}</b> in payment · {kids.filter(k => !isPayingChild(k)).length} not in payment (age policy)</>}{kids.filter(isPayingChild).length > MAX_PAYING_CHILDREN && <> · <b>max {MAX_PAYING_CHILDREN} children paid</b></>}</span>
         {canEdit && <Btn onClick={() => onAddChild(family.id)} size="sm" variant="gold"><Icon name="plus" size={15} />Add Child</Btn>}
       </div>
 
@@ -1297,19 +1336,32 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
             )}
             {sorted.map(c => {
               const childDocs = allDocs.filter(d => d.child_id === c.id)
-              const aged = !isPayingChild(c) // 19+: shown for records, not counted in payment
+              const aged = !isPayingChild(c) // under 3, 21+, or 19-20 not in school: shown for records, not counted in payment
+              const exc = ageExclusion(c)
+              const childAge = ageOf(c.date_of_birth)
+              const ext = isExtendedAge(c)               // 19-20 and still in school
+              const needCert = needsCertificate(c, allDocs) // ...and no School Certificate yet
               return (
-                <div key={c.id} style={{ background: aged ? B.neutralBg : B.card, borderRadius: 14, border: aged ? `1.5px dashed ${B.textLight}` : `1px solid ${B.border}`, padding: isMobile ? '14px' : '16px 18px', boxShadow: aged ? 'none' : `0 2px 8px rgba(30,125,34,0.05)` }}>
+                <div key={c.id} style={{ background: aged ? B.errBg : B.card, borderRadius: 14, border: aged ? `1.5px dashed ${B.red}` : needCert ? `1.5px solid ${B.red}` : `1px solid ${B.border}`, padding: isMobile ? '14px' : '16px 18px', boxShadow: aged ? 'none' : `0 2px 8px rgba(30,125,34,0.05)` }}>
                   {aged && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, fontSize: 11.5, fontWeight: 700, color: B.neutralText }}>
-                      <Icon name="info" size={13} /> {ageExclusion(c) === 'under' ? `Under ${MIN_PAYING_AGE}` : `Over ${MAX_PAYING_AGE}`} — kept for records, not included in the payment
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, fontSize: 11.5, fontWeight: 700, color: B.red }}>
+                      <Icon name="info" size={13} /> {exc === 'under' ? `Under age — ${MIN_PAYING_AGE - 1} and younger are not eligible` : childAge > MAX_SCHOOL_AGE ? `Over age — older than ${MAX_SCHOOL_AGE}` : `Age ${childAge} and not in school`} — kept for records, NOT in payment
+                    </div>
+                  )}
+                  {needCert && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, fontSize: 11.5, fontWeight: 700, color: B.red }}>
+                      <Icon name="info" size={13} /> Age {childAge} and still in school — a School Certificate must be uploaded to continue the payment
                     </div>
                   )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
                     <Avatar name={c.child_name} photoUrl={c.child_photo_url} size={52} radius={12} clickable={true} />
                     <div style={{ flex: 1, minWidth: 120 }}>
                       <div style={{ fontWeight: 700, fontSize: 15, color: B.text, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>{c.child_name}
-                        {aged && <span style={{ fontSize: 10.5, fontWeight: 800, background: B.card, color: B.neutralText, border: `1px solid ${B.textLight}`, borderRadius: 20, padding: '1px 8px' }}>NOT IN PAYMENT</span>}
+                        {aged && <span style={{ fontSize: 10.5, fontWeight: 800, background: B.red, color: '#fff', borderRadius: 20, padding: '1px 8px' }}>NOT IN PAYMENT</span>}
+                        {aged && exc === 'under' && <span style={{ fontSize: 10.5, fontWeight: 800, background: B.card, color: B.red, border: `1px solid ${B.red}`, borderRadius: 20, padding: '1px 8px' }}>UNDER AGE</span>}
+                        {aged && exc === 'over' && <span style={{ fontSize: 10.5, fontWeight: 800, background: B.card, color: B.red, border: `1px solid ${B.red}`, borderRadius: 20, padding: '1px 8px' }}>OVER AGE</span>}
+                        {needCert && <span style={{ fontSize: 10.5, fontWeight: 800, background: B.red, color: '#fff', borderRadius: 20, padding: '1px 8px' }}>NEED CERTIFICATE</span>}
+                        {ext && !needCert && <span style={{ fontSize: 10.5, fontWeight: 800, background: B.greenLight, color: B.green, borderRadius: 20, padding: '1px 8px' }}>{childAge} · IN SCHOOL · CERTIFICATE ON FILE</span>}
                       </div>
                       <div style={{ fontSize: 12, color: B.textMid, marginTop: 3 }}>
                         {c.date_of_birth && <>Age {calcAge(c.date_of_birth)} · </>}
@@ -1345,7 +1397,7 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
                         const existing = childDocs.find(d => d.document_type === docType)
                         return (
                           <div key={docType} style={{ flex: 1, minWidth: 150 }}>
-                            <div style={{ fontSize: 11, color: B.textMid, marginBottom: 6, fontWeight: 600 }}>{docType}</div>
+                            <div style={{ fontSize: 11, color: (needCert && docType === SCHOOL_CERT) ? B.red : B.textMid, marginBottom: 6, fontWeight: 600 }}>{docType}{needCert && docType === SCHOOL_CERT && ' — REQUIRED'}</div>
                             {existing
                               ? <div style={{ background: B.card, border: `1px solid ${B.border}`, borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
                                   <Icon name="file" size={16} color={B.green} />
@@ -1863,14 +1915,24 @@ function FamilyForm({ initial, defaultProject, defaultBranch, families = [], onS
 }
 
 // ─── CHILD FORM ───────────────────────────────────────────────────────────────
-function ChildForm({ initial, familyId, onSave, onCancel, saving }) {
+function ChildForm({ initial, familyId, onSave, onCancel, saving, hasSchoolCert = false }) {
   const [f, setF] = useState(initial || { child_name: '', gender: 'female', date_of_birth: '', grade: '', school_name: '', medical_notes: '', child_photo_url: null, academic_average: '', academic_status: '' })
   const [photoFile, setPhotoFile] = useState(null)
   const [birthCertFile, setBirthCertFile] = useState(null)
   const [schoolCertFile, setSchoolCertFile] = useState(null)
+  const [formErr, setFormErr] = useState('')
   const s = k => v => setF(x => ({ ...x, [k]: v }))
   const bp = useBreakpoint()
   const isMobile = bp === 'mobile'
+  // Age 19-20 and still in school: a School Certificate is a must (already uploaded earlier, or attached now)
+  const certRequired = isExtendedAge(f)
+  const certMissing = certRequired && !hasSchoolCert && !schoolCertFile
+  const childAge = ageOf(f.date_of_birth)
+  const trySave = () => {
+    if (certMissing) { setFormErr(`Age ${childAge} and still in school — please upload the School Certificate before saving.`); return }
+    setFormErr('')
+    onSave(f, photoFile, birthCertFile, schoolCertFile, familyId)
+  }
   return (
     <div>
       <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', marginBottom: 20, padding: '14px', background: B.greenLight, borderRadius: 12, border: `1px solid ${B.border}` }}>
@@ -1899,16 +1961,27 @@ function ChildForm({ initial, familyId, onSave, onCancel, saving }) {
         <div style={{ fontSize: 12, fontWeight: 700, color: B.textMid, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.04em' }}><Icon name="attach" size={13} /> Child Documents</div>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14 }}>
           <ImageUpload label="Birth Certificate" type="document" onFileReady={f => setBirthCertFile(f)} />
-          <ImageUpload label="School Certificate" type="document" onFileReady={f => setSchoolCertFile(f)} />
+          <ImageUpload label={certRequired ? 'School Certificate (REQUIRED)' : 'School Certificate'} type="document" onFileReady={f => setSchoolCertFile(f)} />
         </div>
+        {hasSchoolCert && <div style={{ fontSize: 11, color: B.green, marginTop: 6, fontWeight: 600 }}><Icon name="check" size={12} /> A School Certificate is already on file.</div>}
         <div style={{ fontSize: 11, color: B.textLight, marginTop: 6 }}><Icon name="camera" size={12} /> Photo or scan — auto-compressed up to 80% smaller.</div>
       </div>
+      {f.date_of_birth && childAge != null && childAge < MIN_PAYING_AGE && (
+        <div style={{ background: B.errBg, color: B.red, border: `1px dashed ${B.red}`, borderRadius: 10, padding: '9px 12px', marginBottom: 10, fontSize: 12.5, fontWeight: 700 }}>Under age ({childAge}) — children must be {MIN_PAYING_AGE} or older to be in payment. Saved for records only.</div>
+      )}
+      {f.date_of_birth && childAge != null && childAge > MAX_PAYING_AGE && !certRequired && (
+        <div style={{ background: B.errBg, color: B.red, border: `1px dashed ${B.red}`, borderRadius: 10, padding: '9px 12px', marginBottom: 10, fontSize: 12.5, fontWeight: 700 }}>{childAge <= MAX_SCHOOL_AGE ? `Age ${childAge} and not in school (fill in School Name / Grade if still studying)` : `Over age (${childAge})`} — not in payment. Saved for records only.</div>
+      )}
+      {certMissing && (
+        <div style={{ background: B.errBg, color: B.red, border: `1px solid ${B.red}`, borderRadius: 10, padding: '9px 12px', marginBottom: 10, fontSize: 12.5, fontWeight: 700 }}>NEED CERTIFICATE — age {childAge} and still in school: uploading the School Certificate is a must.</div>
+      )}
+      {formErr && <div style={{ color: B.red, fontSize: 12.5, fontWeight: 700, marginBottom: 10 }}>{formErr}</div>}
       <div style={{
         display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 6,
         flexDirection: isMobile ? 'column-reverse' : 'row',
       }}>
         <Btn onClick={onCancel} variant="secondary" disabled={saving} full={isMobile}>Cancel</Btn>
-        <Btn onClick={() => onSave(f, photoFile, birthCertFile, schoolCertFile, familyId)} disabled={saving} variant="primary" full={isMobile}>
+        <Btn onClick={trySave} disabled={saving} variant="primary" full={isMobile}>
           {saving ? 'Saving…' : <><Icon name="save" size={16} />Save Child</>}
         </Btn>
       </div>
@@ -2785,7 +2858,7 @@ export default function App() {
           )}
           {allowed && page === 'families' && (
             <DashboardPage
-              families={liveFamilies} children={liveChildren} loading={dataLoading} transferredCount={can(role, 'view_case_status') ? transferredFamilies.length : null}
+              families={liveFamilies} children={liveChildren} docs={docs} loading={dataLoading} transferredCount={can(role, 'view_case_status') ? transferredFamilies.length : null}
               onView={openFamily}
               onAdd={() => { setEditingFamily(null); setShowFamilyForm(true) }}
               isMobile={isMobile} isTablet={isTablet} canEdit={canEdit} canAdd={canAdd} showCase={can(role, 'view_case_status')}
@@ -2809,7 +2882,7 @@ export default function App() {
           {allowed && page === 'project-detail' && (
             <DashboardPage
               families={liveFamilies.filter(f => f.project === selectedProject && (selectedProject === 'OVC' || f.branch === selectedBranch))}
-              children={liveChildren} loading={dataLoading}
+              children={liveChildren} docs={docs} loading={dataLoading}
               onView={openFamily}
               onAdd={() => { setEditingFamily(null); setShowFamilyForm(true) }}
               isMobile={isMobile} isTablet={isTablet} canEdit={canEdit} canAdd={canAdd} showCase={can(role, 'view_case_status')}
@@ -2880,7 +2953,7 @@ export default function App() {
       </Modal>
 
       <Modal open={showChildForm} onClose={() => !saving && setShowChildForm(false)} title={editingChild ? 'Edit Child' : 'Add Child'} width={560}>
-        <ChildForm key={editingChild?.id || 'new-' + showChildForm} initial={editingChild} familyId={childFamilyId} onSave={saveChild} onCancel={() => setShowChildForm(false)} saving={saving} />
+        <ChildForm key={editingChild?.id || 'new-' + showChildForm} initial={editingChild} familyId={childFamilyId} hasSchoolCert={!!editingChild && docs.some(d => d.child_id === editingChild.id && d.document_type === SCHOOL_CERT)} onSave={saveChild} onCancel={() => setShowChildForm(false)} saving={saving} />
       </Modal>
 
       <Modal open={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Confirm Deletion" width={400}>

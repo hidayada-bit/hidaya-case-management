@@ -3,9 +3,11 @@ import { supabase } from './supabase'
 // Monthly amount for one family = mother rate + (children x child rate). Rates are set by the admin.
 export const DEFAULT_RATES = { mother: 3500, child: 1500 }
 
-// Payment rule: only children aged MIN_PAYING_AGE..MAX_PAYING_AGE are paid, and at most MAX_PAYING_CHILDREN per family.
-export const MIN_PAYING_AGE = 4
+// Payment rule: children aged MIN_PAYING_AGE..MAX_PAYING_AGE are paid; 19..MAX_SCHOOL_AGE only while still in school
+// (and a School Certificate must be uploaded); at most MAX_PAYING_CHILDREN per family.
+export const MIN_PAYING_AGE = 3
 export const MAX_PAYING_AGE = 18
+export const MAX_SCHOOL_AGE = 20
 export const MAX_PAYING_CHILDREN = 4
 export const cappedChildren = n => Math.min(Math.max(Number(n) || 0, 0), MAX_PAYING_CHILDREN)
 
@@ -27,8 +29,10 @@ export async function saveRates(rates, userId) {
 }
 
 // ── Child age rule for payments ─────────────────────────────────────────────
-// Children aged 4 to 18 are paid for. Under 4 (not yet 4) and 19+ stay on the profile (children tab)
-// but are not counted in the payment. No birth date = counted. Max 4 children per family (see monthlyFor).
+// 3 to 18 (including 18): in payment.  Under 3 (2 and younger): NOT in payment.
+// 19 and 20: stay in payment only while still in school, and a School Certificate is a MUST (tag "Need certificate" until uploaded).
+// 19-20 not in school, and 21+: NOT in payment.  Everyone stays on the profile (children tab) for records.
+// No birth date = counted. Max 4 children per family (see monthlyFor).
 export const ageOf = dob => {
   if (!dob) return null
   const b = new Date(dob), n = new Date()
@@ -36,9 +40,23 @@ export const ageOf = dob => {
   if (n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate())) a--
   return a
 }
-export const isPayingChild = c => { const a = ageOf(c.date_of_birth); return a == null || (a >= MIN_PAYING_AGE && a <= MAX_PAYING_AGE) }
+// "In school" = a school name or grade is filled in on the child's profile
+export const inSchool = c => !!((c?.school_name || '').trim() || (c?.grade || '').trim())
+// 19-20 and still studying -> extended eligibility (certificate required)
+export const isExtendedAge = c => { const a = ageOf(c?.date_of_birth); return a != null && a > MAX_PAYING_AGE && a <= MAX_SCHOOL_AGE && inSchool(c) }
 // 'under' | 'over' | null — why a child is not in the payment (null = eligible by age)
-export const ageExclusion = c => { const a = ageOf(c.date_of_birth); return a == null ? null : a < MIN_PAYING_AGE ? 'under' : a > MAX_PAYING_AGE ? 'over' : null }
+export const ageExclusion = c => {
+  const a = ageOf(c?.date_of_birth)
+  if (a == null) return null
+  if (a < MIN_PAYING_AGE) return 'under'
+  if (a > MAX_SCHOOL_AGE) return 'over'
+  if (a > MAX_PAYING_AGE && !inSchool(c)) return 'over'
+  return null
+}
+export const isPayingChild = c => ageExclusion(c) === null
+export const SCHOOL_CERT = 'School Certificate'
+// true when a 19-20 year old in school has no School Certificate uploaded yet. docs = list of documents (any family)
+export const needsCertificate = (c, docs = []) => isExtendedAge(c) && !docs.some(d => d.child_id === c.id && d.document_type === SCHOOL_CERT)
 
 // Data collector submissions: 'pending' | 'returned' | 'approved' (missing column / old rows => approved)
 export const submissionState = f => f?.submission_status || 'approved'
