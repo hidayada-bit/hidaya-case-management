@@ -53,10 +53,12 @@ export const ageExclusion = c => {
   if (a > MAX_PAYING_AGE && !inSchool(c)) return 'over'
   return null
 }
-export const isPayingChild = c => ageExclusion(c) === null
+// A child put on hold (Children tab) is also not in the payment
+export const isHeldChild = c => !!c?.on_hold
+export const isPayingChild = c => !isHeldChild(c) && ageExclusion(c) === null
 export const SCHOOL_CERT = 'School Certificate'
 // true when a 19-20 year old in school has no School Certificate uploaded yet. docs = list of documents (any family)
-export const needsCertificate = (c, docs = []) => isExtendedAge(c) && !docs.some(d => d.child_id === c.id && d.document_type === SCHOOL_CERT)
+export const needsCertificate = (c, docs = []) => isExtendedAge(c) && !isHeldChild(c) && !docs.some(d => d.child_id === c.id && d.document_type === SCHOOL_CERT)
 
 // Data collector submissions: 'pending' | 'returned' | 'approved' (missing column / old rows => approved)
 export const submissionState = f => f?.submission_status || 'approved'

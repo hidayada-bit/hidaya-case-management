@@ -12,7 +12,7 @@ import MySubmissionsPage from './pages/MySubmissionsPage'
 import BankPicker from './components/BankPicker'
 import BankMark from './components/BankMark'
 import { BANKS } from './lib/banks'
-import { DEFAULT_RATES, loadRates, saveRates, loadBranches, saveBranches, DEFAULT_HF_BRANCHES, monthlyFor, isPayingChild, ageExclusion, cappedChildren, caseState, submissionState, MIN_PAYING_AGE, MAX_PAYING_AGE, MAX_SCHOOL_AGE, MAX_PAYING_CHILDREN, ageOf, isExtendedAge, needsCertificate, SCHOOL_CERT, joinedDate, enrollmentFromNotes, tenureText } from './lib/settings'
+import { DEFAULT_RATES, loadRates, saveRates, loadBranches, saveBranches, DEFAULT_HF_BRANCHES, monthlyFor, isPayingChild, ageExclusion, cappedChildren, caseState, submissionState, MIN_PAYING_AGE, MAX_PAYING_AGE, MAX_SCHOOL_AGE, MAX_PAYING_CHILDREN, ageOf, isHeldChild, isExtendedAge, needsCertificate, SCHOOL_CERT, joinedDate, enrollmentFromNotes, tenureText } from './lib/settings'
 import PaymentsPage from './pages/PaymentsPage'
 import HomePage from './pages/HomePage'
 import UsersPage from './pages/UsersPage'
@@ -1063,7 +1063,8 @@ function DashboardPage({ families, children, docs = [], loading, onView, onAdd, 
     const famIds = new Set(families.map(f => f.id))
     children.forEach(c => {
       if (!famIds.has(c.family_id)) return
-      const x = (m[c.family_id] ||= { under: 0, over: 0, cert: 0 })
+      const x = (m[c.family_id] ||= { under: 0, over: 0, cert: 0, hold: 0 })
+      if (isHeldChild(c)) x.hold++
       const e = ageExclusion(c)
       if (e === 'under') x.under++
       else if (e === 'over') x.over++
@@ -1071,8 +1072,8 @@ function DashboardPage({ families, children, docs = [], loading, onView, onAdd, 
     })
     return m
   }, [families, children, docs])
-  const ageCounts = { under: 0, over: 0, cert: 0 }
-  Object.values(ageFlags).forEach(x => { if (x.under) ageCounts.under++; if (x.over) ageCounts.over++; if (x.cert) ageCounts.cert++ })
+  const ageCounts = { under: 0, over: 0, cert: 0, hold: 0 }
+  Object.values(ageFlags).forEach(x => { if (x.under) ageCounts.under++; if (x.over) ageCounts.over++; if (x.cert) ageCounts.cert++; if (x.hold) ageCounts.hold++ })
 
   const filtered = families.filter(f => {
     const q = search.toLowerCase()
@@ -1210,7 +1211,7 @@ function DashboardPage({ families, children, docs = [], loading, onView, onAdd, 
           {/* Age policy check: see families with under-age / over-age children or missing certificates */}
           <div style={{ display: 'flex', gap: 6, width: '100%', overflowX: 'auto', alignItems: 'center' }}>
             <span style={{ fontSize: 10, color: B.textLight, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', marginRight: 2 }}>Age check</span>
-            {[['all', 'All', null], ['under', `Under age (≤${MIN_PAYING_AGE - 1})`, ageCounts.under], ['over', `Over age (${MAX_PAYING_AGE + 1}+)`, ageCounts.over], ['cert', 'Need certificate', ageCounts.cert]].map(([k, label, n]) => {
+            {[['all', 'All', null], ['under', `Under age (≤${MIN_PAYING_AGE - 1})`, ageCounts.under], ['over', `Over age (${MAX_PAYING_AGE + 1}+)`, ageCounts.over], ['cert', 'Need certificate', ageCounts.cert], ['hold', 'Child on hold', ageCounts.hold]].map(([k, label, n]) => {
               const on = ageFilter === k, red = k !== 'all'
               return (
                 <button key={k} onClick={() => setAgeFilter(k)}
@@ -1263,6 +1264,7 @@ function DashboardPage({ families, children, docs = [], loading, onView, onAdd, 
                         <span style={{ fontSize: 11, fontWeight: 700, color: B.goldDark, background: B.goldLight, borderRadius: 20, padding: '3px 9px' }}><Icon name="child" size={11} /> {kidsN} {kidsN === 1 ? 'child' : 'children'}</span>
                         {ageFlags[f.id]?.under > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: B.red, background: B.errBg, borderRadius: 20, padding: '3px 9px' }}>{ageFlags[f.id].under} under age</span>}
                         {ageFlags[f.id]?.over > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: B.red, background: B.errBg, borderRadius: 20, padding: '3px 9px' }}>{ageFlags[f.id].over} over age</span>}
+                        {ageFlags[f.id]?.hold > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: B.warnText, background: B.goldLight, borderRadius: 20, padding: '3px 9px' }}>{ageFlags[f.id].hold} child on hold</span>}
                         {ageFlags[f.id]?.cert > 0 && <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', background: B.red, borderRadius: 20, padding: '3px 9px' }}>Need certificate</span>}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderTop: `1px solid ${B.greenLight}`, paddingTop: 11 }}>
@@ -1307,7 +1309,23 @@ function DashboardPage({ families, children, docs = [], loading, onView, onAdd, 
 }
 
 // ─── CHILDREN TAB (proper component so hooks are legal) ───────────────────────
-function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteChild, toast, onDocUploaded, setViewingDoc, setUploading, uploading, isMobile, canEdit = true, canDelete = true, canRemoveChild = false, user = null }) {
+function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteChild, toast, onDocUploaded, setViewingDoc, setUploading, uploading, isMobile, canEdit = true, canDelete = true, canRemoveChild = false, user = null, onChildChanged = () => {} }) {
+  const toggleHold = async c => {
+    const holding = !c.on_hold
+    let reason = ''
+    if (holding) {
+      reason = window.prompt(`Put ${c.child_name} on hold?\nReason (optional):`, '')
+      if (reason === null) return
+    }
+    const signer = user?.full_name || 'Someone'
+    const { error } = await supabase.from('children').update(holding
+      ? { on_hold: true, hold_reason: reason.trim() || null, held_at: new Date().toISOString(), held_by_name: signer }
+      : { on_hold: false, hold_reason: null, held_at: null, held_by_name: null }).eq('id', c.id)
+    if (error) { toast(error.message + (/on_hold/.test(error.message) ? ' — run migration 012_child_hold.sql' : ''), 'error'); return }
+    logActivity(user, 'family', `${signer} ${holding ? 'put' : 'released'} ${c.child_name} (${family.mother_name})${holding ? ' on hold' : ' from hold'}${reason.trim() ? ' — ' + reason.trim() : ''}`, family.id)
+    toast(holding ? `${c.child_name} put on hold` : `${c.child_name} released from hold`)
+    onChildChanged()
+  }
   const statusColor = s => ({ 'Excellent': B.green, 'Good': '#0891b2', 'Average': B.goldDark, 'Needs Support': B.red }[s] || B.textLight)
   const statusBg   = s => ({ 'Excellent': B.greenLight, 'Good': '#e0f2fe', 'Average': B.goldLight, 'Needs Support': B.errBg }[s] || B.neutralBg)
 
@@ -1316,7 +1334,7 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
-        <span style={{ fontSize: 14, color: B.textMid }}>{kids.length} children registered{kids.some(k => !isPayingChild(k)) && <> · <b>{Math.min(kids.filter(isPayingChild).length, MAX_PAYING_CHILDREN)}</b> in payment · {kids.filter(k => !isPayingChild(k)).length} not in payment (age policy)</>}{kids.filter(isPayingChild).length > MAX_PAYING_CHILDREN && <> · <b>max {MAX_PAYING_CHILDREN} children paid</b></>}</span>
+        <span style={{ fontSize: 14, color: B.textMid }}>{kids.length} children registered{kids.some(k => !isPayingChild(k)) && <> · <b>{Math.min(kids.filter(isPayingChild).length, MAX_PAYING_CHILDREN)}</b> in payment · {kids.filter(k => !isPayingChild(k)).length} not in payment (age policy / on hold)</>}{kids.filter(isPayingChild).length > MAX_PAYING_CHILDREN && <> · <b>max {MAX_PAYING_CHILDREN} children paid</b></>}</span>
         {canEdit && <Btn onClick={() => onAddChild(family.id)} size="sm" variant="gold"><Icon name="plus" size={15} />Add Child</Btn>}
       </div>
 
@@ -1341,11 +1359,17 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
               const childAge = ageOf(c.date_of_birth)
               const ext = isExtendedAge(c)               // 19-20 and still in school
               const needCert = needsCertificate(c, allDocs) // ...and no School Certificate yet
+              const held = isHeldChild(c)                  // put on hold by staff
               return (
-                <div key={c.id} style={{ background: aged ? B.errBg : B.card, borderRadius: 14, border: aged ? `1.5px dashed ${B.red}` : needCert ? `1.5px solid ${B.red}` : `1px solid ${B.border}`, padding: isMobile ? '14px' : '16px 18px', boxShadow: aged ? 'none' : `0 2px 8px rgba(30,125,34,0.05)` }}>
+                <div key={c.id} style={{ background: aged ? B.errBg : held ? B.goldLight : B.card, borderRadius: 14, border: aged ? `1.5px dashed ${B.red}` : held ? `1.5px dashed ${B.gold}` : needCert ? `1.5px solid ${B.red}` : `1px solid ${B.border}`, padding: isMobile ? '14px' : '16px 18px', boxShadow: aged ? 'none' : `0 2px 8px rgba(30,125,34,0.05)` }}>
                   {aged && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, fontSize: 11.5, fontWeight: 700, color: B.red }}>
                       <Icon name="info" size={13} /> {exc === 'under' ? `Under age — ${MIN_PAYING_AGE - 1} and younger are not eligible` : childAge > MAX_SCHOOL_AGE ? `Over age — older than ${MAX_SCHOOL_AGE}` : `Age ${childAge} and not in school`} — kept for records, NOT in payment
+                    </div>
+                  )}
+                  {held && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, fontSize: 11.5, fontWeight: 700, color: B.warnText, flexWrap: 'wrap' }}>
+                      <Icon name="info" size={13} /> On hold — NOT in payment{c.hold_reason ? `: ${c.hold_reason}` : ''}{c.held_by_name ? ` (by ${c.held_by_name}${c.held_at ? ', ' + c.held_at.slice(0, 10) : ''})` : ''}
                     </div>
                   )}
                   {needCert && (
@@ -1358,6 +1382,7 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
                     <div style={{ flex: 1, minWidth: 120 }}>
                       <div style={{ fontWeight: 700, fontSize: 15, color: B.text, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>{c.child_name}
                         {aged && <span style={{ fontSize: 10.5, fontWeight: 800, background: B.red, color: '#fff', borderRadius: 20, padding: '1px 8px' }}>NOT IN PAYMENT</span>}
+                        {held && <span style={{ fontSize: 10.5, fontWeight: 800, background: B.gold, color: B.greenDark, borderRadius: 20, padding: '1px 8px' }}>ON HOLD</span>}
                         {aged && exc === 'under' && <span style={{ fontSize: 10.5, fontWeight: 800, background: B.card, color: B.red, border: `1px solid ${B.red}`, borderRadius: 20, padding: '1px 8px' }}>UNDER AGE</span>}
                         {aged && exc === 'over' && <span style={{ fontSize: 10.5, fontWeight: 800, background: B.card, color: B.red, border: `1px solid ${B.red}`, borderRadius: 20, padding: '1px 8px' }}>OVER AGE</span>}
                         {needCert && <span style={{ fontSize: 10.5, fontWeight: 800, background: B.red, color: '#fff', borderRadius: 20, padding: '1px 8px' }}>NEED CERTIFICATE</span>}
@@ -1386,6 +1411,7 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 8, flexShrink: 0, width: isMobile ? '100%' : 'auto' }}>
+                      {canEdit && <Btn onClick={() => toggleHold(c)} variant={held ? 'gold' : 'secondary'} size="sm" full={isMobile}><Icon name={held ? 'check' : 'pending'} size={14} />{held ? 'Release hold' : 'Hold'}</Btn>}
                       {canEdit && <Btn onClick={() => onEditChild(c)} variant="secondary" size="sm" full={isMobile}><Icon name="edit" size={14} />{!isMobile && 'Edit'}</Btn>}
                       {(canDelete || canRemoveChild) && <Btn onClick={() => onDeleteChild(c)} variant="danger" size="sm" full={isMobile}><Icon name="trash" size={14} />{!isMobile && 'Delete'}</Btn>}
                     </div>
@@ -1732,7 +1758,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
         <ChildrenTab
           kids={kids} allDocs={allDocs} family={family}
           onAddChild={onAddChild} onEditChild={onEditChild} onDeleteChild={onDeleteChild}
-          toast={toast} onDocUploaded={onDocUploaded}
+          toast={toast} onDocUploaded={onDocUploaded} onChildChanged={() => onCaseChanged && onCaseChanged('child')}
           setViewingDoc={setViewingDoc} setUploading={setUploading} uploading={uploading}
           isMobile={isMobile} canEdit={canEdit} canDelete={canDelete} canRemoveChild={canRemoveChild} user={user}
         />

@@ -162,7 +162,7 @@ export default function FamilyPaymentsTab({ family, user, canManage, toast, isMo
 
       {excludedCount > 0 && (
         <div style={{ background: B.neutralBg, color: B.neutralText, border: `1px dashed ${B.textLight}`, borderRadius: 12, padding: '9px 14px', marginBottom: 12, fontSize: 12.5 }}>
-          <Icon name="info" size={13} /> {excludedCount} {excludedCount === 1 ? 'child is' : 'children are'} not counted in this payment (under {MIN_PAYING_AGE}, over {MAX_PAYING_AGE} and not in school / over 20, or beyond the maximum of {MAX_PAYING_CHILDREN} children) — still listed in the Children tab.
+          <Icon name="info" size={13} /> {excludedCount} {excludedCount === 1 ? 'child is' : 'children are'} not counted in this payment (under {MIN_PAYING_AGE}, over {MAX_PAYING_AGE} and not in school / over 20, on hold, or beyond the maximum of {MAX_PAYING_CHILDREN} children) — still listed in the Children tab.
         </div>
       )}
       {caseState === 'on_hold' && (
