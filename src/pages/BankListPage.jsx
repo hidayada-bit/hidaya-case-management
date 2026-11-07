@@ -122,11 +122,14 @@ const imageDataUrl = src => new Promise(resolve => {
   img.src = src
 })
 
+// Bank list order: roll_number (zero-padded text, e.g. '0001'), blanks last, then name
+const byRoll = (a, b) => (a.roll_number || '\uffff').localeCompare(b.roll_number || '\uffff') || (a.mother_name || '').localeCompare(b.mother_name || '')
+
 function BankLetter({ families, bank, project, onClose, isMobile, childCounts = {}, rates = DEFAULT_RATES, user = null, isAdmin = false, canRecord = false, letterSettings = DEFAULT_LETTER_SETTINGS, toast = () => {} }) {
   const amountOf = f => monthlyFor(rates, childCounts[f.id] || 0)
   const matching = families
     .filter(f => f.bank === bank.id && f.project === project)
-    .sort((a, b) => (a.mother_name || '').localeCompare(b.mother_name || ''))
+    .sort(byRoll)
   const isHeld = f => caseState(f) === 'on_hold'
   const noKids = f => !(childCounts[f.id] > 0)
   // payable = what actually goes into print / copy / CSV / Excel / PDF / payment records
@@ -136,7 +139,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
   // preview only: held families and mothers with no eligible children (shown highlighted, never exported)
   const heldRows = matching.filter(isHeld).map(f => ({ ...f, _held: true, _tag: 'ON HOLD', _rowNo: '—', _amount: amountOf(f) }))
   const noKidRows = matching.filter(f => !isHeld(f) && noKids(f)).map(f => ({ ...f, _held: true, _tag: 'NO CHILDREN', _remark: NO_KIDS_REMARK, _rowNo: '—', _amount: amountOf(f) }))
-  const previewRows = [...filtered, ...heldRows, ...noKidRows].sort((a, b) => (a.mother_name || '').localeCompare(b.mother_name || ''))
+  const previewRows = [...filtered, ...heldRows, ...noKidRows].sort(byRoll)
 
   const pages = paginate(filtered)
   const viewPages = paginate(previewRows)
