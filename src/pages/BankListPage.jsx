@@ -155,11 +155,27 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
   const letter = letterFor(issued)
   const RECORDS_MARK = 'FOR RECORDS ONLY — NOT FOR BANK USE'
   // EXPORT columns (print / copy / CSV / Excel): no Family ID, Remark left blank for the bank/office to fill.
-  const hdrs = () => ['R.No', 'Parent/Guardian Name', 'Account No', 'Amount (Birr)', 'Remark']
+  const hdrs = () => ['No.', "Parent's/Guardian's Name", 'Account No', 'Amount in birr', 'Remark']
   const cells = f => [f._rowNo, f.mother_name, f.account_number || '—', fmt(f._amount), '']
   // ON-SCREEN preview columns: keeps the Family ID for staff.
   const viewHdrs = () => ['R.No', 'Family ID', 'Beneficiary Name', 'Account No', 'Amount (ETB)', 'Remark']
   const viewCells = f => [f._rowNo, f.family_code || '—', f.mother_name, f.account_number || '—', fmt(f._amount), f._remark || '']
+
+  // Letter wording shared by Copy / CSV / Excel so they match the printed letter:
+  // date + ref (top right), To block, subject, paragraph (with thanks), and the signatures under the table.
+  const letterParts = meta => {
+    const Lt = letterFor(meta)
+    const sum = `${amountWords(totalAmount)} (${figure(totalAmount)})`
+    return { Lt, sum, para: `${Lt.body} ${Lt.closing}`, names: Lt.signatories.map(x => x.name), titles: Lt.signatories.map(x => x.title) }
+  }
+  const FONT = 'font-family:Arial,sans-serif;font-size:12pt'
+  const letterTopHtml = P =>
+    `<p style="text-align:right;${FONT}">Date: <u>${esc(P.Lt.date)}</u><br>Ref No: <u>${esc(P.Lt.ref)}</u></p>` +
+    `<p style="${FONT}">To: ${esc(P.Lt.toLines[0] || '')}${P.Lt.toLines.slice(1).map(l => `<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${esc(l)}`).join('')}</p>` +
+    `<p style="text-align:center;${FONT}"><b>Subject:</b> <u>${esc(P.Lt.subject)}</u></p>` +
+    `<p style="text-align:justify;${FONT}">${esc(P.para).replace(esc(P.sum), `<b>${esc(P.sum)}</b>`)}</p>`
+  const letterBottomHtml = P =>
+    `<br><table style="border:none;${FONT}"><tr>${P.names.map(n => `<td style="padding-right:48px">${esc(n)}</td>`).join('')}</tr><tr>${P.titles.map(t => `<td style="padding-right:48px">${esc(t)}</td>`).join('')}</tr></table>`
 
   // Copies a real table: pastes as a formatted table in Word / Outlook / Google Docs and as cells in Excel / Sheets.
   // Plain-text (tab-separated) is included as a fallback for apps that only accept text.
@@ -167,16 +183,19 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
     const head = hdrs()
     const body = filtered.map(f => cells(f))
     const totalRow = ['', 'Total', '', fmt(totalAmount), '']
-    const top = meta ? [`Ref No: ${meta.ref}`, `Payment for: ${monthText(meta.month)}`, `Total: ${amountWords(totalAmount)} (${figure(totalAmount)})`, ''] : [RECORDS_MARK, '']
-    const tsv = [...top, head.join('\t'), ...body.map(r => r.join('\t')), totalRow.join('\t')].join('\n')
+    const P = meta ? letterParts(meta) : null
+    const top = meta ? [`Date: ${P.Lt.date}`, `Ref No: ${P.Lt.ref}`, '', `To: ${P.Lt.toLines.join(', ')}`, `Subject: ${P.Lt.subject}`, '', P.para, ''] : [RECORDS_MARK, '']
+    const bottom = meta ? ['', P.names.join('\t'), P.titles.join('\t')] : []
+    const tsv = [...top, head.join('\t'), ...body.map(r => r.join('\t')), totalRow.join('\t'), ...bottom].join('\n')
     const td = (v, j, bold) => `<td style="border:1px solid #999;padding:4px 8px;${j === 3 ? 'text-align:right;' : ''}${bold ? 'font-weight:bold;' : ''}${j === 4 && v ? REMARK_CSS : ''}">${esc(v)}</td>`
     const html = (meta
-      ? `<p><b>Ref No: ${esc(meta.ref)}</b><br>Payment for: ${esc(monthText(meta.month))}<br>Total: ${esc(amountWords(totalAmount))} (${esc(figure(totalAmount))})</p>`
+      ? letterTopHtml(P)
       : `<p><b style="color:#b91c1c">${RECORDS_MARK}</b></p>`) +
       `<table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:11pt">` +
       `<thead><tr>${head.map(h => `<th style="border:1px solid #999;padding:4px 8px;background:#1e7d22;color:#fff;text-align:left">${esc(h)}</th>`).join('')}</tr></thead>` +
       `<tbody>${body.map(r => `<tr>${r.map((v, j) => td(v, j, false)).join('')}</tr>`).join('')}` +
-      `<tr>${totalRow.map((v, j) => td(v, j, true)).join('')}</tr></tbody></table>`
+      `<tr>${totalRow.map((v, j) => td(v, j, true)).join('')}</tr></tbody></table>` +
+      (meta ? letterBottomHtml(P) : '')
     const done = () => { setCopied(true); setTimeout(() => setCopied(false), 2000) }
     const textOnly = () => navigator.clipboard.writeText(tsv).then(done)
     if (window.ClipboardItem && navigator.clipboard?.write) {
@@ -388,11 +407,13 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
   }
 
   const handleExportCSV = (meta) => {
+    const P = meta ? letterParts(meta) : null
     const rows = [
-      ...(meta ? [['Ref No', meta.ref], ['Payment for', monthText(meta.month)], ['Total in words', `${amountWords(totalAmount)} (${figure(totalAmount)})`], []] : []),
+      ...(meta ? [['Date', P.Lt.date], ['Ref No', P.Lt.ref], [], ['To', P.Lt.toLines.join(', ')], ['Subject', P.Lt.subject], [], [P.para], []] : []),
       hdrs(),
       ...filtered.map(f => [f._rowNo, f.mother_name, f.account_number || '', f._amount, '']),
       ['', 'Total', '', totalAmount, ''],
+      ...(meta ? [[], P.names, P.titles] : []),
     ]
     const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n')
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })
@@ -404,11 +425,22 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
 
   const handleExportExcel = (meta) => {
     const cols = hdrs().length
+    const P = meta ? letterParts(meta) : null
+    const row = (inner, style = '') => `<tr><td colspan="${cols}" style="${style}">${inner}</td></tr>`
+    const top = meta
+      ? row(`Date: ${esc(P.Lt.date)}`, 'text-align:right') + row(`Ref No: ${esc(P.Lt.ref)}`, 'text-align:right') + row('') +
+        row(`To: ${esc(P.Lt.toLines.join(', '))}`) + row(`<b>Subject:</b> ${esc(P.Lt.subject)}`, 'text-align:center') + row('') +
+        row(esc(P.para), 'white-space:normal;vertical-align:top;height:80px') + row('')
+      : ''
+    const bottom = meta
+      ? row('') + `<tr>${P.names.map(n => `<td colspan="2">${esc(n)}</td>`).join('')}</tr><tr>${P.titles.map(t => `<td colspan="2">${esc(t)}</td>`).join('')}</tr>`
+      : ''
     const html = `<table>
-      ${meta ? `<tr><td colspan="${cols}"><b>Ref No: ${esc(meta.ref)}</b> — Payment for ${monthText(meta.month)}</td></tr><tr><td colspan="${cols}">Total in words: ${esc(amountWords(totalAmount))} (${esc(figure(totalAmount))})</td></tr>` : ''}
-      <tr>${hdrs().map(h => `<th>${h}</th>`).join('')}</tr>
+      ${top}
+      <tr>${hdrs().map(h => `<th>${esc(h)}</th>`).join('')}</tr>
       ${filtered.map(f => `<tr>${cells(f).map((v, j) => `<td${j === 4 && v ? ` style="${REMARK_CSS}"` : ''}>${esc(v)}</td>`).join('')}</tr>`).join('')}
-      <tr><td colspan="${cols}"><b>Total: ${filtered.length} — ETB ${fmt(totalAmount)}</b></td></tr>
+      <tr><td></td><td><b>Total</b></td><td></td><td><b>${fmt(totalAmount)}</b></td><td></td></tr>
+      ${bottom}
     </table>`
     const blob = new Blob([html], { type: 'application/vnd.ms-excel' })
     const url = URL.createObjectURL(blob)
