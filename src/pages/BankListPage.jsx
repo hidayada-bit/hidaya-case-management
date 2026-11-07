@@ -135,7 +135,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
   // payable = what actually goes into print / copy / CSV / Excel / PDF / payment records
   const filtered = matching
     .filter(f => !isHeld(f) && !noKids(f))
-    .map((f, i) => ({ ...f, _rowNo: f.roll_number || i + 1, _amount: amountOf(f) })) // stable row number, independent of page
+    .map((f, i) => ({ ...f, _rowNo: f.roll_number ? String(parseInt(f.roll_number, 10) || f.roll_number) : i + 1, _amount: amountOf(f) })) // stable row number, independent of page
   // preview only: held families and mothers with no eligible children (shown highlighted, never exported)
   const heldRows = matching.filter(isHeld).map(f => ({ ...f, _held: true, _tag: 'ON HOLD', _rowNo: '—', _amount: amountOf(f) }))
   const noKidRows = matching.filter(f => !isHeld(f) && noKids(f)).map(f => ({ ...f, _held: true, _tag: 'NO CHILDREN', _remark: NO_KIDS_REMARK, _rowNo: '—', _amount: amountOf(f) }))
@@ -168,14 +168,15 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
     const sum = `${amountWords(totalAmount)} (${figure(totalAmount)})`
     return { Lt, sum, para: `${Lt.body} ${Lt.closing}`, names: Lt.signatories.map(x => x.name), titles: Lt.signatories.map(x => x.title) }
   }
-  const FONT = 'font-family:Arial,sans-serif;font-size:12pt'
+  const FONT = "font-family:'Times New Roman',Times,serif;font-size:12pt"
+  const COLW = ['7%', '35%', '24%', '18%', '16%'] // full-width table like the hand-fixed Word letter
   const letterTopHtml = P =>
     `<p style="text-align:right;${FONT}">Date: <u>${esc(P.Lt.date)}</u><br>Ref No: <u>${esc(P.Lt.ref)}</u></p>` +
     `<p style="${FONT}">To: ${esc(P.Lt.toLines[0] || '')}${P.Lt.toLines.slice(1).map(l => `<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${esc(l)}`).join('')}</p>` +
     `<p style="text-align:center;${FONT}"><b>Subject:</b> <u>${esc(P.Lt.subject)}</u></p>` +
     `<p style="text-align:justify;${FONT}">${esc(P.para).replace(esc(P.sum), `<b>${esc(P.sum)}</b>`)}</p>`
   const letterBottomHtml = P =>
-    `<br><table style="border:none;${FONT}"><tr>${P.names.map(n => `<td style="padding-right:48px">${esc(n)}</td>`).join('')}</tr><tr>${P.titles.map(t => `<td style="padding-right:48px">${esc(t)}</td>`).join('')}</tr></table>`
+    `<br><table style="border:none;${FONT}"><tr>${P.names.map(n => `<td style="width:2.6in;${FONT}">${esc(n)}</td>`).join('')}</tr><tr>${P.names.map(() => `<td style="height:0.6in">&nbsp;</td>`).join('')}</tr><tr>${P.titles.map(t => `<td style="width:2.6in;${FONT}">${esc(t)}</td>`).join('')}</tr></table>`
 
   // Copies a real table: pastes as a formatted table in Word / Outlook / Google Docs and as cells in Excel / Sheets.
   // Plain-text (tab-separated) is included as a fallback for apps that only accept text.
@@ -185,14 +186,14 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
     const totalRow = ['', 'Total', '', fmt(totalAmount), '']
     const P = meta ? letterParts(meta) : null
     const top = meta ? [`Date: ${P.Lt.date}`, `Ref No: ${P.Lt.ref}`, '', `To: ${P.Lt.toLines.join(', ')}`, `Subject: ${P.Lt.subject}`, '', P.para, ''] : [RECORDS_MARK, '']
-    const bottom = meta ? ['', P.names.join('\t'), P.titles.join('\t')] : []
+    const bottom = meta ? ['', P.names.join('\t'), '', '', P.titles.join('\t')] : []
     const tsv = [...top, head.join('\t'), ...body.map(r => r.join('\t')), totalRow.join('\t'), ...bottom].join('\n')
-    const td = (v, j, bold) => `<td style="border:1px solid #999;padding:4px 8px;${j === 3 ? 'text-align:right;' : ''}${bold ? 'font-weight:bold;' : ''}${j === 4 && v ? REMARK_CSS : ''}">${esc(v)}</td>`
+    const td = (v, j, bold) => `<td style="width:${COLW[j]};border:1px solid #000;padding:4px 8px;${FONT};${j === 3 ? 'text-align:right;' : ''}${bold ? 'font-weight:bold;' : ''}${j === 4 && v ? REMARK_CSS : ''}">${esc(v)}</td>`
     const html = (meta
       ? letterTopHtml(P)
       : `<p><b style="color:#b91c1c">${RECORDS_MARK}</b></p>`) +
-      `<table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:11pt">` +
-      `<thead><tr>${head.map(h => `<th style="border:1px solid #999;padding:4px 8px;background:#1e7d22;color:#fff;text-align:left">${esc(h)}</th>`).join('')}</tr></thead>` +
+      `<table width="100%" style="width:100%;border-collapse:collapse;${FONT}">` +
+      `<thead><tr>${head.map((h, j) => `<th style="width:${COLW[j]};border:1px solid #000;padding:4px 8px;${FONT};background:#1e7d22;color:#fff;text-align:left">${esc(h)}</th>`).join('')}</tr></thead>` +
       `<tbody>${body.map(r => `<tr>${r.map((v, j) => td(v, j, false)).join('')}</tr>`).join('')}` +
       `<tr>${totalRow.map((v, j) => td(v, j, true)).join('')}</tr></tbody></table>` +
       (meta ? letterBottomHtml(P) : '')
@@ -413,7 +414,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
       hdrs(),
       ...filtered.map(f => [f._rowNo, f.mother_name, f.account_number || '', f._amount, '']),
       ['', 'Total', '', totalAmount, ''],
-      ...(meta ? [[], P.names, P.titles] : []),
+      ...(meta ? [[], P.names, [], [], P.titles] : []),
     ]
     const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n')
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })
@@ -433,9 +434,9 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
         row(esc(P.para), 'white-space:normal;vertical-align:top;height:80px') + row('')
       : ''
     const bottom = meta
-      ? row('') + `<tr>${P.names.map(n => `<td colspan="2">${esc(n)}</td>`).join('')}</tr><tr>${P.titles.map(t => `<td colspan="2">${esc(t)}</td>`).join('')}</tr>`
+      ? row('') + `<tr>${P.names.map(n => `<td colspan="2">${esc(n)}</td>`).join('')}</tr><tr style="height:45px">${P.names.map(() => `<td colspan="2">&nbsp;</td>`).join('')}</tr><tr>${P.titles.map(t => `<td colspan="2">${esc(t)}</td>`).join('')}</tr>`
       : ''
-    const html = `<table>
+    const html = `<table style="font-family:'Times New Roman',Times,serif;font-size:12pt">
       ${top}
       <tr>${hdrs().map(h => `<th>${esc(h)}</th>`).join('')}</tr>
       ${filtered.map(f => `<tr>${cells(f).map((v, j) => `<td${j === 4 && v ? ` style="${REMARK_CSS}"` : ''}>${esc(v)}</td>`).join('')}</tr>`).join('')}
