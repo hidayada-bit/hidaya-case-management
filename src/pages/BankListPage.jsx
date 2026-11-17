@@ -93,7 +93,7 @@ const REMARK_CSS = 'background:#fff1e6;color:#c2410c;font-weight:700;border:1px 
 const HELD_TD = { padding: '6px 10px', border: '1px solid #f5b5a0', background: '#fff1e6', color: '#c2410c', fontWeight: 700, textDecoration: 'none' }
 
 // Page capacities: the first page also carries the letter heading + body, the last page the closing + signatures.
-const FIRST_CAP = 13, MID_CAP = 20, LAST_CAP = 14
+const FIRST_CAP = 11, MID_CAP = 17, LAST_CAP = 14 // first/middle pages are shorter: they also carry the signature block at the bottom
 function paginate(rows) {
   if (!rows.length) return [[]]
   const pages = []
@@ -253,7 +253,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
     const bodyLines = doc.splitTextToSize(Lt.body.replace(/for the month of .*\.$/, 'for the month of ____________.'), R - L)
     doc.text(bodyLines, L, y, { lineHeightFactor: 1.5 }); y += bodyLines.length * 5.6 + 3
     autoTable(doc, {
-      startY: y, margin: { left: L, right: W - R, top: TOP, bottom: BOT },
+      startY: y, margin: { left: L, right: W - R, top: TOP, bottom: BOT + 26 },
       head: [hdrs()], body: filtered.map(f => [f._rowNo, f.mother_name, f.account_number || '—', fmt(f._amount), '']),
       theme: 'grid', styles: { font: 'times', fontSize: 9.5, cellPadding: 1.8, lineColor: [190, 190, 190], textColor: 17 },
       headStyles: { fillColor: [30, 125, 34], textColor: 255 }, columnStyles: { 3: { halign: 'right' } },
@@ -267,11 +267,13 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
     doc.text(Lt.closing, L, y); y += 8
     doc.text(Lt.regards, L, y); y += 14
     const colW = (R - L) / Math.max(Lt.signatories.length, 1)
-    Lt.signatories.forEach((s, i) => { doc.setFont('times', 'bold'); doc.text(s.name, L + i * colW, y); doc.setFont('times', 'normal'); doc.text(s.title, L + i * colW, y + 5) })
+    const drawSign = yy => Lt.signatories.forEach((s, i) => { const x = L + i * colW; doc.setDrawColor(0); doc.setLineWidth(0.3); doc.line(x, yy - 5, x + Math.min(colW - 6, 55), yy - 5); doc.setFontSize(10.5); doc.setFont('times', 'bold'); doc.text(s.name, x, yy); doc.setFont('times', 'normal'); doc.text(s.title, x, yy + 5) })
+    drawSign(y)
     // watermark + page numbers on every page
     const n = doc.getNumberOfPages()
     for (let i = 1; i <= n; i++) {
       doc.setPage(i)
+      if (i < n) { doc.setTextColor(17); drawSign(H - BOT - 12) } // signature block at the end of every page
       doc.setFontSize(8); doc.setTextColor(110); doc.text(`Page ${i} of ${n}`, R, H - BOT + 6, { align: 'right' })
       doc.saveGraphicsState(); doc.setGState(new doc.GState({ opacity: 0.16 })); doc.setTextColor(185, 28, 28)
       doc.setFont('helvetica', 'bold'); doc.setFontSize(30)
@@ -350,7 +352,10 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
           .total { margin-top: 10pt; font-size: 11pt; font-weight: bold; }
           .closing { margin-top: 10pt; font-size: 10.5pt; }
           .sign { display: flex; gap: 30pt; margin-top: 26pt; font-size: 10.5pt; }
+          .sign > div { min-width: 150pt; border-top: 1pt solid #000; padding-top: 3pt; }
           .sign b { display: block; }
+          .sign.every { margin-top: auto; padding-top: 22pt; }
+          .sign.every + .pagelabel { margin-top: 0; }
           .pagelabel { margin-top: auto; padding-top: 10pt; text-align: right; font-size: 9pt; color: #555; font-style: italic; }
           @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
         </style>
@@ -395,7 +400,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
             </table>
             ${isLast ? `<div class="total">Total Beneficiaries: ${filtered.length} &nbsp;·&nbsp; Total Amount: ETB ${fmt(totalAmount)}</div>
             <div class="closing">${esc(Lt.closing)}<br><br>${esc(Lt.regards)}</div>
-            <div class="sign">${Lt.signatories.map(s => `<div><b>${esc(s.name)}</b>${esc(s.title)}</div>`).join('')}</div>` : ''}
+            <div class="sign">${Lt.signatories.map(s => `<div><b>${esc(s.name)}</b>${esc(s.title)}</div>`).join('')}</div>` : `<div class="sign every">${Lt.signatories.map(s => `<div><b>${esc(s.name)}</b>${esc(s.title)}</div>`).join('')}</div>`}
             ${totalPages > 1 ? `<div class="pagelabel">${isLast ? `End of list — Page ${pIdx + 1} of ${totalPages}` : `Continued on next page — Page ${pIdx + 1} of ${totalPages}`}</div>` : ''}
           </div>
         </div>`
@@ -546,12 +551,17 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
                 <div style={{ fontSize: 12, marginTop: 8 }}>{letter.closing}</div>
                 <div style={{ fontSize: 12, marginTop: 6 }}>{letter.regards}</div>
                 <div style={{ display: 'flex', gap: 32, marginTop: 22, fontSize: 12 }}>
-                  {letter.signatories.map((sg, i) => <div key={i}><b style={{ display: 'block' }}>{sg.name}</b>{sg.title}</div>)}
+                  {letter.signatories.map((sg, i) => <div key={i} style={{ minWidth: 150, borderTop: '1px solid #000', paddingTop: 3 }}><b style={{ display: 'block' }}>{sg.name}</b>{sg.title}</div>)}
                 </div>
               </>
             )}
+            {!isLast && (
+              <div style={{ display: 'flex', gap: 32, marginTop: 'auto', paddingTop: 22, fontSize: 12 }}>
+                {letter.signatories.map((sg, i) => <div key={i} style={{ minWidth: 150, borderTop: '1px solid #000', paddingTop: 3 }}><b style={{ display: 'block' }}>{sg.name}</b>{sg.title}</div>)}
+              </div>
+            )}
             {viewPages.length > 1 && (
-              <div style={{ marginTop: 'auto', paddingTop: 8, textAlign: 'right', fontSize: 10, color: '#888', fontStyle: 'italic' }}>
+              <div style={{ marginTop: isLast ? 'auto' : 0, paddingTop: 8, textAlign: 'right', fontSize: 10, color: '#888', fontStyle: 'italic' }}>
                 {isLast ? `End of list — Page ${pIdx + 1} of ${viewPages.length}` : `Continued on next page — Page ${pIdx + 1} of ${viewPages.length}`}
               </div>
             )}
@@ -624,12 +634,17 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
                     <div style={{ fontSize: 'clamp(9px, 2.6vw, 13px)', fontWeight: 700 }}>Total Beneficiaries: {filtered.length} · Total: ETB {fmt(totalAmount)}</div>
                     <div style={{ fontSize: 'clamp(7px, 2.1vw, 11px)', marginTop: '1.5vw' }}>{letter.closing}</div>
                     <div style={{ display: 'flex', gap: '6vw', marginTop: '4vw', fontSize: 'clamp(7px, 2.1vw, 11px)' }}>
-                      {letter.signatories.map((sg, i) => <div key={i}><b style={{ display: 'block' }}>{sg.name}</b>{sg.title}</div>)}
+                      {letter.signatories.map((sg, i) => <div key={i} style={{ minWidth: '28vw', borderTop: '1px solid #000', paddingTop: 3 }}><b style={{ display: 'block' }}>{sg.name}</b>{sg.title}</div>)}
                     </div>
                   </>
                 )}
+                {!isLast && (
+                  <div style={{ display: 'flex', gap: '6vw', marginTop: 'auto', paddingTop: '3vw', fontSize: 'clamp(7px, 2.1vw, 11px)' }}>
+                    {letter.signatories.map((sg, i) => <div key={i} style={{ minWidth: '28vw', borderTop: '1px solid #000', paddingTop: 2 }}><b style={{ display: 'block' }}>{sg.name}</b>{sg.title}</div>)}
+                  </div>
+                )}
                 {viewPages.length > 1 && (
-                  <div style={{ marginTop: 'auto', paddingTop: 6, textAlign: 'right', fontSize: 'clamp(7px, 2vw, 10px)', color: '#888', fontStyle: 'italic' }}>
+                  <div style={{ marginTop: isLast ? 'auto' : 0, paddingTop: 6, textAlign: 'right', fontSize: 'clamp(7px, 2vw, 10px)', color: '#888', fontStyle: 'italic' }}>
                     {isLast ? `End of list — Page ${pIdx + 1}/${viewPages.length}` : `Continued — Page ${pIdx + 1}/${viewPages.length}`}
                   </div>
                 )}
