@@ -15,6 +15,26 @@ const smallBtn = (bg, color, border) => ({
 })
 const initials = n => (n || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
 
+// "Active now" (under 5 min), "12 min ago", "3 h ago", "Yesterday 14:05", otherwise the date.
+function lastActive(ts) {
+  if (!ts) return { text: 'Never active', live: false }
+  const d = new Date(ts), mins = Math.max(0, Math.round((Date.now() - d) / 60000))
+  if (mins < 5) return { text: 'Active now', live: true }
+  if (mins < 60) return { text: `${mins} min ago`, live: false }
+  if (mins < 24 * 60) return { text: `${Math.floor(mins / 60)} h ago`, live: false }
+  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+  if (mins < 48 * 60) return { text: `Yesterday ${time}`, live: false }
+  return { text: d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + time, live: false }
+}
+function LastActive({ ts }) {
+  const { text, live } = lastActive(ts)
+  return (
+    <div title={ts ? new Date(ts).toLocaleString('en-GB') : ''} style={{ fontSize: 11.5, color: live ? B.green : B.textLight, fontWeight: live ? 700 : 500, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+      <span style={{ width: 7, height: 7, borderRadius: '50%', background: live ? '#22c55e' : '#cbd5d0' }} />{text}
+    </div>
+  )
+}
+
 function Person({ u }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
@@ -123,6 +143,7 @@ export default function UsersPage({ currentUser, toast, isMobile }) {
           return (
             <div key={u.id} style={{ padding: '13px 18px', borderBottom: `1px solid ${B.greenLight}`, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               <Person u={u} />
+              <LastActive ts={u.last_active_at} />
               <select value={u.role} disabled={busy || self} onChange={e => changeRole(u, e.target.value)} style={selectStyle} aria-label={`Role for ${u.full_name}`} title={self ? 'You cannot change your own role' : ''}>
                 {ASSIGNABLE_ROLES.map(r => <option key={r} value={r}>{roleLabel(r)}</option>)}
               </select>
