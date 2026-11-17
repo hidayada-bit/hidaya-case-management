@@ -2597,6 +2597,20 @@ export default function App() {
       })
     }
   }, [session?.user?.id, user?.id, user?.status])
+  // Last-active heartbeat: stamps the user's own row on open, every 5 min while the tab is visible, and when they come back to it.
+  useEffect(() => {
+    if (!session || !user?.id || user.status !== 'approved') return
+    let last = 0
+    const beat = () => {
+      if (document.visibilityState !== 'visible' || Date.now() - last < 120000) return
+      last = Date.now()
+      supabase.from('users').update({ last_active_at: new Date().toISOString() }).eq('id', user.id).then(() => {}, () => {})
+    }
+    beat()
+    const t = setInterval(beat, 300000)
+    document.addEventListener('visibilitychange', beat)
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', beat) }
+  }, [session?.user?.id, user?.id, user?.status])
   useEffect(() => { if (session && user?.status === 'approved') loadAll() }, [session?.user?.id, user?.id, user?.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // While waiting for approval, quietly re-check every 15s
