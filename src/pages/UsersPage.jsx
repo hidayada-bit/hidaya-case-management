@@ -26,11 +26,13 @@ function lastActive(ts) {
   if (mins < 48 * 60) return { text: `Yesterday ${time}`, live: false }
   return { text: d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + time, live: false }
 }
-function LastActive({ ts }) {
+const hoursText = m => { m = Number(m) || 0; return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ''}` }
+function LastActive({ ts, minutes }) {
   const { text, live } = lastActive(ts)
   return (
     <div title={ts ? new Date(ts).toLocaleString('en-GB') : ''} style={{ fontSize: 11.5, color: live ? B.green : B.textLight, fontWeight: live ? 700 : 500, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
       <span style={{ width: 7, height: 7, borderRadius: '50%', background: live ? '#22c55e' : '#cbd5d0' }} />{text}
+      <span style={{ color: B.textLight, fontWeight: 500 }}>· {hoursText(minutes)} active</span>
     </div>
   )
 }
@@ -143,7 +145,7 @@ export default function UsersPage({ currentUser, toast, isMobile }) {
           return (
             <div key={u.id} style={{ padding: '13px 18px', borderBottom: `1px solid ${B.greenLight}`, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               <Person u={u} />
-              <LastActive ts={u.last_active_at} />
+              <LastActive ts={u.last_active_at} minutes={u.active_minutes} />
               <select value={u.role} disabled={busy || self} onChange={e => changeRole(u, e.target.value)} style={selectStyle} aria-label={`Role for ${u.full_name}`} title={self ? 'You cannot change your own role' : ''}>
                 {ASSIGNABLE_ROLES.map(r => <option key={r} value={r}>{roleLabel(r)}</option>)}
               </select>
