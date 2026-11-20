@@ -7,6 +7,7 @@ import BankMark from '../components/BankMark'
 import { B } from '../lib/theme'
 import { logActivity } from '../lib/activity'
 import { buildLetter, DEFAULT_LETTER_SETTINGS, amountWords, figure } from '../lib/letter'
+import { tl, pl } from '../lib/i18n'
 
 
 const PROJECTS = ['OVC', 'HF']
@@ -52,31 +53,31 @@ function ExportDialog({ count, onCancel, onConfirm, busy, bankName, project, can
   return (
     <div onClick={busy ? undefined : onCancel} style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div onClick={e => e.stopPropagation()} style={{ background: B.card, borderRadius: 16, width: '100%', maxWidth: 440, maxHeight: '92vh', overflow: 'auto', boxShadow: '0 32px 80px rgba(0,0,0,0.4)' }}>
-        <div style={{ padding: '14px 20px', borderBottom: `2px solid ${B.greenLight}`, fontSize: 16, fontWeight: 800, color: B.text }}>What is this export for?</div>
+        <div style={{ padding: '14px 20px', borderBottom: `2px solid ${B.greenLight}`, fontSize: 16, fontWeight: 800, color: B.text }}>{tl('What is this export for?')}</div>
         <div style={{ padding: '16px 20px 20px' }}>
           {opt('keep', 'Just to have it', action === 'copy' ? 'For your own records. Nothing is recorded. The copied text is marked "FOR RECORDS ONLY".' : 'For your own records. Saved as a locked PDF with a "FOR RECORDS ONLY" watermark — it cannot be edited or used as a bank letter. Nothing is recorded.')}
           {opt('bank', 'For bank use (deposit)', 'Official letter for the bank, with the letter text, total in words and figures. Needs a letter Ref No and the month it pays.')}
           {purpose === 'bank' && (
             <div style={{ background: B.greenLight, border: `1px solid ${B.border}`, borderRadius: 12, padding: 14, marginTop: 4 }}>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: B.textMid, marginBottom: 6 }}>Letter Ref No</label>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: B.textMid, marginBottom: 6 }}>{tl('Letter Ref No')}</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <span style={{ fontWeight: 800, color: B.text }}>HDA /</span>
+                <span style={{ fontWeight: 800, color: B.text }}>{tl('HDA /')}</span>
                 <input inputMode="numeric" autoFocus value={num} onChange={e => setNum(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="XXX" style={{ ...fieldStyle, textAlign: 'center', maxWidth: 110 }} />
                 <span style={{ fontWeight: 800, color: B.text }}>/ {yy}</span>
               </div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: B.textMid, marginBottom: 6 }}>Month this letter pays</label>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: B.textMid, marginBottom: 6 }}>{tl('Month this letter pays')}</label>
               <input type="month" value={month} onChange={e => setMonth(e.target.value)} style={fieldStyle} />
               <div style={{ fontSize: 12, color: B.goldDark, background: B.goldLight, borderRadius: 8, padding: '8px 10px', marginTop: 12, lineHeight: 1.5 }}>
                 {canRecord
-                  ? <>Confirming will mark the active {project} beneficiaries on this {bankName} list (not yet paid) as <b>PAID</b> for <b>{valid ? monthText(month) : 'the chosen month'}</b> under Ref <b>{num ? ref : 'HDA/XXX/' + yy}</b>, and update each mother's Payment tab. {count} on this list.</>
-                  : <>This creates the letter for <b>{valid ? monthText(month) : 'the chosen month'}</b> under Ref <b>{num ? ref : 'HDA/XXX/' + yy}</b>. Your role does not record payments, so finance or the administrator marks them as paid. {count} on this list.</>}
+                  ? <>{tl('Confirming will mark the active')}{' '}{project}{' '}{tl('beneficiaries on this')}{' '}{bankName}{' '}{tl('list (not yet paid) as')}{' '}<b>PAID</b> for <b>{valid ? monthText(month) : tl('the chosen month')}</b>{' '}{tl('under Ref')}{' '}<b>{num ? ref : 'HDA/XXX/' + yy}</b>{tl(', and update each mother\'s Payment tab.')}{' '}{count}{' '}{tl('on this list.')}</>
+                  : <>{tl('This creates the letter for')}{' '}<b>{valid ? monthText(month) : tl('the chosen month')}</b>{' '}{tl('under Ref')}{' '}<b>{num ? ref : 'HDA/XXX/' + yy}</b>. Your role does not record payments, so finance or the administrator marks them as paid. {count}{' '}{tl('on this list.')}</>}
               </div>
             </div>
           )}
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
-            <button disabled={busy} onClick={onCancel} style={{ ...toolBtn(B.card), color: B.text, border: `1.5px solid ${B.border}`, padding: '10px 16px', fontSize: 13 }}>Cancel</button>
+            <button disabled={busy} onClick={onCancel} style={{ ...toolBtn(B.card), color: B.text, border: `1.5px solid ${B.border}`, padding: '10px 16px', fontSize: 13 }}>{tl('Cancel')}</button>
             <button disabled={busy || !valid} onClick={() => onConfirm(purpose === 'bank' ? { ref, month: month } : null)} style={{ ...toolBtn(`linear-gradient(135deg, ${B.green}, ${B.greenMid})`), padding: '10px 18px', fontSize: 13, opacity: busy || !valid ? 0.55 : 1 }}>
-              {busy ? 'Recording…' : purpose === 'bank' ? 'Confirm & export' : 'Export'}
+              {busy ? tl('Recording…') : purpose === 'bank' ? 'Confirm & export' : 'Export'}
             </button>
           </div>
         </div>
@@ -211,7 +212,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
   const recordPayments = async ({ ref, month }) => {
     const { data: used, error: e1 } = await supabase.from('payments').select('id').eq('reference', ref).limit(1)
     if (e1) throw e1
-    if (used?.length) throw new Error(`Ref No ${ref} has already been used. Please use a new letter number.`)
+    if (used?.length) throw new Error(tl('Ref No {ref} has already been used. Please use a new letter number.', { "ref": ref }))
     const period = `${month}-01`
     const targets = filtered.filter(f => f.status === 'active')
     const ids = targets.map(f => f.id)
@@ -227,7 +228,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
       if (error) throw error
     }
     logActivity(user, 'payment', `${user?.full_name || 'Someone'} recorded ${rows.length} payment(s) as paid for ${monthText(month)} (${ref}, ${bank.name} ${project})`)
-    toast(`${rows.length} beneficiar${rows.length === 1 ? 'y' : 'ies'} recorded as paid for ${monthText(month)}${already.size ? ` (${already.size} already paid, skipped)` : ''}`)
+    toast(tl('{length} beneficiar{x} recorded as paid for {x}{x}', { "length": rows.length, "x": [pl(rows.length === 1 ? 'y' : 'ies'), monthText(month), already.size ? ` (${already.size} already paid, skipped)` : ''] }))
   }
 
   // "Just to have it": one locked, watermarked PDF (the same file whether Print, CSV or Excel was pressed).
@@ -302,7 +303,7 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
         if (canRecord) { if (!issued || issued.ref !== meta.ref) await recordPayments(meta) }
         else {
           const { data: used } = await supabase.from('payments').select('id').eq('reference', meta.ref).limit(1)
-          if (used?.length) throw new Error(`Ref No ${meta.ref} has already been used. Please use a new letter number.`)
+          if (used?.length) throw new Error(tl('Ref No {ref} has already been used. Please use a new letter number.', { "ref": meta.ref }))
         }
         setIssued(meta)
       }
@@ -475,13 +476,13 @@ function BankLetter({ families, bank, project, onClose, isMobile, childCounts = 
       }}>
         <div>
           <div style={{ fontSize: 13, fontWeight: 800, color: B.gold }}>{bank.name} — {project}</div>
-          <div style={{ fontSize: 11, color: '#81c784' }}>{filtered.length} beneficiaries{heldRows.length ? ` · ${heldRows.length} on hold` : ''}{noKidRows.length ? ` · ${noKidRows.length} no eligible children` : ''}{heldRows.length + noKidRows.length ? ' (not exported)' : ''} · {today}{viewPages.length > 1 ? ` · ${viewPages.length} pages` : ''}</div>
+          <div style={{ fontSize: 11, color: '#81c784' }}>{filtered.length} beneficiaries{heldRows.length ? tl('· {length} on hold', { "length": heldRows.length }) : ''}{noKidRows.length ? tl('· {length} no eligible children', { "length": noKidRows.length }) : ''}{heldRows.length + noKidRows.length ? tl('(not exported)') : ''} · {today}{viewPages.length > 1 ? tl('· {length} pages', { "length": viewPages.length }) : ''}</div>
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {!isMobile && <button onClick={() => ask('print')} style={toolBtn('#1e7d22')}><Icon name="print" size={14} />Print</button>}
+          {!isMobile && <button onClick={() => ask('print')} style={toolBtn('#1e7d22')}><Icon name="print" size={14} />{tl('Print')}</button>}
           <button onClick={() => ask('csv')} style={toolBtn('#0891b2')}><Icon name="file" size={14} />CSV</button>
-          {!isMobile && <button onClick={() => ask('excel')} style={toolBtn('#059669')}><Icon name="spreadsheet" size={14} />Excel</button>}
-          <button onClick={() => ask('copy')} style={toolBtn(copied ? '#6b21a8' : '#7c3aed')}>{copied ? <><Icon name="check" size={14} />Copied all!</> : <><Icon name="copy" size={14} />Copy all</>}</button>
+          {!isMobile && <button onClick={() => ask('excel')} style={toolBtn('#059669')}><Icon name="spreadsheet" size={14} />{tl('Excel')}</button>}
+          <button onClick={() => ask('copy')} style={toolBtn(copied ? '#6b21a8' : '#7c3aed')}>{copied ? <><Icon name="check" size={14} />{tl('Copied all!')}</> : <><Icon name="copy" size={14} />{tl('Copy all')}</>}</button>
           <button onClick={onClose} style={toolBtn('#dc2626')}><Icon name="x" size={14} /></button>
         </div>
       </div>
@@ -678,8 +679,8 @@ export default function BankListPage({ families, isMobile, childCounts = {}, rat
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <Icon name="bank" size={30} color={B.gold} />
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: B.gold }}>Bank List</div>
-            <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>Generate official bank payment letters by project and bank</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: B.gold }}>{tl('Bank List')}</div>
+            <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>{tl('Generate official bank payment letters by project and bank')}</div>
           </div>
         </div>
       </div>
@@ -722,7 +723,7 @@ export default function BankListPage({ families, isMobile, childCounts = {}, rat
                     onMouseLeave={e => { e.currentTarget.style.borderColor = B.border; e.currentTarget.style.background = 'var(--c-input)'; e.currentTarget.style.boxShadow = 'none' }}
                   >
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: B.text, marginBottom: 4 }}>{project} Project</div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: B.text, marginBottom: 4 }}>{project}{' '}{tl('Project')}</div>
                       <div style={{ fontSize: 12, color: B.textLight }}>{count} beneficiaries</div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -735,7 +736,7 @@ export default function BankListPage({ families, isMobile, childCounts = {}, rat
                         background: bank.color,
                         color: '#fff', borderRadius: 8, padding: '6px 14px',
                         fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5,
-                      }}>Generate <Icon name="forward" size={13} /></div>
+                      }}>{tl('Generate')}{' '}<Icon name="forward" size={13} /></div>
                     </div>
                   </div>
                 )
