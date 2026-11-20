@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { B } from '../lib/theme'
 import { TRANSFER_CATEGORIES, categoryOf } from '../lib/settings'
 import Icon from '../components/Icon'
+import { tl } from '../lib/i18n'
 
 const fdate = d => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
 const CAT_COLOR = {
@@ -31,8 +32,8 @@ export default function ArchivePage({ families, onView, isMobile }) {
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, ${B.gold}, ${B.green})` }} />
         <Icon name="archive" size={28} color={B.gold} />
         <div style={{ flex: 1, minWidth: 180 }}>
-          <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>Transferred Families</div>
-          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>Removed from the family, bank and payment lists. Not visible to data collectors.</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>{tl('Transferred Families')}</div>
+          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>{tl('Removed from the family, bank and payment lists. Not visible to data collectors.')}</div>
         </div>
         <div style={{ color: '#fff', fontWeight: 800, fontSize: 22 }}>{families.length}</div>
       </div>
@@ -44,14 +45,14 @@ export default function ArchivePage({ families, onView, isMobile }) {
 
       <div style={{ position: 'relative', marginBottom: 14 }}>
         <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: B.textLight, display: 'flex' }}><Icon name="search" size={16} /></span>
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search name or code…" style={{ width: '100%', padding: '10px 12px 10px 36px', border: `1.5px solid ${B.border}`, borderRadius: 10, fontSize: 16, color: B.text, background: B.card, fontFamily: 'inherit', boxSizing: 'border-box', minHeight: 44, outline: 'none' }} />
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder={tl('Search name or code…')} style={{ width: '100%', padding: '10px 12px 10px 36px', border: `1.5px solid ${B.border}`, borderRadius: 10, fontSize: 16, color: B.text, background: B.card, fontFamily: 'inherit', boxSizing: 'border-box', minHeight: 44, outline: 'none' }} />
       </div>
 
       {groups.length === 0 ? (
         <div style={{ background: B.card, border: `1px solid ${B.border}`, borderRadius: 14, padding: '44px 20px', textAlign: 'center', color: B.textLight }}>
           <Icon name="archive" size={36} style={{ marginBottom: 8 }} />
-          <div style={{ fontWeight: 700, color: B.text }}>No transferred families</div>
-          <div style={{ fontSize: 13 }}>An administrator transfers a family from the “Status” tab on its profile.</div>
+          <div style={{ fontWeight: 700, color: B.text }}>{tl('No transferred families')}</div>
+          <div style={{ fontSize: 13 }}>{tl('An administrator transfers a family from the “Status” tab on its profile.')}</div>
         </div>
       ) : groups.map(g => (
         <div key={g.c} style={{ marginBottom: 20 }}>
@@ -64,14 +65,14 @@ export default function ArchivePage({ families, onView, isMobile }) {
               <div key={f.id} onClick={() => onView(f)} style={{ background: B.card, border: `1px solid ${B.border}`, borderLeft: `4px solid ${CAT_COLOR[g.c]}`, borderRadius: 12, padding: '13px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                 <div style={{ flex: 1, minWidth: 200 }}>
                   <div style={{ fontWeight: 800, fontSize: 14.5, color: B.text }}>{f.mother_name}</div>
-                  <div style={{ fontSize: 11.5, color: B.textLight }}>{f.family_code} · {f.project}{f.project === 'HF' && f.branch ? ` · ${f.branch}` : ''}</div>
-                  {f.case_reason && <div style={{ fontSize: 12.5, color: B.textMid, marginTop: 5 }}><b>Reason:</b> {f.case_reason}</div>}
+                  <div style={{ fontSize: 11.5, color: B.textLight }}>{f.family_code} · {f.project}{f.project === 'HF' && f.branch ? tl('· {branch}', { "branch": f.branch }) : ''}</div>
+                  {f.case_reason && <div style={{ fontSize: 12.5, color: B.textMid, marginTop: 5 }}><b>{tl('Reason:')}</b> {f.case_reason}</div>}
                 </div>
                 <div style={{ fontSize: 11.5, color: B.textLight, textAlign: isMobile ? 'left' : 'right' }}>
                   <div>{fdate(f.case_changed_at)}</div>
                   {f.case_changed_by_name && <div>by <b style={{ color: B.textMid }}>{f.case_changed_by_name}</b></div>}
                 </div>
-                <span style={{ background: B.greenLight, color: B.green, border: `1px solid ${B.border}`, borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}>History <Icon name="forward" size={12} /></span>
+                <span style={{ background: B.greenLight, color: B.green, border: `1px solid ${B.border}`, borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}>{tl('History')}{' '}<Icon name="forward" size={12} /></span>
               </div>
             ))}
           </div>
