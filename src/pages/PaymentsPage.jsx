@@ -7,14 +7,15 @@ import { DEFAULT_RATES, monthlyFor, caseState, joinedDate } from '../lib/setting
 import { B } from '../lib/theme'
 import { logActivity } from '../lib/activity'
 import CsoReport from './CsoReport'
+import { tl } from '../lib/i18n'
 
 const HF_BRANCHES = ['Addis Ababa', 'Bishoftu', 'Dangla', 'Bure', 'Dire Dawa', 'Nekemte', 'Chagni']
 
 const STATUS = {
-  paid:    { label: 'Paid',    bg: B.greenLight, color: B.okText, dot: '#1e7d22', icon: 'done' },
-  pending: { label: 'Unpaid',  bg: B.goldLight, color: B.warnText, dot: '#f5a800', icon: 'clock' },
-  failed:  { label: 'Failed',  bg: B.errBg, color: B.errText, dot: B.red, icon: 'fail' },
-  on_hold: { label: 'On hold', bg: B.infoBg, color: B.infoText, dot: '#6366f1', icon: 'pending' },
+  paid:    { get label() { return tl('Paid') },    bg: B.greenLight, color: B.okText, dot: '#1e7d22', icon: 'done' },
+  pending: { get label() { return tl('Unpaid') },  bg: B.goldLight, color: B.warnText, dot: '#f5a800', icon: 'clock' },
+  failed:  { get label() { return tl('Failed') },  bg: B.errBg, color: B.errText, dot: B.red, icon: 'fail' },
+  on_hold: { get label() { return tl('On hold') }, bg: B.infoBg, color: B.infoText, dot: '#6366f1', icon: 'pending' },
 }
 
 const inputStyle = {
@@ -52,7 +53,7 @@ function Sheet({ title, onClose, children, isMobile }) {
       <div onClick={e => e.stopPropagation()} style={{ background: B.card, width: '100%', maxWidth: 440, borderRadius: isMobile ? '20px 20px 0 0' : 18, boxShadow: '0 32px 80px rgba(0,0,0,0.3)', maxHeight: '92vh', overflow: 'auto' }}>
         <div style={{ padding: '14px 20px', borderBottom: `2px solid ${B.greenLight}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 16, fontWeight: 800, color: B.text }}>{title}</span>
-          <button onClick={onClose} aria-label="Close" style={{ background: B.greenLight, border: `1px solid ${B.border}`, borderRadius: 8, width: 32, height: 32, cursor: 'pointer', color: B.greenDark, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="x" size={16} /></button>
+          <button onClick={onClose} aria-label={tl('Close')} style={{ background: B.greenLight, border: `1px solid ${B.border}`, borderRadius: 8, width: 32, height: 32, cursor: 'pointer', color: B.greenDark, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="x" size={16} /></button>
         </div>
         <div style={{ padding: '18px 20px calc(20px + env(safe-area-inset-bottom))' }}>{children}</div>
       </div>
@@ -164,8 +165,8 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
   const save = async () => {
     if (!modal) return
     const { kind, targets } = modal
-    if (kind === 'paid' && !form.paid_on) { toast('Please choose the payment date', 'error'); return }
-    if (kind === 'issue' && !form.notes.trim()) { toast('Please add a short reason', 'error'); return }
+    if (kind === 'paid' && !form.paid_on) { toast(tl('Please choose the payment date'), 'error'); return }
+    if (kind === 'issue' && !form.notes.trim()) { toast(tl('Please add a short reason'), 'error'); return }
     setSaving(true)
     try {
       const period = `${month}-01`
@@ -223,18 +224,18 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, ${B.gold}, ${B.green})` }} />
         <Icon name="wallet" size={28} color={B.gold} />
         <div style={{ flex: 1, minWidth: 180 }}>
-          <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>Payment Follow-up</div>
-          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>Track who has been paid each month and chase the rest</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>{tl('Payment Follow-up')}</div>
+          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>{tl('Track who has been paid each month and chase the rest')}</div>
         </div>
-        <button onClick={() => setShowReport(true)} style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: 10, padding: '8px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', minHeight: 40, fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name="file" size={15} /> CSO Report</button>
+        <button onClick={() => setShowReport(true)} style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: 10, padding: '8px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', minHeight: 40, fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name="file" size={15} />{' '}{tl('CSO Report')}</button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 11, padding: 4 }}>
-          <button aria-label="Previous month" onClick={() => setMonth(m => shiftMonth(m, -1))} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', width: 34, height: 34, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="chevronLeft" size={18} /></button>
+          <button aria-label={tl('Previous month')} onClick={() => setMonth(m => shiftMonth(m, -1))} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', width: 34, height: 34, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="chevronLeft" size={18} /></button>
           <label style={{ position: 'relative', minWidth: 150, color: '#fff', fontWeight: 800, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, cursor: 'pointer' }}>
             <Icon name="calendar" size={15} color={B.gold} />{monthLabel(month)}
-            <input type="month" value={month} onChange={e => e.target.value && setMonth(e.target.value)} aria-label="Choose month"
+            <input type="month" value={month} onChange={e => e.target.value && setMonth(e.target.value)} aria-label={tl('Choose month')}
               onClick={e => e.target.showPicker?.()} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%' }} />
           </label>
-          <button aria-label="Next month" onClick={() => setMonth(m => shiftMonth(m, 1))} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', width: 34, height: 34, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="chevron" size={18} /></button>
+          <button aria-label={tl('Next month')} onClick={() => setMonth(m => shiftMonth(m, 1))} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', width: 34, height: 34, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="chevron" size={18} /></button>
         </div>
       </div>
 
@@ -246,7 +247,7 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
           return (
             <button key={o.m} onClick={() => setMonth(o.m)} style={{ flex: '0 0 auto', minWidth: 96, textAlign: 'left', background: on ? B.green : B.card, color: on ? '#fff' : B.text, border: `1px solid ${on ? B.green : B.border}`, borderRadius: 11, padding: '8px 11px', cursor: 'pointer', fontFamily: 'inherit' }}>
               <div style={{ fontSize: 12, fontWeight: 800 }}>{new Date(...o.m.split('-').map((v, i) => i ? v - 1 : +v), 1).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })}</div>
-              <div style={{ fontSize: 11, fontWeight: 600, opacity: .85 }}>{o.paid}/{o.total} paid · {o.total - o.paid} unpaid</div>
+              <div style={{ fontSize: 11, fontWeight: 600, opacity: .85 }}>{o.paid}/{o.total}{' '}{tl('paid ·')}{' '}{o.total - o.paid} unpaid</div>
               <div style={{ height: 4, borderRadius: 3, background: on ? 'rgba(255,255,255,.3)' : B.greenLight, marginTop: 5, overflow: 'hidden' }}><div style={{ width: `${pc}%`, height: '100%', background: on ? B.gold : B.green }} /></div>
             </button>
           )
@@ -255,10 +256,10 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
 
       {/* Summary */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: isMobile ? 10 : 14, marginBottom: 14 }}>
-        <StatTile icon="users" label="Beneficiaries" value={stats.total} sub={`${stats.paid} paid`} color={B.green} bg={B.greenLight} />
-        <StatTile icon="done" label="Paid" value={stats.paid} sub={`ETB ${money(stats.paidAmt)}`} color="#1b5e20" bg="#e8f5e9" />
-        <StatTile icon="clock" label="Unpaid" value={stats.pending} sub={`ETB ${money(Math.max(stats.expectedAmt - stats.paidAmt, 0))} outstanding`} color={B.goldDark} bg={B.goldLight} />
-        <StatTile icon="alert" label="Issues" value={stats.failed + stats.on_hold} sub={`${stats.failed} failed · ${stats.on_hold} on hold`} color="#dc2626" bg="#fef2f2" />
+        <StatTile icon="users" label={tl('Beneficiaries')} value={stats.total} sub={`${stats.paid} paid`} color={B.green} bg={B.greenLight} />
+        <StatTile icon="done" label={tl('Paid')} value={stats.paid} sub={`ETB ${money(stats.paidAmt)}`} color="#1b5e20" bg="#e8f5e9" />
+        <StatTile icon="clock" label={tl('Unpaid')} value={stats.pending} sub={`ETB ${money(Math.max(stats.expectedAmt - stats.paidAmt, 0))} outstanding`} color={B.goldDark} bg={B.goldLight} />
+        <StatTile icon="alert" label={tl('Issues')} value={stats.failed + stats.on_hold} sub={`${stats.failed} failed · ${stats.on_hold} on hold`} color="#dc2626" bg="#fef2f2" />
       </div>
       <div style={{ background: B.card, border: `1px solid ${B.border}`, borderRadius: 12, padding: '12px 16px', marginBottom: 14 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 700, color: B.textMid, marginBottom: 7 }}>
@@ -267,33 +268,33 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
         <div style={{ height: 9, background: B.greenLight, borderRadius: 5, overflow: 'hidden' }}>
           <div style={{ width: `${pct}%`, height: '100%', background: `linear-gradient(to right, ${B.green}, ${B.greenMid})`, transition: 'width .5s' }} />
         </div>
-        {missingAcct > 0 && <div style={{ fontSize: 11.5, color: B.amber, marginTop: 8, display: 'flex', gap: 6, alignItems: 'center' }}><Icon name="warn" size={13} />{missingAcct} beneficiar{missingAcct > 1 ? 'ies have' : 'y has'} no bank account on file</div>}
+        {missingAcct > 0 && <div style={{ fontSize: 11.5, color: B.amber, marginTop: 8, display: 'flex', gap: 6, alignItems: 'center' }}><Icon name="warn" size={13} />{missingAcct} beneficiar{missingAcct > 1 ? tl('ies have') : tl('y has')}{' '}{tl('no bank account on file')}</div>}
       </div>
 
       {/* Filters */}
       <div style={{ background: B.card, border: `1px solid ${B.border}`, borderRadius: 14, padding: '12px 14px', marginBottom: 14, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ position: 'relative', flex: isMobile ? '1 1 100%' : '0 1 230px' }}>
           <span style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: B.textLight, display: 'flex' }}><Icon name="search" size={16} /></span>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, code, account…" style={{ ...filterStyle, paddingLeft: 34, width: '100%', fontSize: 16 }} />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder={tl('Search name, code, account…')} style={{ ...filterStyle, paddingLeft: 34, width: '100%', fontSize: 16 }} />
         </div>
-        <select value={project} onChange={e => { setProject(e.target.value); setBranch('All') }} style={filterStyle} aria-label="Project">
-          <option value="All">All projects</option><option value="OVC">OVC</option><option value="HF">HF</option>
+        <select value={project} onChange={e => { setProject(e.target.value); setBranch('All') }} style={filterStyle} aria-label={tl('Project')}>
+          <option value="All">{tl('All projects')}</option><option value="OVC">OVC</option><option value="HF">HF</option>
         </select>
         {project === 'HF' && (
-          <select value={branch} onChange={e => setBranch(e.target.value)} style={filterStyle} aria-label="Branch">
-            <option value="All">All branches</option>{HF_BRANCHES.map(b => <option key={b}>{b}</option>)}
+          <select value={branch} onChange={e => setBranch(e.target.value)} style={filterStyle} aria-label={tl('Branch')}>
+            <option value="All">{tl('All branches')}</option>{HF_BRANCHES.map(b => <option key={b}>{b}</option>)}
           </select>
         )}
-        <select value={bank} onChange={e => setBank(e.target.value)} style={filterStyle} aria-label="Bank">
-          <option value="All">All banks</option>{BANKS.map(b => <option key={b.id} value={b.id}>{b.label}</option>)}<option value="None">No bank set</option>
+        <select value={bank} onChange={e => setBank(e.target.value)} style={filterStyle} aria-label={tl('Bank')}>
+          <option value="All">{tl('All banks')}</option>{BANKS.map(b => <option key={b.id} value={b.id}>{b.label}</option>)}<option value="None">{tl('No bank set')}</option>
         </select>
-        <select value={statusF} onChange={e => setStatusF(e.target.value)} style={filterStyle} aria-label="Status">
-          <option value="All">All statuses</option>
+        <select value={statusF} onChange={e => setStatusF(e.target.value)} style={filterStyle} aria-label={tl('Status')}>
+          <option value="All">{tl('All statuses')}</option>
           {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {canManage && <button style={btn('primary', !selected.size)} disabled={!selected.size} onClick={() => openModal('paid', selTargets)}><Icon name="check" size={15} />Mark paid ({selected.size})</button>}
-          {canManage && <button style={btn('danger', !selected.size)} disabled={!selected.size} onClick={() => openModal('issue', selTargets)}><Icon name="alert" size={15} />Report issue</button>}
+          {canManage && <button style={btn('primary', !selected.size)} disabled={!selected.size} onClick={() => openModal('paid', selTargets)}><Icon name="check" size={15} />{tl('Mark paid (')}{selected.size})</button>}
+          {canManage && <button style={btn('danger', !selected.size)} disabled={!selected.size} onClick={() => openModal('issue', selTargets)}><Icon name="alert" size={15} />{tl('Report issue')}</button>}
           <button style={btn('secondary')} onClick={exportCSV}><Icon name="download" size={15} />CSV</button>
         </div>
       </div>
@@ -302,16 +303,16 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
       <div style={{ background: B.card, border: `1px solid ${B.border}`, borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 20px rgba(30,125,34,0.08)' }}>
         {!isMobile && (
           <div style={{ display: 'grid', gridTemplateColumns: `${canManage ? '36px ' : ''}minmax(180px,1.6fr) 1fr 1.2fr 0.8fr 0.9fr ${canManage ? '200px' : '90px'}`, gap: 12, padding: '10px 16px', background: B.greenLight, borderBottom: `1px solid ${B.border}`, fontSize: 11, fontWeight: 700, color: B.textMid, textTransform: 'uppercase', letterSpacing: '0.05em', alignItems: 'center' }}>
-            {canManage && <input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label="Select all" style={{ width: 16, height: 16, accentColor: B.green }} />}
-            <span>Beneficiary</span><span>Bank / Account</span><span>Status</span><span>Amount (ETB)</span><span>Paid on</span><span>{canManage ? 'Actions' : 'Contact'}</span>
+            {canManage && <input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label={tl('Select all')} style={{ width: 16, height: 16, accentColor: B.green }} />}
+            <span>{tl('Beneficiary')}</span><span>{tl('Bank / Account')}</span><span>{tl('Status')}</span><span>{tl('Amount (ETB)')}</span><span>{tl('Paid on')}</span><span>{canManage ? tl('Actions') : tl('Contact')}</span>
           </div>
         )}
-        {loading && <div style={{ padding: 36, textAlign: 'center', color: B.textLight, display: 'flex', gap: 8, justifyContent: 'center', alignItems: 'center' }}><Icon name="spinner" size={18} spin />Loading payments…</div>}
+        {loading && <div style={{ padding: 36, textAlign: 'center', color: B.textLight, display: 'flex', gap: 8, justifyContent: 'center', alignItems: 'center' }}><Icon name="spinner" size={18} spin />{tl('Loading payments…')}</div>}
         {!loading && rows.length === 0 && (
           <div style={{ padding: '44px 20px', textAlign: 'center', color: B.textLight }}>
             <Icon name="search" size={34} style={{ marginBottom: 8 }} />
-            <div style={{ fontWeight: 700, color: B.text }}>No beneficiaries match</div>
-            <div style={{ fontSize: 13 }}>Only active families are listed. Adjust the filters above.</div>
+            <div style={{ fontWeight: 700, color: B.text }}>{tl('No beneficiaries match')}</div>
+            <div style={{ fontSize: 13 }}>{tl('Only active families are listed. Adjust the filters above.')}</div>
           </div>
         )}
         {!loading && rows.map(({ f, p, status, amount }) => {
@@ -319,27 +320,27 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
           const actions = canManage && (
             <div style={{ display: 'flex', gap: 6, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
               {status !== 'paid'
-                ? <button style={btn('primary')} onClick={() => openModal('paid', [f])}><Icon name="check" size={14} />Paid</button>
-                : <button style={btn('secondary')} onClick={() => openModal('reset', [f])} title="Reset to unpaid"><Icon name="refresh" size={14} />Undo</button>}
-              {status !== 'paid' && <button style={{ ...btn('danger'), padding: '8px 10px' }} onClick={() => openModal('issue', [f])} title="Report issue" aria-label="Report issue"><Icon name="alert" size={14} /></button>}
+                ? <button style={btn('primary')} onClick={() => openModal('paid', [f])}><Icon name="check" size={14} />{tl('Paid')}</button>
+                : <button style={btn('secondary')} onClick={() => openModal('reset', [f])} title={tl('Reset to unpaid')}><Icon name="refresh" size={14} />{tl('Undo')}</button>}
+              {status !== 'paid' && <button style={{ ...btn('danger'), padding: '8px 10px' }} onClick={() => openModal('issue', [f])} title={tl('Report issue')} aria-label={tl('Report issue')}><Icon name="alert" size={14} /></button>}
             </div>
           )
           const call = f.phone_number && (
-            <a href={`tel:${f.phone_number.replace(/[\s-]/g, '')}`} style={{ ...btn('secondary'), textDecoration: 'none', color: B.green, padding: '8px 11px' }} aria-label={`Call ${f.mother_name}`}><Icon name="phone" size={14} />{!isMobile && 'Call'}</a>
+            <a href={`tel:${f.phone_number.replace(/[\s-]/g, '')}`} style={{ ...btn('secondary'), textDecoration: 'none', color: B.green, padding: '8px 11px' }} aria-label={tl('Call {mother_name}', { "mother_name": f.mother_name })}><Icon name="phone" size={14} />{!isMobile && tl('Call')}</a>
           )
           if (isMobile) return (
             <div key={f.id} style={{ padding: '13px 14px', borderBottom: `1px solid ${B.greenLight}`, background: sel ? B.greenLight : B.card }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                {canManage && <input type="checkbox" checked={sel} onChange={() => toggle(f.id)} aria-label={`Select ${f.mother_name}`} style={{ width: 18, height: 18, accentColor: B.green }} />}
+                {canManage && <input type="checkbox" checked={sel} onChange={() => toggle(f.id)} aria-label={tl('Select {mother_name}', { "mother_name": f.mother_name })} style={{ width: 18, height: 18, accentColor: B.green }} />}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 14, color: B.text }}>{f.mother_name}</div>
-                  <div style={{ fontSize: 11, color: B.textLight }}>{f.family_code} · {f.bank || 'No bank'}{f.account_number ? ` · ${f.account_number}` : ''}{isHeld(f) && <span style={{ marginLeft: 6, background: B.goldLight, color: B.warnText, borderRadius: 10, padding: '1px 7px', fontWeight: 700 }}>On hold</span>}</div>
+                  <div style={{ fontSize: 11, color: B.textLight }}>{f.family_code} · {f.bank || tl('No bank')}{f.account_number ? tl('· {account_number}', { "account_number": f.account_number }) : ''}{isHeld(f) && <span style={{ marginLeft: 6, background: B.goldLight, color: B.warnText, borderRadius: 10, padding: '1px 7px', fontWeight: 700 }}>{tl('On hold')}</span>}</div>
                 </div>
                 <Badge s={status} />
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 9, flexWrap: 'wrap' }}>
                 <span style={{ fontSize: 13, fontWeight: 800, color: B.text }}>ETB {money(amount)}</span>
-                {p?.paid_on && <span style={{ fontSize: 11, color: B.textLight }}>on {p.paid_on}{signedBy(p) ? ` · by ${signedBy(p)}` : ''}</span>}
+                {p?.paid_on && <span style={{ fontSize: 11, color: B.textLight }}>on {p.paid_on}{signedBy(p) ? tl('· by {x}', { "x": signedBy(p) }) : ''}</span>}
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>{status !== 'paid' && call}{actions}</div>
               </div>
               {p?.notes && status !== 'paid' && <div style={{ fontSize: 11.5, color: B.errText, marginTop: 6 }}>{p.notes}</div>}
@@ -347,20 +348,20 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
           )
           return (
             <div key={f.id} style={{ display: 'grid', gridTemplateColumns: `${canManage ? '36px ' : ''}minmax(180px,1.6fr) 1fr 1.2fr 0.8fr 0.9fr ${canManage ? '200px' : '90px'}`, gap: 12, padding: '11px 16px', borderBottom: `1px solid ${B.greenLight}`, alignItems: 'center', background: sel ? B.greenLight : B.card }}>
-              {canManage && <input type="checkbox" checked={sel} onChange={() => toggle(f.id)} aria-label={`Select ${f.mother_name}`} style={{ width: 16, height: 16, accentColor: B.green }} />}
+              {canManage && <input type="checkbox" checked={sel} onChange={() => toggle(f.id)} aria-label={tl('Select {mother_name}', { "mother_name": f.mother_name })} style={{ width: 16, height: 16, accentColor: B.green }} />}
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: 13.5, color: B.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.mother_name}</div>
-                <div style={{ fontSize: 11, color: B.textLight }}>{f.family_code}{f.project === 'HF' && f.branch ? ` · ${f.branch}` : ''}{isHeld(f) && <span title={f.case_reason || ''} style={{ marginLeft: 6, background: B.goldLight, color: B.warnText, borderRadius: 10, padding: '1px 7px', fontWeight: 700 }}>On hold</span>}</div>
+                <div style={{ fontSize: 11, color: B.textLight }}>{f.family_code}{f.project === 'HF' && f.branch ? tl('· {branch}', { "branch": f.branch }) : ''}{isHeld(f) && <span title={f.case_reason || ''} style={{ marginLeft: 6, background: B.goldLight, color: B.warnText, borderRadius: 10, padding: '1px 7px', fontWeight: 700 }}>{tl('On hold')}</span>}</div>
               </div>
               <div style={{ fontSize: 12.5, color: B.textMid, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>{f.bank && <BankMark bank={f.bank} size={18} />}{bankLabel(f.bank)}</div>
-                <div style={{ fontSize: 11, color: f.account_number ? B.textLight : B.amber }}>{f.account_number || 'No account'}</div>
+                <div style={{ fontSize: 11, color: f.account_number ? B.textLight : B.amber }}>{f.account_number || tl('No account')}</div>
               </div>
               <div style={{ minWidth: 0 }}>
                 <Badge s={status} />
                 {(p?.reference || (p?.notes && status !== 'paid')) && (
                   <div title={p.reference || p.notes} style={{ fontSize: 11, color: status === 'paid' ? B.textLight : B.errText, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {status === 'paid' ? `Ref: ${p.reference}` : p.notes}
+                    {status === 'paid' ? tl('Ref: {reference}', { "reference": p.reference }) : p.notes}
                   </div>
                 )}
               </div>
@@ -372,38 +373,38 @@ export default function PaymentsPage({ families, user, canManage, toast, isMobil
         })}
       </div>
 
-      {!canManage && <div style={{ fontSize: 12, color: B.textLight, marginTop: 12, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="lock" size={13} />You have view-only access to payments. Finance and administrators can record them.</div>}
+      {!canManage && <div style={{ fontSize: 12, color: B.textLight, marginTop: 12, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="lock" size={13} />{tl('You have view-only access to payments. Finance and administrators can record them.')}</div>}
 
       {/* Modal */}
       {modal && (
         <Sheet isMobile={isMobile} onClose={() => !saving && setModal(null)}
           title={modal.kind === 'paid' ? 'Mark as paid' : modal.kind === 'issue' ? 'Report payment issue' : 'Reset to unpaid'}>
           <div style={{ background: B.greenLight, borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: B.textMid }}>
-            <b style={{ color: B.text }}>{modal.targets.length === 1 ? modal.targets[0].mother_name : `${modal.targets.length} beneficiaries`}</b> · {monthLabel(month)}
+            <b style={{ color: B.text }}>{modal.targets.length === 1 ? modal.targets[0].mother_name : tl('{length} beneficiaries', { "length": modal.targets.length })}</b> · {monthLabel(month)}
           </div>
           {modal.kind === 'paid' && (<>
-            <div style={{ marginBottom: 14 }}><Lbl>Payment date</Lbl><input type="date" value={form.paid_on} max={todayStr()} onChange={e => setForm(f => ({ ...f, paid_on: e.target.value }))} style={inputStyle} /></div>
-            <div style={{ marginBottom: 14 }}><Lbl>Bank reference / batch no. (optional)</Lbl><input value={form.reference} onChange={e => setForm(f => ({ ...f, reference: e.target.value }))} placeholder="e.g. FT26283XXXXX" style={inputStyle} /></div>
+            <div style={{ marginBottom: 14 }}><Lbl>{tl('Payment date')}</Lbl><input type="date" value={form.paid_on} max={todayStr()} onChange={e => setForm(f => ({ ...f, paid_on: e.target.value }))} style={inputStyle} /></div>
+            <div style={{ marginBottom: 14 }}><Lbl>{tl('Bank reference / batch no. (optional)')}</Lbl><input value={form.reference} onChange={e => setForm(f => ({ ...f, reference: e.target.value }))} placeholder="e.g. FT26283XXXXX" style={inputStyle} /></div>
             <div style={{ marginBottom: 18 }}>
-              <Lbl>Amount (ETB){modal.targets.length > 1 ? ' — leave blank to use each monthly support' : ''}</Lbl>
+              <Lbl>{tl('Amount (ETB)')}{modal.targets.length > 1 ? tl('— leave blank to use each monthly support') : ''}</Lbl>
               <input type="number" inputMode="decimal" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder={modal.targets.length > 1 ? 'Each beneficiary’s monthly support' : '0.00'} style={inputStyle} />
             </div>
           </>)}
           {modal.kind === 'issue' && (<>
             <div style={{ marginBottom: 14 }}>
-              <Lbl>Issue type</Lbl>
+              <Lbl>{tl('Issue type')}</Lbl>
               <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} style={inputStyle}>
-                <option value="failed">Failed (bank rejected / wrong account)</option>
-                <option value="on_hold">On hold (waiting for documents / verification)</option>
+                <option value="failed">{tl('Failed (bank rejected / wrong account)')}</option>
+                <option value="on_hold">{tl('On hold (waiting for documents / verification)')}</option>
               </select>
             </div>
-            <div style={{ marginBottom: 18 }}><Lbl>Reason</Lbl><textarea rows={3} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="e.g. Account number rejected by bank — call beneficiary to confirm" style={{ ...inputStyle, resize: 'vertical' }} /></div>
+            <div style={{ marginBottom: 18 }}><Lbl>{tl('Reason')}</Lbl><textarea rows={3} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder={tl('e.g. Account number rejected by bank — call beneficiary to confirm')} style={{ ...inputStyle, resize: 'vertical' }} /></div>
           </>)}
-          {modal.kind === 'reset' && <p style={{ fontSize: 13.5, color: B.textMid, marginTop: 0, marginBottom: 18 }}>This clears the paid details for this month and puts the beneficiary back to <b>Unpaid</b>.</p>}
+          {modal.kind === 'reset' && <p style={{ fontSize: 13.5, color: B.textMid, marginTop: 0, marginBottom: 18 }}>{tl('This clears the paid details for this month and puts the beneficiary back to')}{' '}<b>{tl('Unpaid')}</b>.</p>}
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexDirection: isMobile ? 'column-reverse' : 'row' }}>
-            <button style={btn('secondary', saving)} disabled={saving} onClick={() => setModal(null)}>Cancel</button>
+            <button style={btn('secondary', saving)} disabled={saving} onClick={() => setModal(null)}>{tl('Cancel')}</button>
             <button style={btn(modal.kind === 'issue' ? 'danger' : 'primary', saving)} disabled={saving} onClick={save}>
-              {saving ? <><Icon name="spinner" size={15} spin />Saving…</> : <><Icon name="save" size={15} />Save</>}
+              {saving ? <><Icon name="spinner" size={15} spin />{tl('Saving…')}</> : <><Icon name="save" size={15} />{tl('Save')}</>}
             </button>
           </div>
         </Sheet>
