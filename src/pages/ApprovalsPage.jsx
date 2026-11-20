@@ -4,6 +4,7 @@ import { B } from '../lib/theme'
 import { submissionState } from '../lib/settings'
 import { logActivity } from '../lib/activity'
 import Icon from '../components/Icon'
+import { tl, pl } from '../lib/i18n'
 
 const fdate = d => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
 const digits = v => String(v || '').replace(/\D/g, '')
@@ -82,20 +83,20 @@ export default function ApprovalsPage({ families, children, staffNames = {}, can
     if (error) toast(error.message, 'error')
     else {
       logActivity(user, 'submission', `${user?.full_name || 'Admin'} approved ${f.mother_name} (${data}) — sent by ${nameOf(f.submitted_by)}`, f.id)
-      toast(`${f.mother_name} approved — ${data}`)
+      toast(tl('{mother_name} approved — {data}', { "mother_name": f.mother_name, "data": data }))
       await onChanged()
     }
     setBusy(null)
   }
 
   const doReturn = async () => {
-    if (!reason.trim()) { toast('Please write the reason', 'error'); return }
+    if (!reason.trim()) { toast(tl('Please write the reason'), 'error'); return }
     setBusy(returning.id)
     const { error } = await supabase.rpc('return_submission', { fid: returning.id, reason })
     if (error) toast(error.message, 'error')
     else {
       logActivity(user, 'submission', `${user?.full_name || 'Admin'} returned ${returning.mother_name} to ${nameOf(returning.submitted_by)} for correction: ${reason.trim()}`, returning.id)
-      toast(`${returning.mother_name} returned for correction`, 'info')
+      toast(tl('{mother_name} returned for correction', { "mother_name": returning.mother_name }), 'info')
       setReturning(null); setReason('')
       await onChanged()
     }
@@ -108,7 +109,7 @@ export default function ApprovalsPage({ families, children, staffNames = {}, can
     if (error) toast(error.message, 'error')
     else {
       logActivity(user, 'submission', `${user?.full_name || 'Admin'} approved all ${data} pending submission(s) from ${confirmAll.name}`)
-      toast(`${data} submission${data === 1 ? '' : 's'} from ${confirmAll.name} approved`)
+      toast(tl('{data} submission{x} from {name} approved', { "data": data, "x": pl(data === 1 ? '' : 's'), "name": confirmAll.name }))
       setConfirmAll(null)
       await onChanged()
     }
@@ -128,34 +129,33 @@ export default function ApprovalsPage({ families, children, staffNames = {}, can
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, ${B.gold}, ${B.green})` }} />
         <Icon name="approve" size={28} color={B.gold} />
         <div style={{ flex: 1, minWidth: 200 }}>
-          <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>Approvals</div>
-          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>Families registered by data collectors. They join the system only after the administrator approves them.</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>{tl('Approvals')}</div>
+          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>{tl('Families registered by data collectors. They join the system only after the administrator approves them.')}</div>
         </div>
         <div style={{ color: '#fff', fontWeight: 800, fontSize: 22 }}>{pending.length}</div>
       </div>
 
       {!canApprove && (
         <div style={{ background: B.infoBg, color: B.infoText, borderRadius: 10, padding: '9px 14px', fontSize: 12.5, marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
-          <Icon name="info" size={14} /> You can review these submissions. Only the administrator can approve or return them.
-        </div>
+          <Icon name="info" size={14} />{' '}{tl('You can review these submissions. Only the administrator can approve or return them.')}</div>
       )}
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12, alignItems: 'center' }}>
         {chip('Pending', pending.length, tab === 'pending', () => setTab('pending'))}
         {chip('Returned', returned.length, tab === 'returned', () => setTab('returned'))}
         <div style={{ flex: 1 }} />
-        <select value={branch} onChange={e => setBranch(e.target.value)} style={field} aria-label="Branch">
-          <option value="All">All projects / branches</option>
+        <select value={branch} onChange={e => setBranch(e.target.value)} style={field} aria-label={tl('Branch')}>
+          <option value="All">{tl('All projects / branches')}</option>
           {branches.map(b => <option key={b} value={b}>{b}</option>)}
         </select>
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search name or collector…" style={{ ...field, minWidth: isMobile ? '100%' : 220 }} />
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder={tl('Search name or collector…')} style={{ ...field, minWidth: isMobile ? '100%' : 220 }} />
       </div>
 
       {collectors.length === 0 && (
         <div style={{ background: B.card, border: `1px solid ${B.border}`, borderRadius: 14, padding: '44px 20px', textAlign: 'center', color: B.textMid }}>
           <div style={{ color: B.textLight, marginBottom: 8 }}><Icon name="done" size={38} /></div>
-          <div style={{ fontWeight: 800, color: B.text }}>{tab === 'pending' ? 'Nothing waiting for approval' : 'No returned submissions'}</div>
-          <div style={{ fontSize: 12.5, marginTop: 4 }}>{tab === 'pending' ? 'New registrations from data collectors will appear here.' : 'Submissions you return for correction stay here until the collector fixes them.'}</div>
+          <div style={{ fontWeight: 800, color: B.text }}>{tab === 'pending' ? tl('Nothing waiting for approval') : tl('No returned submissions')}</div>
+          <div style={{ fontSize: 12.5, marginTop: 4 }}>{tab === 'pending' ? tl('New registrations from data collectors will appear here.') : tl('Submissions you return for correction stay here until the collector fixes them.')}</div>
         </div>
       )}
 
@@ -174,7 +174,7 @@ export default function ApprovalsPage({ families, children, staffNames = {}, can
                 </div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: B.textMid }}>{c.rows.length} famil{c.rows.length === 1 ? 'y' : 'ies'}</div>
                 {canApprove && tab === 'pending' && c.uid !== 'none' && (
-                  <button style={btn(B.green)} onClick={() => setConfirmAll({ uid: c.uid, name: c.name, count: pending.filter(x => x.submitted_by === c.uid).length })}><Icon name="check" size={14} />Approve all</button>
+                  <button style={btn(B.green)} onClick={() => setConfirmAll({ uid: c.uid, name: c.name, count: pending.filter(x => x.submitted_by === c.uid).length })}><Icon name="check" size={14} />{tl('Approve all')}</button>
                 )}
               </div>
 
@@ -186,25 +186,25 @@ export default function ApprovalsPage({ families, children, staffNames = {}, can
                     <div style={{ flex: 1, minWidth: 200 }}>
                       <div style={{ fontWeight: 800, fontSize: 14, color: B.text }}>{f.mother_name}</div>
                       <div style={{ fontSize: 12, color: B.textMid, marginTop: 2 }}>
-                        {branchOf(f)} · {kids} {kids === 1 ? 'child' : 'children'} · sent {fdate(f.submitted_at || f.created_at)}
+                        {branchOf(f)} · {kids} {kids === 1 ? 'child' : 'children'}{' '}{tl('· sent')}{' '}{fdate(f.submitted_at || f.created_at)}
                       </div>
-                      {kids === 0 && <div style={{ marginTop: 6, fontSize: 11.5, fontWeight: 700, color: B.warnText, background: B.goldLight, border: `1px solid ${B.goldBorder}`, borderRadius: 8, padding: '3px 9px', display: 'inline-block' }}>No children added yet — will be paid the mother amount only</div>}
+                      {kids === 0 && <div style={{ marginTop: 6, fontSize: 11.5, fontWeight: 700, color: B.warnText, background: B.goldLight, border: `1px solid ${B.goldBorder}`, borderRadius: 8, padding: '3px 9px', display: 'inline-block' }}>{tl('No children added yet — will be paid the mother amount only')}</div>}
                       {dups.slice(0, 2).map((d, k) => (
                         <div key={k} style={{ marginTop: 6, fontSize: 11.5, fontWeight: 700, color: '#c2410c', background: '#fff1e6', border: '1px solid #f5b5a0', borderRadius: 8, padding: '3px 9px', display: 'block', width: 'fit-content', maxWidth: '100%' }}>
-                          <Icon name="warn" size={12} /> Same {d.why} as {d.other.mother_name} ({d.other.family_code})
+                          <Icon name="warn" size={12} />{' '}{tl('Same')}{' '}{d.why} as {d.other.mother_name} ({d.other.family_code})
                         </div>
                       ))}
                       {tab === 'returned' && f.return_reason && (
                         <div style={{ marginTop: 6, fontSize: 12, color: B.errText, background: B.errBg, border: `1px solid ${B.errBorder}`, borderRadius: 8, padding: '6px 10px' }}>
-                          <b>Returned{f.reviewed_by_name ? ` by ${f.reviewed_by_name}` : ''}:</b> {f.return_reason}
+                          <b>{tl('Returned')}{f.reviewed_by_name ? tl('by {reviewed_by_name}', { "reviewed_by_name": f.reviewed_by_name }) : ''}:</b> {f.return_reason}
                         </div>
                       )}
                     </div>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
-                      <button style={btn(B.card, ghost)} onClick={() => onOpen(f)}><Icon name="eye" size={14} />View</button>
+                      <button style={btn(B.card, ghost)} onClick={() => onOpen(f)}><Icon name="eye" size={14} />{tl('View')}</button>
                       {canApprove && tab === 'pending' && <>
-                        <button style={btn(B.green, { opacity: busy === f.id ? 0.6 : 1 })} disabled={busy === f.id} onClick={() => approve(f)}><Icon name="check" size={14} />{busy === f.id ? 'Approving…' : 'Approve'}</button>
-                        <button style={btn(B.card, { color: B.errText, border: `1.5px solid ${B.errBorder}` })} disabled={busy === f.id} onClick={() => { setReturning(f); setReason('') }}><Icon name="back" size={14} />Return</button>
+                        <button style={btn(B.green, { opacity: busy === f.id ? 0.6 : 1 })} disabled={busy === f.id} onClick={() => approve(f)}><Icon name="check" size={14} />{busy === f.id ? tl('Approving…') : tl('Approve')}</button>
+                        <button style={btn(B.card, { color: B.errText, border: `1.5px solid ${B.errBorder}` })} disabled={busy === f.id} onClick={() => { setReturning(f); setReason('') }}><Icon name="back" size={14} />{tl('Return')}</button>
                       </>}
                     </div>
                   </div>
@@ -216,27 +216,24 @@ export default function ApprovalsPage({ families, children, staffNames = {}, can
       </div>
 
       {returning && (
-        <Dialog title="Return for correction" busy={busy === returning.id} onClose={() => setReturning(null)}>
+        <Dialog title={tl('Return for correction')} busy={busy === returning.id} onClose={() => setReturning(null)}>
           <div style={{ fontSize: 13, color: B.textMid, marginBottom: 10 }}>
-            <b style={{ color: B.text }}>{returning.mother_name}</b> goes back to {nameOf(returning.submitted_by)}, who can edit it and send it again. Tell them what to fix.
-          </div>
-          <textarea autoFocus rows={4} value={reason} onChange={e => setReason(e.target.value)} placeholder="e.g. Phone number is missing; birth certificate of the 2nd child is unreadable"
+            <b style={{ color: B.text }}>{returning.mother_name}</b>{' '}{tl('goes back to')}{' '}{nameOf(returning.submitted_by)}{tl(', who can edit it and send it again. Tell them what to fix.')}</div>
+          <textarea autoFocus rows={4} value={reason} onChange={e => setReason(e.target.value)} placeholder={tl('e.g. Phone number is missing; birth certificate of the 2nd child is unreadable')}
             style={{ ...field, width: '100%', boxSizing: 'border-box', resize: 'vertical' }} />
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 14 }}>
-            <button style={btn(B.card, ghost)} disabled={busy === returning.id} onClick={() => setReturning(null)}>Cancel</button>
-            <button style={btn(B.red, { opacity: !reason.trim() || busy === returning.id ? 0.55 : 1 })} disabled={!reason.trim() || busy === returning.id} onClick={doReturn}>{busy === returning.id ? 'Returning…' : 'Return'}</button>
+            <button style={btn(B.card, ghost)} disabled={busy === returning.id} onClick={() => setReturning(null)}>{tl('Cancel')}</button>
+            <button style={btn(B.red, { opacity: !reason.trim() || busy === returning.id ? 0.55 : 1 })} disabled={!reason.trim() || busy === returning.id} onClick={doReturn}>{busy === returning.id ? tl('Returning…') : tl('Return')}</button>
           </div>
         </Dialog>
       )}
 
       {confirmAll && (
-        <Dialog title="Approve all?" busy={busy === 'all'} onClose={() => setConfirmAll(null)}>
-          <div style={{ fontSize: 13.5, color: B.text, lineHeight: 1.6 }}>
-            This approves all <b>{confirmAll.count}</b> pending famil{confirmAll.count === 1 ? 'y' : 'ies'} sent by <b>{confirmAll.name}</b> (including any hidden by the filters above). Each gets its real Family ID and joins the system. The collector can no longer edit them.
-          </div>
+        <Dialog title={tl('Approve all?')} busy={busy === 'all'} onClose={() => setConfirmAll(null)}>
+          <div style={{ fontSize: 13.5, color: B.text, lineHeight: 1.6 }}>{tl('This approves all')}{' '}<b>{confirmAll.count}</b>{' '}{tl('pending famil')}{confirmAll.count === 1 ? 'y' : 'ies'}{' '}{tl('sent by')}{' '}<b>{confirmAll.name}</b>{' '}{tl('(including any hidden by the filters above). Each gets its real Family ID and joins the system. The collector can no longer edit them.')}</div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
-            <button style={btn(B.card, ghost)} disabled={busy === 'all'} onClick={() => setConfirmAll(null)}>Cancel</button>
-            <button style={btn(B.green, { opacity: busy === 'all' ? 0.6 : 1 })} disabled={busy === 'all'} onClick={doApproveAll}>{busy === 'all' ? 'Approving…' : 'Approve all'}</button>
+            <button style={btn(B.card, ghost)} disabled={busy === 'all'} onClick={() => setConfirmAll(null)}>{tl('Cancel')}</button>
+            <button style={btn(B.green, { opacity: busy === 'all' ? 0.6 : 1 })} disabled={busy === 'all'} onClick={doApproveAll}>{busy === 'all' ? tl('Approving…') : tl('Approve all')}</button>
           </div>
         </Dialog>
       )}
