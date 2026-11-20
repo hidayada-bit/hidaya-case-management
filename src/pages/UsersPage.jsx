@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import Icon from '../components/Icon'
 import { ROLES, ASSIGNABLE_ROLES, roleLabel } from '../lib/permissions'
 import { B } from '../lib/theme'
+import { tl } from '../lib/i18n'
 
 
 const selectStyle = {
@@ -17,13 +18,13 @@ const initials = n => (n || '?').split(' ').map(w => w[0]).join('').slice(0, 2).
 
 // "Active now" (under 5 min), "12 min ago", "3 h ago", "Yesterday 14:05", otherwise the date.
 function lastActive(ts) {
-  if (!ts) return { text: 'Never active', live: false }
+  if (!ts) return { text: tl('Never active'), live: false }
   const d = new Date(ts), mins = Math.max(0, Math.round((Date.now() - d) / 60000))
-  if (mins < 5) return { text: 'Active now', live: true }
-  if (mins < 60) return { text: `${mins} min ago`, live: false }
-  if (mins < 24 * 60) return { text: `${Math.floor(mins / 60)} h ago`, live: false }
+  if (mins < 5) return { text: tl('Active now'), live: true }
+  if (mins < 60) return { text: tl('{mins} min ago', { "mins": mins }), live: false }
+  if (mins < 24 * 60) return { text: tl('{x} h ago', { "x": Math.floor(mins / 60) }), live: false }
   const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-  if (mins < 48 * 60) return { text: `Yesterday ${time}`, live: false }
+  if (mins < 48 * 60) return { text: tl('Yesterday {time}', { "time": time }), live: false }
   return { text: d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + time, live: false }
 }
 const hoursText = m => { m = Number(m) || 0; return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ''}` }
@@ -56,19 +57,16 @@ function PendingRow({ u, onApprove, onReject, busy }) {
   return (
     <div style={{ padding: '14px 18px', borderBottom: `1px solid ${B.greenLight}`, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
       <Person u={u} />
-      <div style={{ fontSize: 11, color: B.textLight, whiteSpace: 'nowrap' }}>
-        Requested {u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}
+      <div style={{ fontSize: 11, color: B.textLight, whiteSpace: 'nowrap' }}>{tl('Requested')}{' '}{u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}
       </div>
-      <select value={role} onChange={e => setRole(e.target.value)} style={selectStyle} aria-label="Role to assign">
+      <select value={role} onChange={e => setRole(e.target.value)} style={selectStyle} aria-label={tl('Role to assign')}>
         {ASSIGNABLE_ROLES.map(r => <option key={r} value={r}>{roleLabel(r)}</option>)}
       </select>
       <div style={{ display: 'flex', gap: 8 }}>
         <button disabled={busy} onClick={() => onApprove(u, role)} style={smallBtn(`linear-gradient(135deg, ${B.green}, ${B.greenMid})`, '#fff')}>
-          <Icon name="approve" size={15} />Approve
-        </button>
+          <Icon name="approve" size={15} />{tl('Approve')}</button>
         <button disabled={busy} onClick={() => onReject(u)} style={smallBtn(B.errBg, B.red, '1.5px solid #fecaca')}>
-          <Icon name="reject" size={15} />Decline
-        </button>
+          <Icon name="reject" size={15} />{tl('Decline')}</button>
       </div>
     </div>
   )
@@ -95,14 +93,14 @@ export default function UsersPage({ currentUser, toast, isMobile }) {
     setBusy(false)
     if (error) { toast(error.message, 'error'); return }
     // RLS can block an update without raising an error: make sure a row really changed
-    if (!data || data.length === 0) { toast('Not saved — the database refused the change. Make sure you are signed in as an approved administrator.', 'error'); load(); return }
+    if (!data || data.length === 0) { toast(tl('Not saved — the database refused the change. Make sure you are signed in as an approved administrator.'), 'error'); load(); return }
     toast(okMsg)
     load()
   }
 
   const approve = (u, role) => update(u, { status: 'approved', role, approved_by: currentUser.id, approved_at: new Date().toISOString() }, `${u.full_name} approved as ${roleLabel(role)}`)
   const reject = u => update(u, { status: 'rejected' }, `${u.full_name} declined`)
-  const revoke = u => { if (window.confirm(`Remove access for ${u.full_name}?`)) update(u, { status: 'rejected' }, 'Access removed') }
+  const revoke = u => { if (window.confirm(tl('Remove access for {full_name}?', { "full_name": u.full_name }))) update(u, { status: 'rejected' }, 'Access removed') }
   const restore = u => update(u, { status: 'approved' }, `${u.full_name} restored`)
   const changeRole = (u, role) => update(u, { role }, `Role updated to ${roleLabel(role)}`)
 
@@ -124,16 +122,16 @@ export default function UsersPage({ currentUser, toast, isMobile }) {
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, ${B.gold}, ${B.green})` }} />
         <Icon name="userCog" size={28} color={B.gold} />
         <div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>Staff & Access</div>
-          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>Approve access requests and assign each person a team role</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>{tl('Staff & Access')}</div>
+          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>{tl('Approve access requests and assign each person a team role')}</div>
         </div>
       </div>
 
       {/* Pending */}
       <div style={{ ...card, borderColor: pending.length ? B.goldBorder : B.border }}>
         {cardHead('clock', 'Access requests', pending.length, pending.length ? B.goldLight : B.greenLight)}
-        {loading ? <div style={{ padding: 24, textAlign: 'center', color: B.textLight, fontSize: 13 }}>Loading…</div>
-          : pending.length === 0 ? <div style={{ padding: 24, textAlign: 'center', color: B.textLight, fontSize: 13 }}>No pending requests.</div>
+        {loading ? <div style={{ padding: 24, textAlign: 'center', color: B.textLight, fontSize: 13 }}>{tl('Loading…')}</div>
+          : pending.length === 0 ? <div style={{ padding: 24, textAlign: 'center', color: B.textLight, fontSize: 13 }}>{tl('No pending requests.')}</div>
           : pending.map(u => <PendingRow key={u.id} u={u} onApprove={approve} onReject={reject} busy={busy} />)}
       </div>
 
@@ -146,16 +144,16 @@ export default function UsersPage({ currentUser, toast, isMobile }) {
             <div key={u.id} style={{ padding: '13px 18px', borderBottom: `1px solid ${B.greenLight}`, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               <Person u={u} />
               <LastActive ts={u.last_active_at} minutes={u.active_minutes} />
-              <select value={u.role} disabled={busy || self} onChange={e => changeRole(u, e.target.value)} style={selectStyle} aria-label={`Role for ${u.full_name}`} title={self ? 'You cannot change your own role' : ''}>
+              <select value={u.role} disabled={busy || self} onChange={e => changeRole(u, e.target.value)} style={selectStyle} aria-label={tl('Role for {full_name}', { "full_name": u.full_name })} title={self ? 'You cannot change your own role' : ''}>
                 {ASSIGNABLE_ROLES.map(r => <option key={r} value={r}>{roleLabel(r)}</option>)}
               </select>
               {self
-                ? <span style={{ fontSize: 11, color: B.textLight, fontWeight: 700, minWidth: 90, textAlign: 'center' }}>You</span>
-                : <button disabled={busy} onClick={() => revoke(u)} style={smallBtn('#fff', B.red, '1.5px solid #fecaca')}><Icon name="reject" size={15} />Remove</button>}
+                ? <span style={{ fontSize: 11, color: B.textLight, fontWeight: 700, minWidth: 90, textAlign: 'center' }}>{tl('You')}</span>
+                : <button disabled={busy} onClick={() => revoke(u)} style={smallBtn('#fff', B.red, '1.5px solid #fecaca')}><Icon name="reject" size={15} />{tl('Remove')}</button>}
             </div>
           )
         })}
-        {!loading && active.length === 0 && <div style={{ padding: 24, textAlign: 'center', color: B.textLight, fontSize: 13 }}>No active staff.</div>}
+        {!loading && active.length === 0 && <div style={{ padding: 24, textAlign: 'center', color: B.textLight, fontSize: 13 }}>{tl('No active staff.')}</div>}
       </div>
 
       {/* Removed */}
@@ -165,7 +163,7 @@ export default function UsersPage({ currentUser, toast, isMobile }) {
           {removed.map(u => (
             <div key={u.id} style={{ padding: '13px 18px', borderBottom: `1px solid ${B.greenLight}`, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', opacity: 0.85 }}>
               <Person u={u} />
-              <button disabled={busy} onClick={() => restore(u)} style={smallBtn(B.greenLight, B.greenDark, `1.5px solid ${B.border}`)}><Icon name="approve" size={15} />Restore</button>
+              <button disabled={busy} onClick={() => restore(u)} style={smallBtn(B.greenLight, B.greenDark, `1.5px solid ${B.border}`)}><Icon name="approve" size={15} />{tl('Restore')}</button>
             </div>
           ))}
         </div>
