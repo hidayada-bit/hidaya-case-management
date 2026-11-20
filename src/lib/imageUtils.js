@@ -1,3 +1,4 @@
+import { tl } from './i18n'
 // ─── IMAGE COMPRESSION UTILITY ───────────────────────────────────────────────
 // Compresses images in the browser using Canvas API before uploading to Supabase.
 // This keeps storage usage low while maintaining visual quality.
@@ -21,19 +22,19 @@ export async function compressImage(file, options = {}) {
   // PDFs pass through untouched
   if (file.type === 'application/pdf') {
     if (file.size > MAX_SIZE_BYTES) {
-      throw new Error(`PDF is too large (${formatBytes(file.size)}). Max allowed is 5MB.`)
+      throw new Error(tl('PDF is too large ({x}). Max allowed is 5MB.', { "x": formatBytes(file.size) }))
     }
     return file
   }
 
   // Must be an image
   if (!file.type.startsWith('image/')) {
-    throw new Error('Only image files (JPG, PNG, HEIC) and PDFs are accepted.')
+    throw new Error(tl('Only image files (JPG, PNG, HEIC) and PDFs are accepted.'))
   }
 
   // Original too large even before compression
   if (file.size > MAX_SIZE_BYTES) {
-    throw new Error(`File is too large (${formatBytes(file.size)}). Max allowed is 5MB.`)
+    throw new Error(tl('File is too large ({x}). Max allowed is 5MB.', { "x": formatBytes(file.size) }))
   }
 
   // Set defaults based on type
@@ -66,7 +67,7 @@ export async function compressImage(file, options = {}) {
       canvas.toBlob(
         (blob) => {
           if (!blob) {
-            reject(new Error('Compression failed. Please try a different image.'))
+            reject(new Error(tl('Compression failed. Please try a different image.')))
             return
           }
           // Return as File with original name but .jpg extension
@@ -84,7 +85,7 @@ export async function compressImage(file, options = {}) {
 
     img.onerror = () => {
       URL.revokeObjectURL(objectUrl)
-      reject(new Error('Could not read the image file. Please try again.'))
+      reject(new Error(tl('Could not read the image file. Please try again.')))
     }
 
     img.src = objectUrl
@@ -119,7 +120,7 @@ export async function uploadFile({ supabase, file, bucket, path, type = 'photo',
     .from(bucket)
     .upload(path, fileToUpload, { upsert: true, contentType: fileToUpload.type })
 
-  if (error) throw new Error(`Upload failed: ${error.message}`)
+  if (error) throw new Error(tl('Upload failed: {message}', { "message": error.message }))
   onProgress?.(85)
 
   // Step 3: Get public URL
@@ -134,7 +135,7 @@ export async function uploadFile({ supabase, file, bucket, path, type = 'photo',
  */
 export async function deleteFile({ supabase, bucket, path }) {
   const { error } = await supabase.storage.from(bucket).remove([path])
-  if (error) throw new Error(`Delete failed: ${error.message}`)
+  if (error) throw new Error(tl('Delete failed: {message}', { "message": error.message }))
 }
 
 /**
