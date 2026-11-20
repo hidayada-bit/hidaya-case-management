@@ -24,6 +24,8 @@ import { can, canOpenPage, roleLabel, homePage } from './lib/permissions'
 import { B, useTheme } from './lib/theme'
 import NotificationBell from './components/NotificationBell'
 import { logActivity } from './lib/activity'
+import { tl, setLang } from './lib/i18n'
+import LanguageSwitcher from './components/LanguageSwitcher'
 
 // ─── HDA BRAND COLORS ────────────────────────────────────────────────────────
 
@@ -129,8 +131,8 @@ function DocViewer({ doc, onClose }) {
             <div style={{ fontSize: 11, color: '#81c784' }}>{doc.file_name} · {doc.file_size_kb}KB</div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <a href={doc.file_url} download target="_blank" rel="noreferrer" style={{ background: B.green, color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name="download" size={14} />Download</a>
-            <button onClick={onClose} style={{ background: B.red, color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name="x" size={14} />Close</button>
+            <a href={doc.file_url} download target="_blank" rel="noreferrer" style={{ background: B.green, color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name="download" size={14} />{tl('Download')}</a>
+            <button onClick={onClose} style={{ background: B.red, color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name="x" size={14} />{tl('Close')}</button>
           </div>
         </div>
         {/* Viewer */}
@@ -155,7 +157,7 @@ const StatusBadge = ({ s, held = false }) => {
       display: 'inline-flex', alignItems: 'center', gap: 5,
     }}>
       <span style={{ width: 6, height: 6, borderRadius: '50%', background: st.dot }} />
-      {s === 'on_hold' ? 'On hold' : s.charAt(0).toUpperCase() + s.slice(1)}
+      {s === 'on_hold' ? tl('On hold') : s.charAt(0).toUpperCase() + s.slice(1)}
     </span>
   )
 }
@@ -446,7 +448,7 @@ const DonutChart = ({ active, inactive, pending }) => {
         <circle cx="38" cy="38" r={r} fill="none" style={{ stroke: B.gold }} strokeWidth="11"
           strokeDasharray={`${iD} ${circ - iD}`} strokeDashoffset={-aD} transform="rotate(-90 38 38)" strokeLinecap="round" />
         <text x="38" y="35" textAnchor="middle" fontSize="10" fontWeight="800" style={{ fill: B.text }}>{Math.round((active / total) * 100)}%</text>
-        <text x="38" y="48" textAnchor="middle" fontSize="9" style={{ fill: B.textLight }}>Active</text>
+        <text x="38" y="48" textAnchor="middle" fontSize="9" style={{ fill: B.textLight }}>{tl('Active')}</text>
       </svg>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {[
@@ -466,21 +468,21 @@ const DonutChart = ({ active, inactive, pending }) => {
 
 // ─── MOBILE BOTTOM NAV ────────────────────────────────────────────────────────
 const NAV = [
-  { id: 'dashboard', label: 'Home',      icon: 'dashboard' },
-  { id: 'projects',  label: 'Projects',  icon: 'folder' },
-  { id: 'families',  label: 'Families',  icon: 'users' },
-  { id: 'approvals', label: 'Approvals', icon: 'approve' },
-  { id: 'register',  label: 'Register',  icon: 'userPlus' },
-  { id: 'mysubs',    label: 'My Submissions', icon: 'clipboard' },
-  { id: 'payments',  label: 'Payments',  icon: 'wallet' },
-  { id: 'messaging', label: 'Messages',  icon: 'message' },
-  { id: 'analytics', label: 'Stats',     icon: 'chart' },
-  { id: 'academics', label: 'Academics', icon: 'graduation' },
-  { id: 'banklist',  label: 'Bank List', icon: 'bank' },
-  { id: 'agreements', label: 'Agreements', icon: 'agreement' },
-  { id: 'archive',   label: 'Transferred', icon: 'archive' },
-  { id: 'users',     label: 'Staff',     icon: 'userCog' },
-  { id: 'settings',  label: 'Settings',  icon: 'settings' },
+  { id: 'dashboard', get label() { return tl('Home') },      icon: 'dashboard' },
+  { id: 'projects',  get label() { return tl('Projects') },  icon: 'folder' },
+  { id: 'families',  get label() { return tl('Families') },  icon: 'users' },
+  { id: 'approvals', get label() { return tl('Approvals') }, icon: 'approve' },
+  { id: 'register',  get label() { return tl('Register') },  icon: 'userPlus' },
+  { id: 'mysubs',    get label() { return tl('My Submissions') }, icon: 'clipboard' },
+  { id: 'payments',  get label() { return tl('Payments') },  icon: 'wallet' },
+  { id: 'messaging', get label() { return tl('Messages') },  icon: 'message' },
+  { id: 'analytics', get label() { return tl('Stats') },     icon: 'chart' },
+  { id: 'academics', get label() { return tl('Academics') }, icon: 'graduation' },
+  { id: 'banklist',  get label() { return tl('Bank List') }, icon: 'bank' },
+  { id: 'agreements', get label() { return tl('Agreements') }, icon: 'agreement' },
+  { id: 'archive',   get label() { return tl('Transferred') }, icon: 'archive' },
+  { id: 'users',     get label() { return tl('Staff') },     icon: 'userCog' },
+  { id: 'settings',  get label() { return tl('Settings') },  icon: 'settings' },
 ]
 
 // ─── MESSAGING PAGE ───────────────────────────────────────────────────────────
@@ -503,7 +505,7 @@ function MessagingPage({ families, isMobile }) {
   }
 
   const openSMS = (group) => {
-    if (!message.trim()) { alert('Please type a message first.'); return }
+    if (!message.trim()) { alert(tl('Please type a message first.')); return }
     const numbers = group.map(f => f.phone_number.replace(/[\s\-]/g, '')).join(',')
     window.open(`sms:${numbers}?body=${encodeURIComponent(message)}`, '_blank')
   }
@@ -522,8 +524,8 @@ function MessagingPage({ families, isMobile }) {
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, ${B.gold}, ${B.green})` }} />
         <Icon name="message" size={28} color={B.gold} />
         <div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>Send Announcement</div>
-          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>Compose a message and send to beneficiary groups via SMS</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>{tl('Send Announcement')}</div>
+          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>{tl('Compose a message and send to beneficiary groups via SMS')}</div>
         </div>
       </div>
 
@@ -557,9 +559,8 @@ function MessagingPage({ families, isMobile }) {
           </div>
         )}
         <div style={{ marginTop: 12, fontSize: 12, color: B.textMid }}>
-          <span style={{ fontWeight: 700, color: B.green }}>{recipients.length}</span> recipients with phone numbers
-          {recipients.length !== families.filter(f => f.project === selectedProject).length && (
-            <span style={{ color: B.red, marginLeft: 6 }}>({families.filter(f => f.project === selectedProject).length - recipients.length} missing phone numbers)</span>
+          <span style={{ fontWeight: 700, color: B.green }}>{recipients.length}</span>{' '}{tl('recipients with phone numbers')}{recipients.length !== families.filter(f => f.project === selectedProject).length && (
+            <span style={{ color: B.red, marginLeft: 6 }}>({families.filter(f => f.project === selectedProject).length - recipients.length}{' '}{tl('missing phone numbers)')}</span>
           )}
         </div>
       </div>
@@ -570,7 +571,7 @@ function MessagingPage({ families, isMobile }) {
         <textarea
           value={message}
           onChange={e => setMessage(e.target.value)}
-          placeholder="Type your announcement here… e.g. Dear beneficiary, please be informed that the next distribution will be on Monday 10th at 9:00AM."
+          placeholder={tl('Type your announcement here… e.g. Dear beneficiary, please be informed that the next distribution will be on Monday 10th at 9:00AM.')}
           rows={5}
           style={{
             width: '100%', padding: '12px 14px', border: `1.5px solid ${B.border}`,
@@ -587,7 +588,7 @@ function MessagingPage({ families, isMobile }) {
       {recipients.length === 0 ? (
         <div style={{ background: B.greenLight, borderRadius: 13, padding: '40px', textAlign: 'center', color: B.textLight }}>
           <div style={{ marginBottom: 8 }}><Icon name="noPhone" size={38} /></div>
-          <div style={{ fontWeight: 600 }}>No recipients found with phone numbers</div>
+          <div style={{ fontWeight: 600 }}>{tl('No recipients found with phone numbers')}</div>
         </div>
       ) : (
         <div style={{ background: B.card, borderRadius: 14, border: `1px solid ${B.border}`, overflow: 'hidden', boxShadow: `0 2px 12px rgba(30,125,34,0.06)` }}>
@@ -605,8 +606,7 @@ function MessagingPage({ families, isMobile }) {
                 fontSize: 13, fontWeight: 800, color: B.green, flexShrink: 0,
               }}>{idx + 1}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: B.text, marginBottom: 3 }}>
-                  Group {idx + 1} — {group.length} recipients
+                <div style={{ fontSize: 13, fontWeight: 700, color: B.text, marginBottom: 3 }}>{tl('Group')}{' '}{idx + 1} — {group.length} recipients
                 </div>
                 <div style={{ fontSize: 11, color: B.textLight, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {group.map(f => f.mother_name).join(', ')}
@@ -623,13 +623,11 @@ function MessagingPage({ families, isMobile }) {
                   minHeight: 40, flexShrink: 0,
                 }}
               >
-                <Icon name="sms" size={16} /> Send SMS
-              </button>
+                <Icon name="sms" size={16} />{' '}{tl('Send SMS')}</button>
             </div>
           ))}
           <div style={{ padding: '12px 18px', background: B.goldLight, fontSize: 12, color: B.goldDark, fontWeight: 600 }}>
-            <Icon name="tip" size={14} style={{ marginRight: 6 }} />Tap "Send SMS" on each group — your phone's SMS app will open with the numbers and message pre-filled. Send one group, come back, send the next.
-          </div>
+            <Icon name="tip" size={14} style={{ marginRight: 6 }} />{tl('Tap "Send SMS" on each group — your phone\'s SMS app will open with the numbers and message pre-filled. Send one group, come back, send the next.')}</div>
         </div>
       )}
     </div>
@@ -660,8 +658,8 @@ function ProjectsPage({ families, onOpenOVC, onOpenHF, isMobile }) {
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, ${B.gold}, ${B.green})` }} />
         <Icon name="folder" size={28} color={B.gold} />
         <div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>Projects</div>
-          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>Choose a project to view its beneficiaries</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>{tl('Projects')}</div>
+          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>{tl('Choose a project to view its beneficiaries')}</div>
         </div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
@@ -675,14 +673,14 @@ function ProjectsPage({ families, onOpenOVC, onOpenHF, isMobile }) {
             <img src="/ebama_logo.jpg" alt="EBAMA" title="EBAMA" style={{ width: 54, height: 54, borderRadius: '50%', objectFit: 'cover', background: '#fff', boxShadow: `0 0 0 3px ${B.greenLight}, 0 2px 8px rgba(0,0,0,0.15)`, filter: 'none' }} onError={e => { e.currentTarget.style.display = 'none' }} />
             <div>
               <div style={{ fontSize: 18, fontWeight: 800, color: B.text }}>OVC</div>
-              <div style={{ fontSize: 12, color: B.textLight }}>Orphans & Vulnerable Children — EBAMA</div>
+              <div style={{ fontSize: 12, color: B.textLight }}>{tl('Orphans & Vulnerable Children — EBAMA')}</div>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 6 }}>
             <span style={{ fontSize: 30, fontWeight: 800, color: B.green }}>{ovcCount}</span>
-            <span style={{ fontSize: 12, color: B.textLight, fontWeight: 600 }}>beneficiary families</span>
+            <span style={{ fontSize: 12, color: B.textLight, fontWeight: 600 }}>{tl('beneficiary families')}</span>
           </div>
-          <div style={{ fontSize: 12, color: B.green, fontWeight: 700, marginTop: 4, display: 'flex', alignItems: 'center', gap: 5 }}>View beneficiaries <Icon name="forward" size={14} /></div>
+          <div style={{ fontSize: 12, color: B.green, fontWeight: 700, marginTop: 4, display: 'flex', alignItems: 'center', gap: 5 }}>{tl('View beneficiaries')}{' '}<Icon name="forward" size={14} /></div>
         </div>
 
         <div
@@ -692,17 +690,17 @@ function ProjectsPage({ families, onOpenOVC, onOpenHF, isMobile }) {
           onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = `0 4px 20px rgba(30,125,34,0.08)` }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <img src="/hidaya_logo.jpg" alt="Hidaya Foundation" title="Hidaya Foundation" style={{ width: 54, height: 54, borderRadius: '50%', objectFit: 'cover', background: '#fff', boxShadow: `0 0 0 3px ${B.goldLight}, 0 2px 8px rgba(0,0,0,0.15)`, filter: 'none' }} onError={e => { e.currentTarget.style.display = 'none' }} />
+            <img src="/hidaya_logo.jpg" alt={tl('Hidaya Foundation')} title={tl('Hidaya Foundation')} style={{ width: 54, height: 54, borderRadius: '50%', objectFit: 'cover', background: '#fff', boxShadow: `0 0 0 3px ${B.goldLight}, 0 2px 8px rgba(0,0,0,0.15)`, filter: 'none' }} onError={e => { e.currentTarget.style.display = 'none' }} />
             <div>
               <div style={{ fontSize: 18, fontWeight: 800, color: B.text }}>HF</div>
-              <div style={{ fontSize: 12, color: B.textLight }}>Hidaya Foundation — {HF_BRANCHES.length} branches</div>
+              <div style={{ fontSize: 12, color: B.textLight }}>{tl('Hidaya Foundation —')}{' '}{HF_BRANCHES.length} branches</div>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 6 }}>
             <span style={{ fontSize: 30, fontWeight: 800, color: B.goldDark }}>{hfCount}</span>
-            <span style={{ fontSize: 12, color: B.textLight, fontWeight: 600 }}>beneficiary families</span>
+            <span style={{ fontSize: 12, color: B.textLight, fontWeight: 600 }}>{tl('beneficiary families')}</span>
           </div>
-          <div style={{ fontSize: 12, color: B.goldDark, fontWeight: 700, marginTop: 4, display: 'flex', alignItems: 'center', gap: 5 }}>View branches <Icon name="forward" size={14} /></div>
+          <div style={{ fontSize: 12, color: B.goldDark, fontWeight: 700, marginTop: 4, display: 'flex', alignItems: 'center', gap: 5 }}>{tl('View branches')}{' '}<Icon name="forward" size={14} /></div>
         </div>
       </div>
     </div>
@@ -729,7 +727,7 @@ function BranchesPage({ families, onOpenBranch, onBack, isMobile, canAddBranch =
           borderRadius: 8, padding: '9px 14px', cursor: 'pointer',
           fontSize: 13, color: B.green, fontWeight: 700, minHeight: 38, marginBottom: 16,
         }}
-      ><Icon name="back" size={14} /> Back to Projects</button>
+      ><Icon name="back" size={14} />{' '}{tl('Back to Projects')}</button>
       <div className="page-banner" style={{
         background: `linear-gradient(135deg, ${B.sidebar}, ${B.sidebarMid})`,
         borderRadius: 14, padding: '16px 20px', marginBottom: 20,
@@ -739,22 +737,22 @@ function BranchesPage({ families, onOpenBranch, onBack, isMobile, canAddBranch =
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, ${B.gold}, ${B.green})` }} />
         <Icon name="globe" size={28} color={B.gold} />
         <div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>HF — Branches</div>
-          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>Choose a branch to view its beneficiaries</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>{tl('HF — Branches')}</div>
+          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>{tl('Choose a branch to view its beneficiaries')}</div>
         </div>
         {canAddBranch && (
           <div style={{ marginLeft: 'auto' }}>
-            <Btn onClick={() => setAdding(a => !a)} variant="gold" size="sm"><Icon name={adding ? 'x' : 'plus'} size={15} />{adding ? 'Cancel' : 'Add branch'}</Btn>
+            <Btn onClick={() => setAdding(a => !a)} variant="gold" size="sm"><Icon name={adding ? 'x' : 'plus'} size={15} />{adding ? tl('Cancel') : tl('Add branch')}</Btn>
           </div>
         )}
       </div>
       {canAddBranch && adding && (
         <div style={{ background: B.card, border: `1.5px solid ${B.gold}`, borderRadius: 12, padding: 14, marginBottom: 16, display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 220px' }}>
-            <FL>New branch name</FL>
-            <input autoFocus value={newName} onChange={e => setNewName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && newName.trim() && !busy) submitBranch() }} placeholder="e.g. Jimma" maxLength={40} style={{ ...inputBase, marginBottom: 0 }} />
+            <FL>{tl('New branch name')}</FL>
+            <input autoFocus value={newName} onChange={e => setNewName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && newName.trim() && !busy) submitBranch() }} placeholder={tl('e.g. Jimma')} maxLength={40} style={{ ...inputBase, marginBottom: 0 }} />
           </div>
-          <Btn onClick={submitBranch} variant="primary" disabled={busy || !newName.trim()}><Icon name="save" size={15} />{busy ? 'Saving…' : 'Save branch'}</Btn>
+          <Btn onClick={submitBranch} variant="primary" disabled={busy || !newName.trim()}><Icon name="save" size={15} />{busy ? tl('Saving…') : tl('Save branch')}</Btn>
         </div>
       )}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 14 }}>
@@ -863,8 +861,8 @@ function Sidebar({ page, setPage, collapsed, setCollapsed, user, onSignOut, role
         {!collapsed && (
           <div>
             <div style={{ fontSize: 13, fontWeight: 800, color: B.gold, lineHeight: 1.2, letterSpacing: '-0.02em' }}>HDA</div>
-            <div style={{ fontSize: 9, color: '#a5d6a7', fontWeight: 500, lineHeight: 1.3 }}>Hidaya Development</div>
-            <div style={{ fontSize: 9, color: '#81c784', fontWeight: 500 }}>Association</div>
+            <div style={{ fontSize: 9, color: '#a5d6a7', fontWeight: 500, lineHeight: 1.3 }}>{tl('Hidaya Development')}</div>
+            <div style={{ fontSize: 9, color: '#81c784', fontWeight: 500 }}>{tl('Association')}</div>
           </div>
         )}
       </div>
@@ -937,7 +935,7 @@ function Sidebar({ page, setPage, collapsed, setCollapsed, user, onSignOut, role
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
             <polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
           </svg>
-          {!collapsed && 'Sign Out'}
+          {!collapsed && tl('Sign Out')}
         </button>
       </div>
       <button
@@ -990,7 +988,7 @@ function Header({ title, breadcrumb, isMobile, user, isDark, onToggleTheme, onOp
         }
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        {!isMobile && <span style={{ fontSize: 12, color: B.textMid, fontWeight: 600 }}>HDA Staff Portal</span>}
+        {!isMobile && <span style={{ fontSize: 12, color: B.textMid, fontWeight: 600 }}>{tl('HDA Staff Portal')}</span>}
         <NotificationBell user={user} onOpenFamily={onOpenFamily} isMobile={isMobile} />
         <button onClick={onToggleTheme} aria-label={isDark ? 'Switch to light mode' : 'Switch to night mode'} title={isDark ? 'Light mode' : 'Night mode'}
           style={{ background: B.greenLight, border: `1px solid ${B.border}`, borderRadius: 10, width: 36, height: 36, cursor: 'pointer', color: B.greenDark, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -998,7 +996,7 @@ function Header({ title, breadcrumb, isMobile, user, isDark, onToggleTheme, onOp
         </button>
         {user && <Avatar name={user.full_name || user.email} photoUrl={user.profile_photo_url} size={34} radius={10} clickable={true} />}
         {isMobile && onSignOut && (
-          <button onClick={() => { if (window.confirm('Sign out of HDA Case Management?')) onSignOut() }} aria-label="Sign out" title="Sign out"
+          <button onClick={() => { if (window.confirm(tl('Sign out of HDA Case Management?'))) onSignOut() }} aria-label={tl('Sign out')} title={tl('Sign out')}
             style={{ background: B.errBg, border: `1px solid ${B.errBorder}`, borderRadius: 10, width: 36, height: 36, cursor: 'pointer', color: B.red, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Icon name="logout" size={17} />
           </button>
@@ -1111,16 +1109,16 @@ function DashboardPage({ families, children, docs = [], loading, onView, onAdd, 
         gridTemplateColumns: isMobile ? '1fr 1fr' : isTablet ? '1fr 1fr 1fr' : '1fr 1fr 1fr auto',
         gap: isMobile ? 10 : 14, marginBottom: isMobile ? 14 : 20,
       }}>
-        <StatCard label="Total Families" value={families.length} icon={<Icon name="users" size={22} color={B.green} />} bg={B.greenLight} color={B.green} sub={`${active} active`} loading={loading} isMobile={isMobile} />
-        <StatCard label="Total Children" value={children.length} icon={<Icon name="child" size={22} color={B.goldDark} />} bg={B.goldLight} color={B.goldDark} sub="enrolled" loading={loading} isMobile={isMobile} />
-        <StatCard label="Pending Cases" value={pending} icon={<Icon name="pending" size={22} color="#e65100" />} bg="#fff8e1" color="#e65100" sub="need review" loading={loading} isMobile={isMobile} />
+        <StatCard label={tl('Total Families')} value={families.length} icon={<Icon name="users" size={22} color={B.green} />} bg={B.greenLight} color={B.green} sub={`${active} active`} loading={loading} isMobile={isMobile} />
+        <StatCard label={tl('Total Children')} value={children.length} icon={<Icon name="child" size={22} color={B.goldDark} />} bg={B.goldLight} color={B.goldDark} sub="enrolled" loading={loading} isMobile={isMobile} />
+        <StatCard label={tl('Pending Cases')} value={pending} icon={<Icon name="pending" size={22} color="#e65100" />} bg="#fff8e1" color="#e65100" sub="need review" loading={loading} isMobile={isMobile} />
         {!isMobile && (
           <div style={{
             background: B.card, borderRadius: 14, border: `1px solid ${B.border}`,
             padding: '16px 18px', minWidth: 190,
             boxShadow: `0 2px 12px rgba(30,125,34,0.06)`,
           }}>
-            <div style={{ fontSize: 10, color: B.textLight, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Family Statistics</div>
+            <div style={{ fontSize: 10, color: B.textLight, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>{tl('Family Statistics')}</div>
             {loading ? <Skeleton h={60} /> : <DonutChart active={active} inactive={inactive} pending={pending} />}
           </div>
         )}
@@ -1129,8 +1127,8 @@ function DashboardPage({ families, children, docs = [], loading, onView, onAdd, 
       {/* Status bar */}
       <div style={{ background: B.card, border: `1px solid ${B.border}`, borderRadius: 14, padding: isMobile ? '12px 14px' : '14px 18px', marginBottom: isMobile ? 14 : 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 6 }}>
-          <span style={{ fontSize: 10, color: B.textLight, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Families by status</span>
-          {transferredCount != null && <span style={{ fontSize: 11.5, color: B.textMid, fontWeight: 600 }}><Icon name="archive" size={12} /> {transferredCount} transferred out</span>}
+          <span style={{ fontSize: 10, color: B.textLight, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{tl('Families by status')}</span>
+          {transferredCount != null && <span style={{ fontSize: 11.5, color: B.textMid, fontWeight: 600 }}><Icon name="archive" size={12} /> {transferredCount}{' '}{tl('transferred out')}</span>}
         </div>
         {loading ? <Skeleton h={14} /> : (
           <>
@@ -1166,7 +1164,7 @@ function DashboardPage({ families, children, docs = [], loading, onView, onAdd, 
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 3, height: 18, borderRadius: 2, background: `linear-gradient(to bottom, ${B.gold}, ${B.green})` }} />
-            <span style={{ fontSize: 15, fontWeight: 800, color: B.text }}>Beneficiary List</span>
+            <span style={{ fontSize: 15, fontWeight: 800, color: B.text }}>{tl('Beneficiary List')}</span>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
             <div style={{ position: 'relative', flex: isMobile ? 1 : 'none' }}>
@@ -1192,7 +1190,7 @@ function DashboardPage({ families, children, docs = [], loading, onView, onAdd, 
                 {['All', 'Active', 'Inactive', 'Pending', ...(showCase ? ['On hold'] : [])].map(o => <option key={o}>{o}</option>)}
               </select>
             )}
-            {!isMobile && canAdd && <Btn onClick={onAdd} variant="gold" size="md"><Icon name="plus" size={16} />Add Family</Btn>}
+            {!isMobile && canAdd && <Btn onClick={onAdd} variant="gold" size="md"><Icon name="plus" size={16} />{tl('Add Family')}</Btn>}
           </div>
           {isMobile && (
             <div style={{ display: 'flex', gap: 6, width: '100%', overflowX: 'auto' }}>
@@ -1210,7 +1208,7 @@ function DashboardPage({ families, children, docs = [], loading, onView, onAdd, 
           )}
           {/* Age policy check: see families with under-age / over-age children or missing certificates */}
           <div style={{ display: 'flex', gap: 6, width: '100%', overflowX: 'auto', alignItems: 'center' }}>
-            <span style={{ fontSize: 10, color: B.textLight, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', marginRight: 2 }}>Age check</span>
+            <span style={{ fontSize: 10, color: B.textLight, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', marginRight: 2 }}>{tl('Age check')}</span>
             {[['all', 'All', null], ['under', `Under age (≤${MIN_PAYING_AGE - 1})`, ageCounts.under], ['over', `Over age (${MAX_PAYING_AGE + 1}+)`, ageCounts.over], ['cert', 'Need certificate', ageCounts.cert], ['hold', 'Child on hold', ageCounts.hold]].map(([k, label, n]) => {
               const on = ageFilter === k, red = k !== 'all'
               return (
@@ -1236,12 +1234,12 @@ function DashboardPage({ families, children, docs = [], loading, onView, onAdd, 
           ) : filtered.length === 0 ? (
             <div style={{ padding: '48px 20px', textAlign: 'center', color: B.textLight }}>
               <div style={{ marginBottom: 10 }}><Icon name="search" size={38} /></div>
-              <div style={{ fontWeight: 700, color: B.text, marginBottom: 4 }}>No families found</div>
-              <div style={{ fontSize: 13 }}>Try a different search term or filter.</div>
+              <div style={{ fontWeight: 700, color: B.text, marginBottom: 4 }}>{tl('No families found')}</div>
+              <div style={{ fontSize: 13 }}>{tl('Try a different search term or filter.')}</div>
             </div>
           ) : (
             <>
-              <div style={{ fontSize: 12, color: B.textLight, marginBottom: 12 }}>Showing {Math.min(shown, filtered.length)} of {filtered.length} families</div>
+              <div style={{ fontSize: 12, color: B.textLight, marginBottom: 12 }}>{tl('Showing')}{' '}{Math.min(shown, filtered.length)} of {filtered.length} families</div>
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(270px, 1fr))', gap: isMobile ? 12 : 16 }}>
                 {filtered.slice(0, shown).map((f, i) => {
                   const pb = projectBadge(f)
@@ -1262,17 +1260,17 @@ function DashboardPage({ families, children, docs = [], loading, onView, onAdd, 
                           <span style={{ fontSize: 11, fontWeight: 700, color: B.greenDark, background: B.greenLight, border: `1px solid ${B.border}`, borderRadius: 20, padding: '3px 9px' }}><Icon name="pin" size={10} /> {f.branch}</span>
                         )}
                         <span style={{ fontSize: 11, fontWeight: 700, color: B.goldDark, background: B.goldLight, borderRadius: 20, padding: '3px 9px' }}><Icon name="child" size={11} /> {kidsN} {kidsN === 1 ? 'child' : 'children'}</span>
-                        {ageFlags[f.id]?.under > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: B.red, background: B.errBg, borderRadius: 20, padding: '3px 9px' }}>{ageFlags[f.id].under} under age</span>}
-                        {ageFlags[f.id]?.over > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: B.red, background: B.errBg, borderRadius: 20, padding: '3px 9px' }}>{ageFlags[f.id].over} over age</span>}
-                        {ageFlags[f.id]?.hold > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: B.warnText, background: B.goldLight, borderRadius: 20, padding: '3px 9px' }}>{ageFlags[f.id].hold} child on hold</span>}
-                        {ageFlags[f.id]?.cert > 0 && <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', background: B.red, borderRadius: 20, padding: '3px 9px' }}>Need certificate</span>}
+                        {ageFlags[f.id]?.under > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: B.red, background: B.errBg, borderRadius: 20, padding: '3px 9px' }}>{ageFlags[f.id].under}{' '}{tl('under age')}</span>}
+                        {ageFlags[f.id]?.over > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: B.red, background: B.errBg, borderRadius: 20, padding: '3px 9px' }}>{ageFlags[f.id].over}{' '}{tl('over age')}</span>}
+                        {ageFlags[f.id]?.hold > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: B.warnText, background: B.goldLight, borderRadius: 20, padding: '3px 9px' }}>{ageFlags[f.id].hold}{' '}{tl('child on hold')}</span>}
+                        {ageFlags[f.id]?.cert > 0 && <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', background: B.red, borderRadius: 20, padding: '3px 9px' }}>{tl('Need certificate')}</span>}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderTop: `1px solid ${B.greenLight}`, paddingTop: 11 }}>
                         <div style={{ fontSize: 12, color: B.textMid, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Icon name="phone" size={12} />{f.phone_number || '—'}</div>
                           {f.district && <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: B.textLight, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><Icon name="pin" size={12} />{f.district}</div>}
                         </div>
-                        <span style={{ fontSize: 12, fontWeight: 800, color: B.green, display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>View <span className="fam-go" style={{ display: 'inline-flex' }}><Icon name="forward" size={13} /></span></span>
+                        <span style={{ fontSize: 12, fontWeight: 800, color: B.green, display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>{tl('View')}{' '}<span className="fam-go" style={{ display: 'inline-flex' }}><Icon name="forward" size={13} /></span></span>
                       </div>
                     </div>
                   )
@@ -1280,8 +1278,7 @@ function DashboardPage({ families, children, docs = [], loading, onView, onAdd, 
               </div>
               {shown < filtered.length && (
                 <div ref={sentinelRef} style={{ padding: '22px 0 6px', textAlign: 'center', color: B.textLight, fontSize: 12, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-                  <Icon name="spinner" size={16} spin /> Loading more…
-                </div>
+                  <Icon name="spinner" size={16} spin />{' '}{tl('Loading more…')}</div>
               )}
             </>
           )}
@@ -1301,7 +1298,7 @@ function DashboardPage({ families, children, docs = [], loading, onView, onAdd, 
             fontSize: 26, color: B.greenDark, fontWeight: 800, cursor: 'pointer',
             zIndex: 150, touchAction: 'manipulation',
           }}
-          aria-label="Add family"
+          aria-label={tl('Add family')}
         ><Icon name="plus" size={26} strokeWidth={2.6} /></button>
       )}
     </div>
@@ -1334,23 +1331,21 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
-        <span style={{ fontSize: 14, color: B.textMid }}>{kids.length} children registered{kids.some(k => !isPayingChild(k)) && <> · <b>{Math.min(kids.filter(isPayingChild).length, MAX_PAYING_CHILDREN)}</b> in payment · {kids.filter(k => !isPayingChild(k)).length} not in payment (age policy / on hold)</>}{kids.filter(isPayingChild).length > MAX_PAYING_CHILDREN && <> · <b>max {MAX_PAYING_CHILDREN} children paid</b></>}</span>
-        {canEdit && <Btn onClick={() => onAddChild(family.id)} size="sm" variant="gold"><Icon name="plus" size={15} />Add Child</Btn>}
+        <span style={{ fontSize: 14, color: B.textMid }}>{kids.length}{' '}{tl('children registered')}{kids.some(k => !isPayingChild(k)) && <> · <b>{Math.min(kids.filter(isPayingChild).length, MAX_PAYING_CHILDREN)}</b>{' '}{tl('in payment ·')}{' '}{kids.filter(k => !isPayingChild(k)).length}{' '}{tl('not in payment (age policy / on hold)')}</>}{kids.filter(isPayingChild).length > MAX_PAYING_CHILDREN && <> · <b>max {MAX_PAYING_CHILDREN}{' '}{tl('children paid')}</b></>}</span>
+        {canEdit && <Btn onClick={() => onAddChild(family.id)} size="sm" variant="gold"><Icon name="plus" size={15} />{tl('Add Child')}</Btn>}
       </div>
 
       {kids.length === 0 ? (
         <div style={{ background: B.greenLight, borderRadius: 13, padding: '40px', textAlign: 'center', color: B.textLight }}>
           <div style={{ marginBottom: 8 }}><Icon name="child" size={38} /></div>
-          <div style={{ fontWeight: 600, marginBottom: 10 }}>No children added yet</div>
-          {canEdit && <Btn onClick={() => onAddChild(family.id)} size="sm" variant="gold">Add First Child</Btn>}
+          <div style={{ fontWeight: 600, marginBottom: 10 }}>{tl('No children added yet')}</div>
+          {canEdit && <Btn onClick={() => onAddChild(family.id)} size="sm" variant="gold">{tl('Add First Child')}</Btn>}
         </div>
       ) : (
         <>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {sorted.length === 0 && (
-              <div style={{ background: B.greenLight, borderRadius: 13, padding: '30px', textAlign: 'center', color: B.textLight }}>
-                No children match the selected filters.
-              </div>
+              <div style={{ background: B.greenLight, borderRadius: 13, padding: '30px', textAlign: 'center', color: B.textLight }}>{tl('No children match the selected filters.')}</div>
             )}
             {sorted.map(c => {
               const childDocs = allDocs.filter(d => d.child_id === c.id)
@@ -1364,32 +1359,30 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
                 <div key={c.id} style={{ background: aged ? B.errBg : held ? B.goldLight : B.card, borderRadius: 14, border: aged ? `1.5px dashed ${B.red}` : held ? `1.5px dashed ${B.gold}` : needCert ? `1.5px solid ${B.red}` : `1px solid ${B.border}`, padding: isMobile ? '14px' : '16px 18px', boxShadow: aged ? 'none' : `0 2px 8px rgba(30,125,34,0.05)` }}>
                   {aged && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, fontSize: 11.5, fontWeight: 700, color: B.red }}>
-                      <Icon name="info" size={13} /> {exc === 'under' ? `Under age — ${MIN_PAYING_AGE - 1} and younger are not eligible` : childAge > MAX_SCHOOL_AGE ? `Over age — older than ${MAX_SCHOOL_AGE}` : `Age ${childAge} and not in school`} — kept for records, NOT in payment
-                    </div>
+                      <Icon name="info" size={13} /> {exc === 'under' ? tl('Under age — {x} and younger are not eligible', { "x": MIN_PAYING_AGE - 1 }) : childAge > MAX_SCHOOL_AGE ? `Over age — older than ${MAX_SCHOOL_AGE}` : `Age ${childAge} and not in school`}{' '}{tl('— kept for records, NOT in payment')}</div>
                   )}
                   {held && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, fontSize: 11.5, fontWeight: 700, color: B.warnText, flexWrap: 'wrap' }}>
-                      <Icon name="info" size={13} /> On hold — NOT in payment{c.hold_reason ? `: ${c.hold_reason}` : ''}{c.held_by_name ? ` (by ${c.held_by_name}${c.held_at ? ', ' + c.held_at.slice(0, 10) : ''})` : ''}
+                      <Icon name="info" size={13} />{' '}{tl('On hold — NOT in payment')}{c.hold_reason ? tl(': {hold_reason}', { "hold_reason": c.hold_reason }) : ''}{c.held_by_name ? tl('(by {held_by_name}{x})', { "held_by_name": c.held_by_name, "x": c.held_at ? ', ' + c.held_at.slice(0, 10) : '' }) : ''}
                     </div>
                   )}
                   {needCert && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, fontSize: 11.5, fontWeight: 700, color: B.red }}>
-                      <Icon name="info" size={13} /> Age {childAge} and still in school — a School Certificate must be uploaded to continue the payment
-                    </div>
+                      <Icon name="info" size={13} />{' '}{tl('Age')}{' '}{childAge}{' '}{tl('and still in school — a School Certificate must be uploaded to continue the payment')}</div>
                   )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
                     <Avatar name={c.child_name} photoUrl={c.child_photo_url} size={52} radius={12} clickable={true} />
                     <div style={{ flex: 1, minWidth: 120 }}>
                       <div style={{ fontWeight: 700, fontSize: 15, color: B.text, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>{c.child_name}
-                        {aged && <span style={{ fontSize: 10.5, fontWeight: 800, background: B.red, color: '#fff', borderRadius: 20, padding: '1px 8px' }}>NOT IN PAYMENT</span>}
-                        {held && <span style={{ fontSize: 10.5, fontWeight: 800, background: B.gold, color: B.greenDark, borderRadius: 20, padding: '1px 8px' }}>ON HOLD</span>}
-                        {aged && exc === 'under' && <span style={{ fontSize: 10.5, fontWeight: 800, background: B.card, color: B.red, border: `1px solid ${B.red}`, borderRadius: 20, padding: '1px 8px' }}>UNDER AGE</span>}
-                        {aged && exc === 'over' && <span style={{ fontSize: 10.5, fontWeight: 800, background: B.card, color: B.red, border: `1px solid ${B.red}`, borderRadius: 20, padding: '1px 8px' }}>OVER AGE</span>}
-                        {needCert && <span style={{ fontSize: 10.5, fontWeight: 800, background: B.red, color: '#fff', borderRadius: 20, padding: '1px 8px' }}>NEED CERTIFICATE</span>}
-                        {ext && !needCert && <span style={{ fontSize: 10.5, fontWeight: 800, background: B.greenLight, color: B.green, borderRadius: 20, padding: '1px 8px' }}>{childAge} · IN SCHOOL · CERTIFICATE ON FILE</span>}
+                        {aged && <span style={{ fontSize: 10.5, fontWeight: 800, background: B.red, color: '#fff', borderRadius: 20, padding: '1px 8px' }}>{tl('NOT IN PAYMENT')}</span>}
+                        {held && <span style={{ fontSize: 10.5, fontWeight: 800, background: B.gold, color: B.greenDark, borderRadius: 20, padding: '1px 8px' }}>{tl('ON HOLD')}</span>}
+                        {aged && exc === 'under' && <span style={{ fontSize: 10.5, fontWeight: 800, background: B.card, color: B.red, border: `1px solid ${B.red}`, borderRadius: 20, padding: '1px 8px' }}>{tl('UNDER AGE')}</span>}
+                        {aged && exc === 'over' && <span style={{ fontSize: 10.5, fontWeight: 800, background: B.card, color: B.red, border: `1px solid ${B.red}`, borderRadius: 20, padding: '1px 8px' }}>{tl('OVER AGE')}</span>}
+                        {needCert && <span style={{ fontSize: 10.5, fontWeight: 800, background: B.red, color: '#fff', borderRadius: 20, padding: '1px 8px' }}>{tl('NEED CERTIFICATE')}</span>}
+                        {ext && !needCert && <span style={{ fontSize: 10.5, fontWeight: 800, background: B.greenLight, color: B.green, borderRadius: 20, padding: '1px 8px' }}>{childAge}{' '}{tl('· IN SCHOOL · CERTIFICATE ON FILE')}</span>}
                       </div>
                       <div style={{ fontSize: 12, color: B.textMid, marginTop: 3 }}>
-                        {c.date_of_birth && <>Age {calcAge(c.date_of_birth)} · </>}
+                        {c.date_of_birth && <>{tl('Age')}{' '}{calcAge(c.date_of_birth)} · </>}
                         <span style={{ textTransform: 'capitalize' }}>{c.gender}</span>
                         {c.grade && <> · {c.grade}</>}
                         {c.school_name && <> · <Icon name="school" size={13} /> {c.school_name}</>}
@@ -1411,30 +1404,28 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 8, flexShrink: 0, width: isMobile ? '100%' : 'auto' }}>
-                      {canEdit && <Btn onClick={() => toggleHold(c)} variant={held ? 'gold' : 'secondary'} size="sm" full={isMobile}><Icon name={held ? 'check' : 'pending'} size={14} />{held ? 'Release hold' : 'Hold'}</Btn>}
-                      {canEdit && <Btn onClick={() => onEditChild(c)} variant="secondary" size="sm" full={isMobile}><Icon name="edit" size={14} />{!isMobile && 'Edit'}</Btn>}
-                      {(canDelete || canRemoveChild) && <Btn onClick={() => onDeleteChild(c)} variant="danger" size="sm" full={isMobile}><Icon name="trash" size={14} />{!isMobile && 'Delete'}</Btn>}
+                      {canEdit && <Btn onClick={() => toggleHold(c)} variant={held ? 'gold' : 'secondary'} size="sm" full={isMobile}><Icon name={held ? 'check' : 'pending'} size={14} />{held ? tl('Release hold') : tl('Hold')}</Btn>}
+                      {canEdit && <Btn onClick={() => onEditChild(c)} variant="secondary" size="sm" full={isMobile}><Icon name="edit" size={14} />{!isMobile && tl('Edit')}</Btn>}
+                      {(canDelete || canRemoveChild) && <Btn onClick={() => onDeleteChild(c)} variant="danger" size="sm" full={isMobile}><Icon name="trash" size={14} />{!isMobile && tl('Delete')}</Btn>}
                     </div>
                   </div>
                   <div style={{ background: B.greenLight, borderRadius: 10, padding: '12px 14px' }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: B.textMid, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}><Icon name="attach" size={12} /> Documents</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: B.textMid, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}><Icon name="attach" size={12} />{' '}{tl('Documents')}</div>
                     <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                       {['Birth Certificate', 'School Certificate'].map(docType => {
                         const existing = childDocs.find(d => d.document_type === docType)
                         return (
                           <div key={docType} style={{ flex: 1, minWidth: 150 }}>
-                            <div style={{ fontSize: 11, color: (needCert && docType === SCHOOL_CERT) ? B.red : B.textMid, marginBottom: 6, fontWeight: 600 }}>{docType}{needCert && docType === SCHOOL_CERT && ' — REQUIRED'}</div>
+                            <div style={{ fontSize: 11, color: (needCert && docType === SCHOOL_CERT) ? B.red : B.textMid, marginBottom: 6, fontWeight: 600 }}>{docType}{needCert && docType === SCHOOL_CERT && tl('— REQUIRED')}</div>
                             {existing
                               ? <div style={{ background: B.card, border: `1px solid ${B.border}`, borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
                                   <Icon name="file" size={16} color={B.green} />
-                                  <span style={{ fontSize: 11, color: B.green, fontWeight: 600, flex: 1 }}><Icon name="check" size={12} /> Uploaded</span>
+                                  <span style={{ fontSize: 11, color: B.green, fontWeight: 600, flex: 1 }}><Icon name="check" size={12} />{' '}{tl('Uploaded')}</span>
                                   <button onClick={() => setViewingDoc(existing)}
-                                    style={{ background: B.greenLight, border: 'none', borderRadius: 6, padding: '3px 9px', cursor: 'pointer', fontSize: 11, color: B.green, fontWeight: 700 }}>View</button>
+                                    style={{ background: B.greenLight, border: 'none', borderRadius: 6, padding: '3px 9px', cursor: 'pointer', fontSize: 11, color: B.green, fontWeight: 700 }}>{tl('View')}</button>
                                 </div>
-                              : !canEdit ? <div style={{ fontSize: 11, color: B.textLight, padding: '8px 0' }}>Not uploaded</div>
-              : <label style={{ border: `1.5px dashed ${B.green}`, borderRadius: 8, padding: '8px 12px', fontSize: 11, color: B.green, background: B.input, cursor: 'pointer', textAlign: 'center', display: 'block', fontWeight: 600 }}>
-                                  + Upload
-                                  <input type="file" accept="image/*,application/pdf" style={{ display: 'none' }} onChange={async e => {
+                              : !canEdit ? <div style={{ fontSize: 11, color: B.textLight, padding: '8px 0' }}>{tl('Not uploaded')}</div>
+              : <label style={{ border: `1.5px dashed ${B.green}`, borderRadius: 8, padding: '8px 12px', fontSize: 11, color: B.green, background: B.input, cursor: 'pointer', textAlign: 'center', display: 'block', fontWeight: 600 }}>{tl('+ Upload')}<input type="file" accept="image/*,application/pdf" style={{ display: 'none' }} onChange={async e => {
                                     if (!e.target.files[0]) return
                                     setUploading(docType + c.id)
                                     try {
@@ -1443,14 +1434,14 @@ function ChildrenTab({ kids, allDocs, family, onAddChild, onEditChild, onDeleteC
                                       const url = await uploadFile({ supabase, file, bucket: BUCKETS.DOCUMENTS, path, type: 'document' })
                                       await supabase.from('documents').insert({ family_id: family.id, child_id: c.id, document_type: docType, file_url: url, file_name: file.name, file_size_kb: Math.round(file.size / 1024), uploaded_by: user?.id || null })
                                       logActivity(user, 'document', `${user?.full_name || 'Someone'} uploaded ${docType} for ${c.child_name} (${family.mother_name})`, family.id)
-                                      toast(`${docType} uploaded`)
+                                      toast(tl('{docType} uploaded', { "docType": docType }))
                                       onDocUploaded()
                                     } catch (err) { toast(err.message, 'error') }
                                     finally { setUploading(null) }
                                   }} />
                                 </label>
                             }
-                            {uploading === docType + c.id && <div style={{ fontSize: 11, color: B.green, marginTop: 4 }}><Icon name="spinner" size={12} spin /> Uploading…</div>}
+                            {uploading === docType + c.id && <div style={{ fontSize: 11, color: B.green, marginTop: 4 }}><Icon name="spinner" size={12} spin />{' '}{tl('Uploading…')}</div>}
                           </div>
                         )
                       })}
@@ -1484,22 +1475,20 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
     if (!joinEdit) return
     const { error } = await supabase.from('families').update({ joined_on: joinEdit }).eq('id', family.id)
     if (error) { toast(error.message + (/joined_on/.test(error.message) ? ' — run migration 006_case_visibility_tenure.sql' : ''), 'error'); return }
-    logActivity(user, 'family', `${user?.full_name || 'Admin'} changed the joined date of ${family.mother_name} to ${joinEdit}`, family.id); toast('Joined date updated'); setJoinEdit(null); onCaseChanged('edit')
+    logActivity(user, 'family', `${user?.full_name || 'Admin'} changed the joined date of ${family.mother_name} to ${joinEdit}`, family.id); toast(tl('Joined date updated')); setJoinEdit(null); onCaseChanged('edit')
   }
   const registeredById = family.submitted_by || family.created_by
   const registeredBy = staffNames[registeredById] || null
   const registeredChip = registeredBy ? (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', borderRadius: 20, padding: isMobile ? '3px 10px' : '4px 12px', fontSize: isMobile ? 11 : 12, fontWeight: 600, whiteSpace: 'nowrap', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-      <Icon name="users" size={13} color={B.gold} />
-      Registered by <b style={{ color: B.gold }}>{registeredBy}</b>
+      <Icon name="users" size={13} color={B.gold} />{tl('Registered by')}{' '}<b style={{ color: B.gold }}>{registeredBy}</b>
     </span>
   ) : null
   const tenureChip = (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', borderRadius: 20, padding: isMobile ? '3px 10px' : '4px 12px', fontSize: isMobile ? 11 : 12, fontWeight: 600, whiteSpace: 'nowrap', maxWidth: '100%' }}>
-      <Icon name="calendar" size={13} color={B.gold} />
-      With HDA <b style={{ color: B.gold }}>{tenureText(joined)}</b>
+      <Icon name="calendar" size={13} color={B.gold} />{tl('With HDA')}{' '}<b style={{ color: B.gold }}>{tenureText(joined)}</b>
       <span style={{ opacity: 0.8 }}>· {enrolledInNotes ? 'enrolled' : 'since'} {joined ? new Date(joined).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</span>
-      {isAdmin && !enrolledInNotes && <button onClick={() => setJoinEdit(joined || '')} aria-label="Edit joined date" title="Edit joined date" style={{ background: 'rgba(255,255,255,0.18)', border: 'none', borderRadius: 6, width: 22, height: 22, cursor: 'pointer', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="edit" size={12} /></button>}
+      {isAdmin && !enrolledInNotes && <button onClick={() => setJoinEdit(joined || '')} aria-label={tl('Edit joined date')} title={tl('Edit joined date')} style={{ background: 'rgba(255,255,255,0.18)', border: 'none', borderRadius: 6, width: 22, height: 22, cursor: 'pointer', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="edit" size={12} /></button>}
     </span>
   )
 
@@ -1516,7 +1505,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
       })
       if (error) throw error
       logActivity(user, 'document', `${user?.full_name || 'Someone'} uploaded ${docType} for ${family.mother_name}`, family.id)
-      toast(`${docType} uploaded`)
+      toast(tl('{docType} uploaded', { "docType": docType }))
       onDocUploaded()
     } catch (e) { toast(e.message, 'error') }
     finally { setUploading(null) }
@@ -1528,12 +1517,12 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
       {joinEdit !== null && (
         <div onClick={() => setJoinEdit(null)} style={{ position: 'fixed', inset: 0, zIndex: 9500, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: B.card, borderRadius: 16, width: '100%', maxWidth: 380, padding: 20, boxShadow: '0 32px 80px rgba(0,0,0,0.4)' }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: B.text, marginBottom: 4 }}>Date joined HDA</div>
-            <div style={{ fontSize: 12.5, color: B.textMid, marginBottom: 14 }}>Used to show how long {family.mother_name} has been with the organization.</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: B.text, marginBottom: 4 }}>{tl('Date joined HDA')}</div>
+            <div style={{ fontSize: 12.5, color: B.textMid, marginBottom: 14 }}>{tl('Used to show how long')}{' '}{family.mother_name}{' '}{tl('has been with the organization.')}</div>
             <input type="date" value={joinEdit} max={new Date().toISOString().slice(0, 10)} onChange={e => setJoinEdit(e.target.value)} style={{ width: '100%', padding: '10px 12px', border: `1.5px solid ${B.border}`, borderRadius: 9, fontSize: 15, color: B.text, background: B.input, fontFamily: 'inherit', boxSizing: 'border-box', minHeight: 44, marginBottom: 16 }} />
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-              <Btn onClick={() => setJoinEdit(null)} variant="secondary">Cancel</Btn>
-              <Btn onClick={saveJoined} variant="primary" disabled={!joinEdit}>Save</Btn>
+              <Btn onClick={() => setJoinEdit(null)} variant="secondary">{tl('Cancel')}</Btn>
+              <Btn onClick={saveJoined} variant="primary" disabled={!joinEdit}>{tl('Save')}</Btn>
             </div>
           </div>
         </div>
@@ -1547,32 +1536,32 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
             borderRadius: 8, padding: '9px 14px', cursor: 'pointer',
             fontSize: 13, color: B.green, fontWeight: 700, minHeight: 38,
           }}
-        ><Icon name="back" size={14} /> Back</button>
+        ><Icon name="back" size={14} />{' '}{tl('Back')}</button>
         <div style={{ flex: 1 }} />
-        {canEdit && <Btn onClick={() => onEditFamily(family)} variant="secondary" size="sm"><Icon name="edit" size={14} />Edit</Btn>}
-        {canDelete && <Btn onClick={() => onDeleteFamily(family)} variant="danger" size="sm"><Icon name="trash" size={14} />Delete</Btn>}
+        {canEdit && <Btn onClick={() => onEditFamily(family)} variant="secondary" size="sm"><Icon name="edit" size={14} />{tl('Edit')}</Btn>}
+        {canDelete && <Btn onClick={() => onDeleteFamily(family)} variant="danger" size="sm"><Icon name="trash" size={14} />{tl('Delete')}</Btn>}
         <StatusBadge s={family.status} held={canSeeCase && cState === 'on_hold'} />
-        {canSeeCase && cState === 'transferred' && <span style={{ background: B.errBg, color: B.errText, padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700 }}>Transferred</span>}
+        {canSeeCase && cState === 'transferred' && <span style={{ background: B.errBg, color: B.errText, padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700 }}>{tl('Transferred')}</span>}
       </div>
 
       {submissionState(family) !== 'approved' && (
         <div style={{ background: submissionState(family) === 'returned' ? B.errBg : B.goldLight, color: submissionState(family) === 'returned' ? B.errText : B.warnText, border: `1px solid ${submissionState(family) === 'returned' ? B.errBorder : B.goldBorder}`, borderRadius: 12, padding: '10px 14px', marginBottom: 14, fontSize: 13, lineHeight: 1.5 }}>
           {submissionState(family) === 'returned'
-            ? <><b>Returned for correction.</b> {family.return_reason && <><br /><b>To fix:</b> {family.return_reason}</>}<br />Edit what is needed — saving sends it back to the administrator.</>
-            : <><b>Waiting for approval.</b> Sent by {staffNames[family.submitted_by] || 'a data collector'}{family.submitted_at ? ` on ${new Date(family.submitted_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}` : ''}. It is not in the family, payment or bank lists until the administrator approves it.</>}
-          {canRemoveChild && canEdit && <div style={{ marginTop: 8 }}><Btn onClick={() => { setTab('children'); onAddChild(family.id) }} size="sm" variant="gold"><Icon name="plus" size={14} />Add child</Btn></div>}
+            ? <><b>{tl('Returned for correction.')}</b> {family.return_reason && <><br /><b>{tl('To fix:')}</b> {family.return_reason}</>}<br />{tl('Edit what is needed — saving sends it back to the administrator.')}</>
+            : <><b>{tl('Waiting for approval.')}</b>{' '}{tl('Sent by')}{' '}{staffNames[family.submitted_by] || tl('a data collector')}{family.submitted_at ? tl('on {x}', { "x": new Date(family.submitted_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) }) : ''}. It is not in the family, payment or bank lists until the administrator approves it.</>}
+          {canRemoveChild && canEdit && <div style={{ marginTop: 8 }}><Btn onClick={() => { setTab('children'); onAddChild(family.id) }} size="sm" variant="gold"><Icon name="plus" size={14} />{tl('Add child')}</Btn></div>}
         </div>
       )}
 
       {canSeeCase && cState !== 'normal' && (
         <div style={{ background: cState === 'on_hold' ? B.goldLight : B.errBg, color: cState === 'on_hold' ? B.warnText : B.errText, border: `1px solid ${cState === 'on_hold' ? B.goldBorder : B.errBorder}`, borderRadius: 12, padding: '10px 14px', marginBottom: 14, fontSize: 13, lineHeight: 1.5 }}>
-          <b>{cState === 'on_hold' ? 'On hold — deposits postponed.' : 'Transferred out of the active lists.'}</b>
-          {' '}{cState === 'on_hold' ? 'Not on the bank list; shown as unpaid on the payment list.' : 'Not on the bank list or payment list.'}
-          {family.case_reason && <><br /><b>Reason:</b> {family.case_reason}</>}
+          <b>{cState === 'on_hold' ? tl('On hold — deposits postponed.') : tl('Transferred out of the active lists.')}</b>
+          {' '}{cState === 'on_hold' ? tl('Not on the bank list; shown as unpaid on the payment list.') : tl('Not on the bank list or payment list.')}
+          {family.case_reason && <><br /><b>{tl('Reason:')}</b> {family.case_reason}</>}
           {(family.case_changed_by_name || family.case_changed_at) && (
-            <><br /><b>{cState === 'on_hold' ? 'Held' : 'Transferred'}:</b>{' '}
+            <><br /><b>{cState === 'on_hold' ? tl('Held') : tl('Transferred')}:</b>{' '}
               {family.case_changed_at ? new Date(family.case_changed_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}
-              {family.case_changed_by_name ? <> · by <b>{family.case_changed_by_name}</b></> : null}
+              {family.case_changed_by_name ? <>{' '}{tl('· by')}{' '}<b>{family.case_changed_by_name}</b></> : null}
             </>
           )}
         </div>
@@ -1618,7 +1607,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
           {isMobile && (
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 17, fontWeight: 800, color: '#fff', marginBottom: 2, lineHeight: 1.2 }}>{family.mother_name}</div>
-              <div style={{ fontSize: 11, color: B.gold, fontWeight: 600 }}>{family.family_code} · Roll {family.roll_number}</div>
+              <div style={{ fontSize: 11, color: B.gold, fontWeight: 600 }}>{family.family_code}{' '}{tl('· Roll')}{' '}{family.roll_number}</div>
             </div>
           )}
         </div>
@@ -1627,13 +1616,12 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
         {!isMobile && (
           <div style={{ flex: 1, minWidth: 180 }}>
             <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', marginBottom: 4 }}>{family.mother_name}</div>
-            <div style={{ fontSize: 12, color: B.gold, marginBottom: 12, fontWeight: 600 }}>
-              ID: {family.mother_id_number} · {family.family_code} · Roll {family.roll_number}
+            <div style={{ fontSize: 12, color: B.gold, marginBottom: 12, fontWeight: 600 }}>{tl('ID:')}{' '}{family.mother_id_number} · {family.family_code}{' '}{tl('· Roll')}{' '}{family.roll_number}
             </div>
             <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 8 }}>{tenureChip}{registeredChip}</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
               <CallBtn phone={family.phone_number} />
-              {family.alternate_phone && <CallBtn phone={family.alternate_phone} label={`Alt: ${family.alternate_phone}`} />}
+              {family.alternate_phone && <CallBtn phone={family.alternate_phone} label={tl('Alt: {alternate_phone}', { "alternate_phone": family.alternate_phone })} />}
               <span style={{ fontSize: 12, color: '#a5d6a7', display: 'flex', alignItems: 'center', gap: 4 }}><Icon name="pin" size={13} /> {family.address}</span>
               <span style={{ fontSize: 12, color: '#a5d6a7', display: 'flex', alignItems: 'center', gap: 4 }}><Icon name="city" size={13} /> {family.city}, {family.district}</span>
             </div>
@@ -1643,7 +1631,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
         {isMobile && (
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, width: '100%' }}>
             <CallBtn phone={family.phone_number} />
-            {family.alternate_phone && <CallBtn phone={family.alternate_phone} label="Alt" />}
+            {family.alternate_phone && <CallBtn phone={family.alternate_phone} label={tl('Alt')} />}
             <span style={{ fontSize: 11, color: '#a5d6a7', display: 'flex', alignItems: 'center', gap: 4 }}><Icon name="pin" size={13} /> {family.district}</span>
           </div>
         )}
@@ -1730,7 +1718,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
             </div>
           ))}
           <div style={{ gridColumn: '1/-1', background: B.card, borderRadius: 11, border: `1px solid ${B.border}`, padding: isMobile ? '11px 13px' : '13px 16px' }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Full Address</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>{tl('Full Address')}</div>
             <div style={{ fontSize: 14, color: B.text }}>{family.address}</div>
           </div>
           <div style={{ gridColumn: '1/-1', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 8 : 12 }}>
@@ -1767,7 +1755,7 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
       {/* DOCUMENTS */}
       {tab === 'documents' && (
         <div>
-          <div style={{ fontSize: 13, color: B.textMid, marginBottom: 16 }}>Mother's official documents — all images auto-compressed before upload</div>
+          <div style={{ fontSize: 13, color: B.textMid, marginBottom: 16 }}>{tl('Mother\'s official documents — all images auto-compressed before upload')}</div>
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? '140px' : '190px'}, 1fr))`, gap: 12 }}>
             {[
               { type: 'Mother ID', icon: 'idcard' },
@@ -1787,15 +1775,15 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
                   <div style={{ fontWeight: 700, fontSize: 13, color: B.text }}>{doc.type}</div>
                   {existing
                     ? <div>
-                        <div style={{ fontSize: 11, color: B.green, fontWeight: 700, marginBottom: 6 }}><Icon name="check" size={12} /> Uploaded</div>
+                        <div style={{ fontSize: 11, color: B.green, fontWeight: 700, marginBottom: 6 }}><Icon name="check" size={12} />{' '}{tl('Uploaded')}</div>
                         <button onClick={() => setViewingDoc(existing)}
-                          style={{ display: 'block', width: '100%', background: B.greenLight, borderRadius: 7, padding: '7px', cursor: 'pointer', fontSize: 12, color: B.green, fontWeight: 700, textAlign: 'center', border: 'none' }}>View / Download</button>
+                          style={{ display: 'block', width: '100%', background: B.greenLight, borderRadius: 7, padding: '7px', cursor: 'pointer', fontSize: 12, color: B.green, fontWeight: 700, textAlign: 'center', border: 'none' }}>{tl('View / Download')}</button>
                       </div>
-                    : !canEdit ? <div style={{ fontSize: 12, color: B.textLight }}>Not uploaded</div>
+                    : !canEdit ? <div style={{ fontSize: 12, color: B.textLight }}>{tl('Not uploaded')}</div>
                     : <label style={{ border: `1.5px dashed ${B.green}`, borderRadius: 8, padding: '12px', textAlign: 'center', cursor: 'pointer', background: B.input, display: 'block' }}>
                         <div style={{ marginBottom: 4, color: B.green }}><Icon name="upload" size={20} /></div>
-                        <div style={{ fontSize: 11, color: B.green, fontWeight: 600 }}>{uploading === doc.type ? <><Icon name="spinner" size={12} spin /> Uploading…</> : 'Upload'}</div>
-                        <div style={{ fontSize: 10, color: B.textLight, marginTop: 1 }}>Auto-compressed</div>
+                        <div style={{ fontSize: 11, color: B.green, fontWeight: 600 }}>{uploading === doc.type ? <><Icon name="spinner" size={12} spin />{' '}{tl('Uploading…')}</> : tl('Upload')}</div>
+                        <div style={{ fontSize: 10, color: B.textLight, marginTop: 1 }}>{tl('Auto-compressed')}</div>
                         <input type="file" accept="image/*,application/pdf" style={{ display: 'none' }}
                           onChange={e => { if (e.target.files[0]) handleMotherDocUpload(e.target.files[0], doc.type) }} />
                       </label>
@@ -1806,16 +1794,16 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
           </div>
           {motherDocs.length > 0 && (
             <div style={{ marginTop: 18, background: B.card, borderRadius: 13, border: `1px solid ${B.border}`, overflow: 'hidden' }}>
-              <div style={{ padding: '13px 18px', borderBottom: `1px solid ${B.greenLight}`, fontSize: 13, fontWeight: 700, color: B.text, background: B.greenLight }}>All Uploaded Documents</div>
+              <div style={{ padding: '13px 18px', borderBottom: `1px solid ${B.greenLight}`, fontSize: 13, fontWeight: 700, color: B.text, background: B.greenLight }}>{tl('All Uploaded Documents')}</div>
               {motherDocs.map(d => (
                 <div key={d.id} style={{ padding: '12px 18px', borderBottom: `1px solid ${B.greenLight}`, display: 'flex', alignItems: 'center', gap: 12 }}>
                   <Icon name="file" size={20} color={B.green} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 650, color: B.text }}>{d.document_type}</div>
-                    <div style={{ fontSize: 11, color: B.textLight, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.file_name} · {d.file_size_kb}KB · {d.uploaded_at?.slice(0, 10)}{staffNames[d.uploaded_by] ? ` · by ${staffNames[d.uploaded_by]}` : ''}</div>
+                    <div style={{ fontSize: 11, color: B.textLight, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.file_name} · {d.file_size_kb}{tl('KB ·')}{' '}{d.uploaded_at?.slice(0, 10)}{staffNames[d.uploaded_by] ? tl('· by {x}', { "x": staffNames[d.uploaded_by] }) : ''}</div>
                   </div>
                   <button onClick={() => setViewingDoc(d)}
-                    style={{ background: B.greenLight, borderRadius: 7, padding: '5px 12px', fontSize: 12, color: B.green, fontWeight: 700, whiteSpace: 'nowrap', border: 'none', cursor: 'pointer' }}>View</button>
+                    style={{ background: B.greenLight, borderRadius: 7, padding: '5px 12px', fontSize: 12, color: B.green, fontWeight: 700, whiteSpace: 'nowrap', border: 'none', cursor: 'pointer' }}>{tl('View')}</button>
                 </div>
               ))}
             </div>
@@ -1836,9 +1824,9 @@ function FamilyDetailPage({ family, allChildren, allDocs, onBack, onEditFamily, 
       {/* NOTES */}
       {tab === 'notes' && isAdmin && (
         <div style={{ background: B.card, borderRadius: 13, border: `1px solid ${B.border}`, padding: '20px' }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: B.text, marginBottom: 10 }}>Case Notes</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: B.text, marginBottom: 10 }}>{tl('Case Notes')}</div>
           <div style={{ fontSize: 14, color: B.textMid, lineHeight: 1.8, minHeight: 80 }}>
-            {family.notes || <span style={{ color: B.textLight, fontStyle: 'italic' }}>No notes recorded for this family.</span>}
+            {family.notes || <span style={{ color: B.textLight, fontStyle: 'italic' }}>{tl('No notes recorded for this family.')}</span>}
           </div>
         </div>
       )}
@@ -1903,37 +1891,35 @@ function FamilyForm({ initial, defaultProject, defaultBranch, families = [], onS
   return (
     <div>
       <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', marginBottom: 20, padding: '16px', background: B.greenLight, borderRadius: 12, border: `1px solid ${B.border}` }}>
-        <ImageUpload label="Mother Photo" type="photo" currentUrl={f.mother_photo_url}
+        <ImageUpload label={tl('Mother Photo')} type="photo" currentUrl={f.mother_photo_url}
           onFileReady={file => { setPhotoFile(file); setF(x => ({ ...x, mother_photo_url: URL.createObjectURL(file) })) }}
           shape="circle" previewSize={80} />
-        <div style={{ flex: 1, fontSize: 12, color: B.textMid, marginTop: 24, lineHeight: 1.7 }}>
-          Upload a clear photo of the mother.<br />Auto-compressed to ~150KB before saving.
-        </div>
+        <div style={{ flex: 1, fontSize: 12, color: B.textMid, marginTop: 24, lineHeight: 1.7 }}>{tl('Upload a clear photo of the mother.')}<br />{tl('Auto-compressed to ~150KB before saving.')}</div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '0 16px' }}>
-        <FS label="Project" value={f.project} onChange={handleProjectChange} options={[{ value: 'OVC', label: 'OVC' }, { value: 'HF', label: 'HF' }]} />
+        <FS label={tl('Project')} value={f.project} onChange={handleProjectChange} options={[{ value: 'OVC', label: 'OVC' }, { value: 'HF', label: 'HF' }]} />
         {f.project === 'HF' && (
-          <FS label="Branch" value={f.branch} onChange={v => setF(x => ({ ...x, branch: v, city: v || 'Addis Ababa' }))} options={[{ value: '', label: 'Select branch…' }, ...HF_BRANCHES.map(b => ({ value: b, label: b }))]} />
+          <FS label={tl('Branch')} value={f.branch} onChange={v => setF(x => ({ ...x, branch: v, city: v || 'Addis Ababa' }))} options={[{ value: '', label: tl('Select branch…') }, ...HF_BRANCHES.map(b => ({ value: b, label: b }))]} />
         )}
         <FI label={isCollector ? 'Family Code' : 'Family Code (system-generated)'} value={isCollector ? 'Assigned after approval' : f.family_code} disabled req />
-        <FI label="Mother Full Name" value={f.mother_name} onChange={s('mother_name')} placeholder="Full name" req />
-        <FI label="National ID Number" value={f.mother_id_number} onChange={s('mother_id_number')} placeholder="123-456-789" />
-        <FI label="Phone Number" value={f.phone_number} onChange={s('phone_number')} type="tel" placeholder="0911-000-000" req />
-        <FI label="Alternate Phone" value={f.alternate_phone} onChange={s('alternate_phone')} type="tel" placeholder="0922-000-000" />
-        <FI label="District / Sub-City" value={f.district} onChange={s('district')} placeholder="Bole" />
+        <FI label={tl('Mother Full Name')} value={f.mother_name} onChange={s('mother_name')} placeholder={tl('Full name')} req />
+        <FI label={tl('National ID Number')} value={f.mother_id_number} onChange={s('mother_id_number')} placeholder="123-456-789" />
+        <FI label={tl('Phone Number')} value={f.phone_number} onChange={s('phone_number')} type="tel" placeholder="0911-000-000" req />
+        <FI label={tl('Alternate Phone')} value={f.alternate_phone} onChange={s('alternate_phone')} type="tel" placeholder="0922-000-000" />
+        <FI label={tl('District / Sub-City')} value={f.district} onChange={s('district')} placeholder="Bole" />
       </div>
-      <FT label="Full Address" value={f.address} onChange={s('address')} placeholder="Street, Kebele, Woreda…" />
-      <FT label="Case Notes" value={f.notes} onChange={s('notes')} placeholder="Any relevant notes…" />
-      {!isCollector && <FS label="Status" value={f.status} onChange={s('status')} options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }, { value: 'pending', label: 'Pending' }]} />}
+      <FT label={tl('Full Address')} value={f.address} onChange={s('address')} placeholder={tl('Street, Kebele, Woreda…')} />
+      <FT label={tl('Case Notes')} value={f.notes} onChange={s('notes')} placeholder={tl('Any relevant notes…')} />
+      {!isCollector && <FS label={tl('Status')} value={f.status} onChange={s('status')} options={[{ value: 'active', label: tl('Active') }, { value: 'inactive', label: tl('Inactive') }, { value: 'pending', label: tl('Pending') }]} />}
       {/* Bank Info */}
       <BankPicker bank={f.bank} account={f.account_number} onBank={s('bank')} onAccount={s('account_number')} />
       <div style={{
         display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8,
         flexDirection: isMobile ? 'column-reverse' : 'row',
       }}>
-        <Btn onClick={onCancel} variant="secondary" disabled={saving} full={isMobile}>Cancel</Btn>
+        <Btn onClick={onCancel} variant="secondary" disabled={saving} full={isMobile}>{tl('Cancel')}</Btn>
         <Btn onClick={() => onSave(f, photoFile)} disabled={saving} variant="primary" full={isMobile}>
-          {saving ? 'Saving…' : <><Icon name="save" size={16} />{isCollector ? (isNew ? 'Submit for approval' : 'Save & resubmit') : 'Save Family'}</>}
+          {saving ? tl('Saving…') : <><Icon name="save" size={16} />{isCollector ? (isNew ? 'Submit for approval' : 'Save & resubmit') : tl('Save Family')}</>}
         </Btn>
       </div>
     </div>
@@ -1962,53 +1948,53 @@ function ChildForm({ initial, familyId, onSave, onCancel, saving, hasSchoolCert 
   return (
     <div>
       <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', marginBottom: 20, padding: '14px', background: B.greenLight, borderRadius: 12, border: `1px solid ${B.border}` }}>
-        <ImageUpload label="Child Photo" type="photo" currentUrl={f.child_photo_url}
+        <ImageUpload label={tl('Child Photo')} type="photo" currentUrl={f.child_photo_url}
           onFileReady={file => { setPhotoFile(file); setF(x => ({ ...x, child_photo_url: URL.createObjectURL(file) })) }}
           shape="circle" previewSize={72} />
-        <div style={{ flex: 1, fontSize: 12, color: B.textMid, lineHeight: 1.7, marginTop: 20 }}>Clear photo of the child. Auto-compressed before saving.</div>
+        <div style={{ flex: 1, fontSize: 12, color: B.textMid, lineHeight: 1.7, marginTop: 20 }}>{tl('Clear photo of the child. Auto-compressed before saving.')}</div>
       </div>
-      <FI label="Child Full Name" value={f.child_name} onChange={s('child_name')} placeholder="Full name" req />
+      <FI label={tl('Child Full Name')} value={f.child_name} onChange={s('child_name')} placeholder={tl('Full name')} req />
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '0 16px' }}>
-        <FS label="Gender" value={f.gender} onChange={s('gender')} options={[{ value: 'female', label: 'Female' }, { value: 'male', label: 'Male' }]} />
-        <FI label="Date of Birth" value={f.date_of_birth} onChange={s('date_of_birth')} type="date" req />
-        <FI label="Grade / Level" value={f.grade} onChange={s('grade')} placeholder="Grade 4" />
-        <FI label="School Name" value={f.school_name} onChange={s('school_name')} placeholder="School name" />
-        <FI label="Academic Average (0–100)" value={f.academic_average} onChange={s('academic_average')} type="number" placeholder="e.g. 85" />
-        <FS label="Academic Status" value={f.academic_status} onChange={s('academic_status')} options={[
-          { value: '', label: 'Select status…' },
-          { value: 'Excellent', label: 'Excellent' },
-          { value: 'Good', label: 'Good' },
-          { value: 'Average', label: 'Average' },
-          { value: 'Needs Support', label: 'Needs Support' },
+        <FS label={tl('Gender')} value={f.gender} onChange={s('gender')} options={[{ value: 'female', label: tl('Female') }, { value: 'male', label: tl('Male') }]} />
+        <FI label={tl('Date of Birth')} value={f.date_of_birth} onChange={s('date_of_birth')} type="date" req />
+        <FI label={tl('Grade / Level')} value={f.grade} onChange={s('grade')} placeholder="Grade 4" />
+        <FI label={tl('School Name')} value={f.school_name} onChange={s('school_name')} placeholder={tl('School name')} />
+        <FI label={tl('Academic Average (0–100)')} value={f.academic_average} onChange={s('academic_average')} type="number" placeholder="e.g. 85" />
+        <FS label={tl('Academic Status')} value={f.academic_status} onChange={s('academic_status')} options={[
+          { value: '', label: tl('Select status…') },
+          { value: 'Excellent', label: tl('Excellent') },
+          { value: 'Good', label: tl('Good') },
+          { value: 'Average', label: tl('Average') },
+          { value: 'Needs Support', label: tl('Needs Support') },
         ]} />
       </div>
-      <FT label="Medical Notes" value={f.medical_notes} onChange={s('medical_notes')} placeholder="Any health conditions…" />
+      <FT label={tl('Medical Notes')} value={f.medical_notes} onChange={s('medical_notes')} placeholder={tl('Any health conditions…')} />
       <div style={{ background: B.greenLight, borderRadius: 11, padding: '14px', marginBottom: 14, border: `1px solid ${B.border}` }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: B.textMid, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.04em' }}><Icon name="attach" size={13} /> Child Documents</div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: B.textMid, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.04em' }}><Icon name="attach" size={13} />{' '}{tl('Child Documents')}</div>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14 }}>
-          <ImageUpload label="Birth Certificate" type="document" onFileReady={f => setBirthCertFile(f)} />
+          <ImageUpload label={tl('Birth Certificate')} type="document" onFileReady={f => setBirthCertFile(f)} />
           <ImageUpload label={certRequired ? 'School Certificate (REQUIRED)' : 'School Certificate'} type="document" onFileReady={f => setSchoolCertFile(f)} />
         </div>
-        {hasSchoolCert && <div style={{ fontSize: 11, color: B.green, marginTop: 6, fontWeight: 600 }}><Icon name="check" size={12} /> A School Certificate is already on file.</div>}
-        <div style={{ fontSize: 11, color: B.textLight, marginTop: 6 }}><Icon name="camera" size={12} /> Photo or scan — auto-compressed up to 80% smaller.</div>
+        {hasSchoolCert && <div style={{ fontSize: 11, color: B.green, marginTop: 6, fontWeight: 600 }}><Icon name="check" size={12} />{' '}{tl('A School Certificate is already on file.')}</div>}
+        <div style={{ fontSize: 11, color: B.textLight, marginTop: 6 }}><Icon name="camera" size={12} />{' '}{tl('Photo or scan — auto-compressed up to 80% smaller.')}</div>
       </div>
       {f.date_of_birth && childAge != null && childAge < MIN_PAYING_AGE && (
-        <div style={{ background: B.errBg, color: B.red, border: `1px dashed ${B.red}`, borderRadius: 10, padding: '9px 12px', marginBottom: 10, fontSize: 12.5, fontWeight: 700 }}>Under age ({childAge}) — children must be {MIN_PAYING_AGE} or older to be in payment. Saved for records only.</div>
+        <div style={{ background: B.errBg, color: B.red, border: `1px dashed ${B.red}`, borderRadius: 10, padding: '9px 12px', marginBottom: 10, fontSize: 12.5, fontWeight: 700 }}>{tl('Under age (')}{childAge}{tl(') — children must be')}{' '}{MIN_PAYING_AGE}{' '}{tl('or older to be in payment. Saved for records only.')}</div>
       )}
       {f.date_of_birth && childAge != null && childAge > MAX_PAYING_AGE && !certRequired && (
-        <div style={{ background: B.errBg, color: B.red, border: `1px dashed ${B.red}`, borderRadius: 10, padding: '9px 12px', marginBottom: 10, fontSize: 12.5, fontWeight: 700 }}>{childAge <= MAX_SCHOOL_AGE ? `Age ${childAge} and not in school (fill in School Name / Grade if still studying)` : `Over age (${childAge})`} — not in payment. Saved for records only.</div>
+        <div style={{ background: B.errBg, color: B.red, border: `1px dashed ${B.red}`, borderRadius: 10, padding: '9px 12px', marginBottom: 10, fontSize: 12.5, fontWeight: 700 }}>{childAge <= MAX_SCHOOL_AGE ? tl('Age {childAge} and not in school (fill in School Name / Grade if still studying)', { "childAge": childAge }) : tl('Over age ({childAge})', { "childAge": childAge })}{' '}{tl('— not in payment. Saved for records only.')}</div>
       )}
       {certMissing && (
-        <div style={{ background: B.errBg, color: B.red, border: `1px solid ${B.red}`, borderRadius: 10, padding: '9px 12px', marginBottom: 10, fontSize: 12.5, fontWeight: 700 }}>NEED CERTIFICATE — age {childAge} and still in school: uploading the School Certificate is a must.</div>
+        <div style={{ background: B.errBg, color: B.red, border: `1px solid ${B.red}`, borderRadius: 10, padding: '9px 12px', marginBottom: 10, fontSize: 12.5, fontWeight: 700 }}>{tl('NEED CERTIFICATE — age')}{' '}{childAge}{' '}{tl('and still in school: uploading the School Certificate is a must.')}</div>
       )}
       {formErr && <div style={{ color: B.red, fontSize: 12.5, fontWeight: 700, marginBottom: 10 }}>{formErr}</div>}
       <div style={{
         display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 6,
         flexDirection: isMobile ? 'column-reverse' : 'row',
       }}>
-        <Btn onClick={onCancel} variant="secondary" disabled={saving} full={isMobile}>Cancel</Btn>
+        <Btn onClick={onCancel} variant="secondary" disabled={saving} full={isMobile}>{tl('Cancel')}</Btn>
         <Btn onClick={trySave} disabled={saving} variant="primary" full={isMobile}>
-          {saving ? 'Saving…' : <><Icon name="save" size={16} />Save Child</>}
+          {saving ? tl('Saving…') : <><Icon name="save" size={16} />{tl('Save Child')}</>}
         </Btn>
       </div>
     </div>
@@ -2035,8 +2021,8 @@ function AnalyticsPage({ families, children, isMobile }) {
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, ${B.gold}, ${B.green})` }} />
         <Icon name="chart" size={28} color={B.gold} />
         <div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>HDA Statistics Overview</div>
-          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>Hidaya Development Association — Case Management Data</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>{tl('HDA Statistics Overview')}</div>
+          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>{tl('Hidaya Development Association — Case Management Data')}</div>
         </div>
       </div>
 
@@ -2045,7 +2031,7 @@ function AnalyticsPage({ families, children, isMobile }) {
         <div style={{ background: B.card, borderRadius: 16, border: `1px solid ${B.border}`, padding: '20px', boxShadow: `0 2px 12px rgba(30,125,34,0.06)` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
             <div style={{ width: 3, height: 16, borderRadius: 2, background: `linear-gradient(to bottom, ${B.gold}, ${B.green})` }} />
-            <span style={{ fontSize: 14, fontWeight: 750, color: B.text }}>Families by Status</span>
+            <span style={{ fontSize: 14, fontWeight: 750, color: B.text }}>{tl('Families by Status')}</span>
           </div>
           <DonutChart active={byStatus.active} inactive={byStatus.inactive} pending={byStatus.pending} />
           <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -2067,7 +2053,7 @@ function AnalyticsPage({ families, children, isMobile }) {
         <div style={{ background: B.card, borderRadius: 16, border: `1px solid ${B.border}`, padding: '20px', boxShadow: `0 2px 12px rgba(30,125,34,0.06)` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
             <div style={{ width: 3, height: 16, borderRadius: 2, background: `linear-gradient(to bottom, ${B.gold}, ${B.green})` }} />
-            <span style={{ fontSize: 14, fontWeight: 750, color: B.text }}>Families by District</span>
+            <span style={{ fontSize: 14, fontWeight: 750, color: B.text }}>{tl('Families by District')}</span>
           </div>
           {Object.entries(byDistrict).map(([d, v]) => (
             <div key={d} style={{ marginBottom: 11 }}>
@@ -2086,7 +2072,7 @@ function AnalyticsPage({ families, children, isMobile }) {
         <div style={{ background: B.card, borderRadius: 16, border: `1px solid ${B.border}`, padding: '20px', boxShadow: `0 2px 12px rgba(30,125,34,0.06)` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
             <div style={{ width: 3, height: 16, borderRadius: 2, background: `linear-gradient(to bottom, ${B.gold}, ${B.green})` }} />
-            <span style={{ fontSize: 14, fontWeight: 750, color: B.text }}>Summary</span>
+            <span style={{ fontSize: 14, fontWeight: 750, color: B.text }}>{tl('Summary')}</span>
           </div>
           {[
             { i: 'users', l: 'Total Families', v: families.length },
@@ -2114,15 +2100,13 @@ function AnalyticsPage({ families, children, isMobile }) {
         padding: isMobile ? '14px' : '16px 20px', marginTop: 16,
         boxShadow: `0 2px 12px rgba(30,125,34,0.06)`,
       }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
-          Children by Age &amp; Gender
-        </div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>{tl('Children by Age & Gender')}</div>
 
         {/* Gender totals */}
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
           {[
-            { label: 'Male', key: 'male', color: '#0891b2', bg: '#e0f2fe' },
-            { label: 'Female', key: 'female', color: B.goldDark, bg: B.goldLight },
+            { label: tl('Male'), key: 'male', color: '#0891b2', bg: '#e0f2fe' },
+            { label: tl('Female'), key: 'female', color: B.goldDark, bg: B.goldLight },
           ].map(g => {
             const count = children.filter(c => (c.gender || '').toLowerCase() === g.key).length
             return (
@@ -2155,10 +2139,10 @@ function AnalyticsPage({ families, children, isMobile }) {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                 <thead>
                   <tr style={{ borderBottom: `1.5px solid ${B.border}` }}>
-                    <th style={{ textAlign: 'left', padding: '6px 8px', color: B.textLight, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em' }}>Age</th>
-                    <th style={{ textAlign: 'right', padding: '6px 8px', color: B.textLight, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em' }}>Total</th>
-                    <th style={{ textAlign: 'right', padding: '6px 8px', color: '#0891b2', fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em' }}>Male</th>
-                    <th style={{ textAlign: 'right', padding: '6px 8px', color: B.goldDark, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em' }}>Female</th>
+                    <th style={{ textAlign: 'left', padding: '6px 8px', color: B.textLight, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em' }}>{tl('Age')}</th>
+                    <th style={{ textAlign: 'right', padding: '6px 8px', color: B.textLight, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em' }}>{tl('Total')}</th>
+                    <th style={{ textAlign: 'right', padding: '6px 8px', color: '#0891b2', fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em' }}>{tl('Male')}</th>
+                    <th style={{ textAlign: 'right', padding: '6px 8px', color: B.goldDark, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em' }}>{tl('Female')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2173,8 +2157,7 @@ function AnalyticsPage({ families, children, isMobile }) {
                   {unknown > 0 && (
                     <tr>
                       <td colSpan={4} style={{ padding: '7px 8px', color: B.textLight, fontStyle: 'italic' }}>
-                        {unknown} {unknown === 1 ? 'child has' : 'children have'} no birth date on file
-                      </td>
+                        {unknown} {unknown === 1 ? tl('child has') : tl('children have')}{' '}{tl('no birth date on file')}</td>
                     </tr>
                   )}
                 </tbody>
@@ -2203,8 +2186,8 @@ function AcademicsPage({ children, isMobile }) {
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, ${B.gold}, ${B.green})` }} />
         <Icon name="graduation" size={28} color={B.gold} />
         <div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>Academic Overview</div>
-          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>Academic status and student breakdown</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>{tl('Academic Overview')}</div>
+          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>{tl('Academic status and student breakdown')}</div>
         </div>
       </div>
 
@@ -2214,16 +2197,14 @@ function AcademicsPage({ children, isMobile }) {
         background: B.card, borderRadius: 14, border: `1px solid ${B.border}`,
         padding: isMobile ? '12px 14px' : '14px 18px', boxShadow: `0 2px 12px rgba(30,125,34,0.06)`,
       }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: 4, alignSelf: 'center' }}>
-          Academic Status
-        </div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: 4, alignSelf: 'center' }}>{tl('Academic Status')}</div>
         {[
-          { label: 'Excellent', color: B.green, bg: B.greenLight },
-          { label: 'Good', color: '#0891b2', bg: '#e0f2fe' },
-          { label: 'Average', color: B.goldDark, bg: B.goldLight },
-          { label: 'Needs Support', color: B.red, bg: B.errBg },
+          { label: tl('Excellent'), value: 'Excellent', color: B.green, bg: B.greenLight },
+          { label: tl('Good'), value: 'Good', color: '#0891b2', bg: '#e0f2fe' },
+          { label: tl('Average'), value: 'Average', color: B.goldDark, bg: B.goldLight },
+          { label: tl('Needs Support'), value: 'Needs Support', color: B.red, bg: B.errBg },
         ].map(s => {
-          const count = children.filter(c => c.academic_status === s.label).length
+          const count = children.filter(c => c.academic_status === s.value).length
           return (
             <div key={s.label} style={{ background: s.bg, color: s.color, borderRadius: 20, padding: '5px 14px', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: s.color }} />
@@ -2239,15 +2220,13 @@ function AcademicsPage({ children, isMobile }) {
         padding: isMobile ? '14px' : '16px 20px',
         boxShadow: `0 2px 12px rgba(30,125,34,0.06)`,
       }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
-          Student Breakdown
-        </div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>{tl('Student Breakdown')}</div>
 
         {/* Gender totals */}
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
           {[
-            { label: 'Male', key: 'male', color: '#0891b2', bg: '#e0f2fe' },
-            { label: 'Female', key: 'female', color: B.goldDark, bg: B.goldLight },
+            { label: tl('Male'), key: 'male', color: '#0891b2', bg: '#e0f2fe' },
+            { label: tl('Female'), key: 'female', color: B.goldDark, bg: B.goldLight },
           ].map(g => {
             const count = children.filter(c => (c.gender || '').toLowerCase() === g.key).length
             return (
@@ -2277,10 +2256,10 @@ function AcademicsPage({ children, isMobile }) {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                 <thead>
                   <tr style={{ borderBottom: `1.5px solid ${B.border}` }}>
-                    <th style={{ textAlign: 'left', padding: '6px 8px', color: B.textLight, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em' }}>Grade</th>
-                    <th style={{ textAlign: 'right', padding: '6px 8px', color: B.textLight, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em' }}>Total</th>
-                    <th style={{ textAlign: 'right', padding: '6px 8px', color: '#0891b2', fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em' }}>Male</th>
-                    <th style={{ textAlign: 'right', padding: '6px 8px', color: B.goldDark, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em' }}>Female</th>
+                    <th style={{ textAlign: 'left', padding: '6px 8px', color: B.textLight, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em' }}>{tl('Grade')}</th>
+                    <th style={{ textAlign: 'right', padding: '6px 8px', color: B.textLight, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em' }}>{tl('Total')}</th>
+                    <th style={{ textAlign: 'right', padding: '6px 8px', color: '#0891b2', fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em' }}>{tl('Male')}</th>
+                    <th style={{ textAlign: 'right', padding: '6px 8px', color: B.goldDark, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.04em' }}>{tl('Female')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2313,21 +2292,21 @@ function SettingsPage({ user, onUpdateUser, toast, isMobile, rates = DEFAULT_RAT
   const setBankField = (id, k, v) => setLset(x => ({ ...x, banks: { ...x.banks, [id]: { ...x.banks[id], [k]: v } } }))
   const setSig = (i, k, v) => setLset(x => ({ ...x, signatories: x.signatories.map((sg, j) => j === i ? { ...sg, [k]: v } : sg) }))
   const handleSaveLetter = async () => {
-    for (const b of BANKS) { const v = lset.banks[b.id]; if (!v.name.trim() || !v.account.trim()) { toast(`${b.label}: bank name and our account number are required`, 'error'); return } }
+    for (const b of BANKS) { const v = lset.banks[b.id]; if (!v.name.trim() || !v.account.trim()) { toast(tl('{label}: bank name and our account number are required', { "label": b.label }), 'error'); return } }
     setSavingLetter(true)
     const err = await saveLetterSettings(lset, user.id)
     setSavingLetter(false)
     if (err) { toast('Could not save: ' + err.message + ' (run migration 010)', 'error'); return }
     onLetterChange?.(lset)
     logActivity(user, 'settings', `${user?.full_name || 'Admin'} updated the bank letter details (bank, branch, address, account numbers)`)
-    toast('Bank letter details saved', 'success')
+    toast(tl('Bank letter details saved'), 'success')
   }
   const [mRate, setMRate] = useState(String(rates.mother))
   const [cRate, setCRate] = useState(String(rates.child))
   const [savingRates, setSavingRates] = useState(false)
   useEffect(() => { setMRate(String(rates.mother)); setCRate(String(rates.child)) }, [rates.mother, rates.child])
   const handleSaveRates = async () => {
-    if (mRate === '' || cRate === '' || Number(mRate) < 0 || Number(cRate) < 0) { toast('Enter valid amounts', 'error'); return }
+    if (mRate === '' || cRate === '' || Number(mRate) < 0 || Number(cRate) < 0) { toast(tl('Enter valid amounts'), 'error'); return }
     setSavingRates(true)
     const next = { mother: Number(mRate), child: Number(cRate) }
     const err = await saveRates(next, user.id)
@@ -2335,7 +2314,7 @@ function SettingsPage({ user, onUpdateUser, toast, isMobile, rates = DEFAULT_RAT
     if (err) { toast('Could not save rates: ' + err.message + ' (run migration 004_payment_rates.sql)', 'error'); return }
     onRatesChange?.(next)
     logActivity(user, 'settings', `${user?.full_name || 'Admin'} changed payment rates: mother ${next.mother.toLocaleString()} ETB, child ${next.child.toLocaleString()} ETB`)
-    toast('Payment rates saved', 'success')
+    toast(tl('Payment rates saved'), 'success')
   }
 
   const [fullName, setFullName] = useState(user?.full_name || '')
@@ -2345,7 +2324,7 @@ function SettingsPage({ user, onUpdateUser, toast, isMobile, rates = DEFAULT_RAT
   const [saving, setSaving] = useState(false)
 
   const handleSave = async () => {
-    if (!fullName) { toast('Full name is required', 'error'); return }
+    if (!fullName) { toast(tl('Full name is required'), 'error'); return }
     setSaving(true)
     try {
       let profile_photo_url = user?.profile_photo_url || null
@@ -2361,7 +2340,7 @@ function SettingsPage({ user, onUpdateUser, toast, isMobile, rates = DEFAULT_RAT
         setNewPass('')
       }
       onUpdateUser({ ...user, full_name: fullName, profile_photo_url })
-      toast('Settings saved', 'success')
+      toast(tl('Settings saved'), 'success')
     } catch (e) { toast('Failed to save: ' + e.message, 'error') }
     finally { setSaving(false) }
   }
@@ -2369,74 +2348,78 @@ function SettingsPage({ user, onUpdateUser, toast, isMobile, rates = DEFAULT_RAT
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: isMobile ? '16px 4px' : '24px 0' }}>
       <div style={{ background: B.card, borderRadius: 16, border: `1px solid ${B.border}`, padding: isMobile ? 20 : 28, boxShadow: `0 2px 12px rgba(30,125,34,0.06)` }}>
-        <div style={{ fontWeight: 800, fontSize: 16, color: B.text, marginBottom: 20 }}>My Profile</div>
+        <div style={{ fontWeight: 800, fontSize: 16, color: B.text, marginBottom: 20 }}>{tl('My Profile')}</div>
 
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
-          <ImageUpload label="Profile Photo" type="photo" currentUrl={photoPreview}
+          <ImageUpload label={tl('Profile Photo')} type="photo" currentUrl={photoPreview}
             onFileReady={file => { setPhotoFile(file); setPhotoPreview(URL.createObjectURL(file)) }}
             shape="circle" previewSize={88} />
         </div>
 
-        <FI label="Full Name" value={fullName} onChange={setFullName} placeholder="Your full name" req />
+        <div style={{ marginBottom: 16 }}>
+          <FL>Language · ቋንቋ · Afaan</FL>
+          <LanguageSwitcher userId={user?.id} />
+        </div>
+
+        <FI label={tl('Full Name')} value={fullName} onChange={setFullName} placeholder={tl('Your full name')} req />
 
         <div style={{ marginBottom: 16 }}>
-          <FL>Email Address</FL>
+          <FL>{tl('Email Address')}</FL>
           <input value={user?.email || ''} disabled style={{ ...inputBase, background: B.bg, color: B.textLight, cursor: 'not-allowed' }} />
         </div>
 
         <div style={{ marginBottom: 4 }}>
-          <FL>Role</FL>
+          <FL>{tl('Role')}</FL>
           <input value={roleLabel(user?.role)} disabled style={{ ...inputBase, background: B.bg, color: B.textLight, cursor: 'not-allowed' }} />
         </div>
 
         <div style={{ height: 1, background: B.border, margin: '20px 0' }} />
 
-        <div style={{ fontWeight: 700, fontSize: 13, color: B.text, marginBottom: 12 }}>Change Password</div>
-        <FI label="New Password" value={newPass} onChange={setNewPass} type="password" placeholder="Leave blank to keep current password" />
+        <div style={{ fontWeight: 700, fontSize: 13, color: B.text, marginBottom: 12 }}>{tl('Change Password')}</div>
+        <FI label={tl('New Password')} value={newPass} onChange={setNewPass} type="password" placeholder={tl('Leave blank to keep current password')} />
 
         <Btn onClick={handleSave} variant="primary" full disabled={saving}>
-          {saving ? 'Saving…' : 'Save Changes'}
+          {saving ? tl('Saving…') : tl('Save Changes')}
         </Btn>
       </div>
 
       {user?.role === 'admin' && (
         <div style={{ background: B.card, borderRadius: 16, border: `1px solid ${B.border}`, padding: isMobile ? 20 : 28, boxShadow: `0 2px 12px rgba(30,125,34,0.06)`, marginTop: 16 }}>
-          <div style={{ fontWeight: 800, fontSize: 16, color: B.text, marginBottom: 4 }}>Payment Rates</div>
-          <div style={{ fontSize: 12, color: B.textMid, marginBottom: 16 }}>Monthly amount per family = mother amount + (number of children × amount per child)</div>
-          <FI label="Amount per mother (ETB)" value={mRate} onChange={setMRate} type="number" placeholder="e.g. 3500" />
-          <FI label="Amount per child (ETB)" value={cRate} onChange={setCRate} type="number" placeholder="e.g. 1500" />
-          <div style={{ background: B.greenLight, border: `1px solid ${B.border}`, borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: B.text }}>
-            Example — mother with 3 children: {Number(mRate || 0).toLocaleString()} + (3 × {Number(cRate || 0).toLocaleString()}) = <b>{monthlyFor({ mother: mRate, child: cRate }, 3).toLocaleString()} ETB / month</b>
-            <div style={{ fontSize: 12, color: B.textMid, marginTop: 4 }}>× 12 months = {(monthlyFor({ mother: mRate, child: cRate }, 3) * 12).toLocaleString()} ETB / year</div>
+          <div style={{ fontWeight: 800, fontSize: 16, color: B.text, marginBottom: 4 }}>{tl('Payment Rates')}</div>
+          <div style={{ fontSize: 12, color: B.textMid, marginBottom: 16 }}>{tl('Monthly amount per family = mother amount + (number of children × amount per child)')}</div>
+          <FI label={tl('Amount per mother (ETB)')} value={mRate} onChange={setMRate} type="number" placeholder="e.g. 3500" />
+          <FI label={tl('Amount per child (ETB)')} value={cRate} onChange={setCRate} type="number" placeholder="e.g. 1500" />
+          <div style={{ background: B.greenLight, border: `1px solid ${B.border}`, borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: B.text }}>{tl('Example — mother with 3 children:')}{' '}{Number(mRate || 0).toLocaleString()} + (3 × {Number(cRate || 0).toLocaleString()}) = <b>{monthlyFor({ mother: mRate, child: cRate }, 3).toLocaleString()}{' '}{tl('ETB / month')}</b>
+            <div style={{ fontSize: 12, color: B.textMid, marginTop: 4 }}>{tl('× 12 months =')}{' '}{(monthlyFor({ mother: mRate, child: cRate }, 3) * 12).toLocaleString()}{' '}{tl('ETB / year')}</div>
           </div>
-          <Btn onClick={handleSaveRates} variant="primary" full disabled={savingRates}>{savingRates ? 'Saving…' : 'Save Payment Rates'}</Btn>
+          <Btn onClick={handleSaveRates} variant="primary" full disabled={savingRates}>{savingRates ? tl('Saving…') : tl('Save Payment Rates')}</Btn>
         </div>
       )}
 
       {user?.role === 'admin' && (
         <div style={{ background: B.card, borderRadius: 16, border: `1px solid ${B.border}`, padding: isMobile ? 20 : 28, boxShadow: `0 2px 12px rgba(30,125,34,0.06)`, marginTop: 16 }}>
-          <div style={{ fontWeight: 800, fontSize: 16, color: B.text, marginBottom: 4 }}>Bank Letter Details</div>
-          <div style={{ fontSize: 12, color: B.textMid, marginBottom: 16 }}>Printed in the "To" block and the body of every bank letter. HDA's own account number at each bank goes in the sentence "…from our account number …".</div>
+          <div style={{ fontWeight: 800, fontSize: 16, color: B.text, marginBottom: 4 }}>{tl('Bank Letter Details')}</div>
+          <div style={{ fontSize: 12, color: B.textMid, marginBottom: 16 }}>{tl('Printed in the "To" block and the body of every bank letter. HDA\'s own account number at each bank goes in the sentence "…from our account number …".')}</div>
           {BANKS.map(b => (
             <div key={b.id} style={{ border: `1.5px solid ${B.border}`, borderLeft: `5px solid ${b.color}`, borderRadius: 12, padding: 14, marginBottom: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                 <BankMark bank={b} size={30} />
                 <div style={{ fontWeight: 800, fontSize: 14, color: B.text }}>{b.label}</div>
               </div>
-              <FI label="Bank name" value={lset.banks[b.id].name} onChange={v => setBankField(b.id, 'name', v)} placeholder={b.name} />
-              <FI label="Branch name" value={lset.banks[b.id].branch} onChange={v => setBankField(b.id, 'branch', v)} placeholder="e.g. Arada Giorgis" />
-              <FI label="Address" value={lset.banks[b.id].address} onChange={v => setBankField(b.id, 'address', v)} placeholder="Addis Ababa" />
-              <FI label="Our (HDA) account number at this bank" value={lset.banks[b.id].account} onChange={v => setBankField(b.id, 'account', v.replace(/[^\d]/g, ''))} placeholder="Account number" />
+              <FI label={tl('Bank name')} value={lset.banks[b.id].name} onChange={v => setBankField(b.id, 'name', v)} placeholder={b.name} />
+              <FI label={tl('Branch name')} value={lset.banks[b.id].branch} onChange={v => setBankField(b.id, 'branch', v)} placeholder={tl('e.g. Arada Giorgis')} />
+              <FI label={tl('Address')} value={lset.banks[b.id].address} onChange={v => setBankField(b.id, 'address', v)} placeholder={tl('Addis Ababa')} />
+              <FI label={tl('Our (HDA) account number at this bank')} value={lset.banks[b.id].account} onChange={v => setBankField(b.id, 'account', v.replace(/[^\d]/g, ''))} placeholder={tl('Account number')} />
             </div>
           ))}
-          <div style={{ fontWeight: 700, fontSize: 13, color: B.text, margin: '6px 0 8px' }}>Signatories (bottom of the letter)</div>
+          <div style={{ fontWeight: 700, fontSize: 13, color: B.text, margin: '6px 0 8px' }}>{tl('Signatories (bottom of the letter)')}</div>
           {lset.signatories.map((sg, i) => (
             <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
-              <FI label={`Name ${i + 1}`} value={sg.name} onChange={v => setSig(i, 'name', v)} />
-              <FI label="Title" value={sg.title} onChange={v => setSig(i, 'title', v)} />
+              <FI label={tl('Name {x}', { "x": i + 1 })} value={sg.name} onChange={v => setSig(i, 'name', v)} />
+              <FI label={tl('Title')} value={sg.title} onChange={v => setSig(i, 'title', v)} />
             </div>
           ))}
-          <Btn onClick={handleSaveLetter} variant="primary" full disabled={savingLetter}>{savingLetter ? 'Saving…' : 'Save Bank Letter Details'}</Btn>
+          <Btn onClick={handleSaveLetter} variant="primary" full disabled={savingLetter}>{savingLetter ? tl('Saving…') : tl('Save Bank Letter Details')}</Btn>
         </div>
       )}
 
@@ -2581,6 +2564,7 @@ export default function App() {
     const { data, error } = await supabase.from('users').select('*').eq('id', uid).maybeSingle()
     if (error) { setProfileError(error.message); setAuthLoading(false); return } // keep the last known profile on a temporary error
     setProfileError(null)
+    if (data?.language) setLang(data.language) // the language saved on the profile follows the user to any device
     const { data: { user: authUser } } = await supabase.auth.getUser()
     setUser(data ? { ...data, email: authUser?.email } : null)
     setAuthLoading(false)
@@ -2655,20 +2639,20 @@ export default function App() {
 
   const addBranch = async name => {
     const clean = String(name || '').trim().replace(/\s+/g, ' ')
-    if (!clean) { toast('Enter the branch name', 'error'); return false }
-    if (HF_BRANCHES.some(b => b.toLowerCase() === clean.toLowerCase())) { toast(`"${clean}" already exists`, 'error'); return false }
+    if (!clean) { toast(tl('Enter the branch name'), 'error'); return false }
+    if (HF_BRANCHES.some(b => b.toLowerCase() === clean.toLowerCase())) { toast(tl('"{clean}" already exists', { "clean": clean }), 'error'); return false }
     const next = [...HF_BRANCHES, clean]
     const err = await saveBranches(next, user.id)
     if (err) { toast('Could not save the branch: ' + err.message + ' (run migration 010)', 'error'); return false }
     HF_BRANCHES.splice(0, HF_BRANCHES.length, ...next); setBranchesVer(v => v + 1)
     logActivity(user, 'settings', `${user?.full_name || 'Admin'} added a new HF branch: ${clean}`)
-    toast(`Branch "${clean}" added`)
+    toast(tl('Branch "{clean}" added', { "clean": clean }))
     return true
   }
 
   const saveFamily = async (form, photoFile) => {
-    if (!form.family_code || !form.mother_name) { toast('Family code and mother name are required', 'error'); return }
-    if (isCollector && form.project === 'HF' && !form.branch) { toast('Please choose the branch', 'error'); return }
+    if (!form.family_code || !form.mother_name) { toast(tl('Family code and mother name are required'), 'error'); return }
+    if (isCollector && form.project === 'HF' && !form.branch) { toast(tl('Please choose the branch'), 'error'); return }
     setSaving(true)
     let newFamilyId = null
     try {
@@ -2686,17 +2670,17 @@ export default function App() {
           toast(submissionState(editingFamily) === 'returned' ? 'Resubmitted for approval' : 'Submission updated')
         } else {
           logActivity(user, 'family', `${user?.full_name || 'Someone'} updated the profile of ${form.mother_name}`, editingFamily.id)
-          toast('Family updated')
+          toast(tl('Family updated'))
         }
       } else {
         const { data: created, error } = await supabase.from('families').insert({ ...payload, created_by: session.user.id }).select('id').single()
         if (error) throw error
         if (isCollector) {
           logActivity(user, 'submission', `${user?.full_name || 'A data collector'} sent a new family for approval: ${form.mother_name} (${form.project}${form.branch ? ' · ' + form.branch : ''})`, created?.id || null)
-          toast('Submitted for approval — now add the children')
+          toast(tl('Submitted for approval — now add the children'))
         } else {
           logActivity(user, 'family', `${user?.full_name || 'Someone'} registered a new family: ${form.mother_name} (${form.family_code})`, created?.id || null)
-          toast('Family registered')
+          toast(tl('Family registered'))
         }
         newFamilyId = created?.id || null
       }
@@ -2709,7 +2693,7 @@ export default function App() {
   }
 
   const saveChild = async (form, photoFile, birthCertFile, schoolCertFile, famId) => {
-    if (!form.child_name) { toast('Child name is required', 'error'); return }
+    if (!form.child_name) { toast(tl('Child name is required'), 'error'); return }
     setSaving(true)
     try {
       const fam = families.find(f => f.id === famId)
@@ -2725,13 +2709,13 @@ export default function App() {
         const { error } = await supabase.from('children').update(payload).eq('id', editingChild.id)
         if (error) throw error
         logActivity(user, 'family', `${user?.full_name || 'Someone'} updated child ${form.child_name} (${fam?.mother_name})`, famId)
-        toast('Child updated')
+        toast(tl('Child updated'))
       } else {
         const { data, error } = await supabase.from('children').insert(payload).select().single()
         if (error) throw error
         childId = data.id
         logActivity(user, 'family', `${user?.full_name || 'Someone'} added child ${form.child_name} to ${fam?.mother_name}`, famId)
-        toast('Child added')
+        toast(tl('Child added'))
       }
       const uploadDoc = async (file, docType) => {
         const path = `${fam?.family_code}/child-${childId?.slice(0, 8)}-${docType.replace(/\s+/g, '-').toLowerCase()}.jpg`
@@ -2753,12 +2737,12 @@ export default function App() {
         if (error) throw error
         if (page === 'detail') setPage(detailOrigin || 'dashboard')
         logActivity(user, 'family', `${user?.full_name || 'Someone'} deleted family ${confirmDelete.item.mother_name} (${confirmDelete.item.family_code})`)
-        toast('Family deleted', 'info')
+        toast(tl('Family deleted'), 'info')
       } else {
         const { error } = await supabase.from('children').delete().eq('id', confirmDelete.item.id)
         if (error) throw error
         logActivity(user, 'family', `${user?.full_name || 'Someone'} removed child ${confirmDelete.item.child_name}`, confirmDelete.item.family_id)
-        toast('Child removed', 'info')
+        toast(tl('Child removed'), 'info')
       }
       setConfirmDelete(null)
       await loadAll()
@@ -2770,7 +2754,7 @@ export default function App() {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: B.sidebar, gap: 16 }}>
       <img src="/HDA_LOGO.png" alt="HDA" style={{ width: 72, height: 72, objectFit: 'contain', animation: 'spin 2s linear infinite' }}
         onError={e => { e.target.style.display = 'none' }} />
-      <div style={{ color: B.gold, fontSize: 16, fontWeight: 700 }}>Loading HDA System…</div>
+      <div style={{ color: B.gold, fontSize: 16, fontWeight: 700 }}>{tl('Loading HDA System…')}</div>
     </div>
   )
 
@@ -2887,8 +2871,8 @@ export default function App() {
           {!allowed && (
             <div style={{ padding: '70px 20px', textAlign: 'center', color: B.textMid }}>
               <div style={{ marginBottom: 12, color: B.textLight }}><Icon name="lock" size={44} /></div>
-              <div style={{ fontWeight: 800, fontSize: 16, color: B.text, marginBottom: 6 }}>No access to this page</div>
-              <div style={{ fontSize: 13 }}>Your role ({roleLabel(role)}) does not include this area. Ask an administrator if you need it.</div>
+              <div style={{ fontWeight: 800, fontSize: 16, color: B.text, marginBottom: 6 }}>{tl('No access to this page')}</div>
+              <div style={{ fontSize: 13 }}>{tl('Your role (')}{roleLabel(role)}{tl(') does not include this area. Ask an administrator if you need it.')}</div>
             </div>
           )}
           {allowed && page === 'dashboard' && (
@@ -2999,16 +2983,15 @@ export default function App() {
         <ChildForm key={editingChild?.id || 'new-' + showChildForm} initial={editingChild} familyId={childFamilyId} hasSchoolCert={!!editingChild && docs.some(d => d.child_id === editingChild.id && d.document_type === SCHOOL_CERT)} onSave={saveChild} onCancel={() => setShowChildForm(false)} saving={saving} />
       </Modal>
 
-      <Modal open={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Confirm Deletion" width={400}>
+      <Modal open={!!confirmDelete} onClose={() => setConfirmDelete(null)} title={tl('Confirm Deletion')} width={400}>
         <div style={{ textAlign: 'center', padding: '8px 0' }}>
           <div style={{ marginBottom: 12, color: B.red }}><Icon name="alert" size={44} /></div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: B.text, marginBottom: 8 }}>Delete {confirmDelete?.type === 'family' ? 'Family' : 'Child'}?</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: B.text, marginBottom: 8 }}>{tl('Delete')}{' '}{confirmDelete?.type === 'family' ? tl('Family') : tl('Child')}?</div>
           <div style={{ fontSize: 13, color: B.textMid, marginBottom: 24 }}>
-            <strong>{confirmDelete?.item?.mother_name || confirmDelete?.item?.child_name}</strong> will be permanently removed.
-          </div>
+            <strong>{confirmDelete?.item?.mother_name || confirmDelete?.item?.child_name}</strong>{' '}{tl('will be permanently removed.')}</div>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-            <Btn onClick={() => setConfirmDelete(null)} variant="secondary">Cancel</Btn>
-            <Btn onClick={doDelete} variant="danger">Delete Permanently</Btn>
+            <Btn onClick={() => setConfirmDelete(null)} variant="secondary">{tl('Cancel')}</Btn>
+            <Btn onClick={doDelete} variant="danger">{tl('Delete Permanently')}</Btn>
           </div>
         </div>
       </Modal>
