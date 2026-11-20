@@ -2,6 +2,7 @@ import { BANKS, bankById, accountPrefixWarning } from '../lib/banks'
 import { B } from '../lib/theme'
 import Icon from './Icon'
 import BankMark from './BankMark'
+import { tl } from '../lib/i18n'
 
 // Compact bank selector: small circular logos (no card / background) + bank-aware account number.
 // Selected logo gets the bank's brand ring, a slight scale-up and a check badge.
@@ -25,9 +26,9 @@ export default function BankPicker({ bank, account, onBank, onAccount }) {
         @media (prefers-reduced-motion:reduce){.bp-logo,.bp-tick,.bp-acc{transition:none}.bp-opt[aria-checked=true] .bp-logo{transform:none}}
       `}</style>
       <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: B.textMid, marginBottom: 6 }}>
-        {sel ? `Bank & Account Number — ${sel.name}` : 'Bank (choose one to enter the account number)'}
+        {sel ? tl('Bank & Account Number — {name}', { "name": sel.name }) : tl('Bank (choose one to enter the account number)')}
       </label>
-      <div role="radiogroup" aria-label="Bank" className="bp-row" style={{ '--bc': sel?.color, '--ba': sel?.accent }}>
+      <div role="radiogroup" aria-label={tl('Bank')} className="bp-row" style={{ '--bc': sel?.color, '--ba': sel?.accent }}>
         <div style={{ display: 'flex', gap: 6 }}>
           {BANKS.map(b => (
             <button key={b.id} type="button" role="radio" aria-checked={bank === b.id} aria-label={b.name} title={b.name}
@@ -40,13 +41,13 @@ export default function BankPicker({ bank, account, onBank, onAccount }) {
           ))}
         </div>
         {sel && (
-          <input id="bp-account" className="bp-acc" inputMode="numeric" value={account || ''} aria-label={`${sel.label} account number`}
+          <input id="bp-account" className="bp-acc" inputMode="numeric" value={account || ''} aria-label={tl('{label} account number', { "label": sel.label })}
             onChange={e => onAccount(e.target.value)} placeholder={sel.placeholder}
             aria-invalid={!!warn} aria-describedby="bp-account-msg" />
         )}
       </div>
       <div id="bp-account-msg" role="status" style={{ minHeight: warn ? 18 : 0, marginTop: 6, fontSize: 12, fontWeight: 600, color: B.warnText }}>
-        {warn ? `⚠ ${warn} Nothing was changed — check the bank or the number.` : ''}
+        {warn ? tl('⚠ {warn} Nothing was changed — check the bank or the number.', { "warn": warn }) : ''}
       </div>
     </div>
   )
