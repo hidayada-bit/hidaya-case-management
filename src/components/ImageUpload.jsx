@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { compressImage, formatBytes } from '../lib/imageUtils'
 import Icon from './Icon'
+import { tl } from '../lib/i18n'
 
 /**
  * Reusable image/document upload component.
@@ -109,12 +110,12 @@ export default function ImageUpload({
             {status === 'compressing' ? (
               <>
                 <div style={{ marginBottom: 4, color: '#60a5fa' }}><Icon name="spinner" size={22} spin /></div>
-                <div style={{ fontSize: 11, color: '#60a5fa', fontWeight: 600 }}>Compressing…</div>
+                <div style={{ fontSize: 11, color: '#60a5fa', fontWeight: 600 }}>{tl('Compressing…')}</div>
               </>
             ) : status === 'ready' && isDoc ? (
               <>
                 <div style={{ marginBottom: 4, color: '#10b981' }}><Icon name="done" size={22} /></div>
-                <div style={{ fontSize: 11, color: '#10b981', fontWeight: 600 }}>Ready to upload</div>
+                <div style={{ fontSize: 11, color: '#10b981', fontWeight: 600 }}>{tl('Ready to upload')}</div>
               </>
             ) : (
               <>
@@ -122,12 +123,10 @@ export default function ImageUpload({
                   <Icon name={isDoc ? 'file' : 'camera'} size={isDoc ? 22 : 20} />
                 </div>
                 <div style={{ fontSize: 11, color: '#60a5fa', fontWeight: 600 }}>
-                  {isDoc ? 'Click or drag file' : 'Upload photo'}
+                  {isDoc ? tl('Click or drag file') : tl('Upload photo')}
                 </div>
                 {isDoc && (
-                  <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>
-                    JPG, PNG, PDF
-                  </div>
+                  <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>{tl('JPG, PNG, PDF')}</div>
                 )}
               </>
             )}
@@ -144,7 +143,7 @@ export default function ImageUpload({
             onMouseEnter={e => e.currentTarget.style.opacity = 1}
             onMouseLeave={e => e.currentTarget.style.opacity = 0}
           >
-            <span style={{ color: '#fff', fontSize: 11, fontWeight: 700 }}>Change</span>
+            <span style={{ color: '#fff', fontSize: 11, fontWeight: 700 }}>{tl('Change')}</span>
           </div>
         )}
       </div>
