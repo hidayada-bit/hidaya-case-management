@@ -4,6 +4,7 @@ import { B } from '../lib/theme'
 import { caseState, TRANSFER_CATEGORIES } from '../lib/settings'
 import Icon from '../components/Icon'
 import { logActivity } from '../lib/activity'
+import { tl, pl } from '../lib/i18n'
 
 const REASONS = {
   hold: ['Missing school certificate', 'Missing documents', 'Cannot be reached', 'Under review', 'Other'],
@@ -12,13 +13,13 @@ const REASONS = {
   restore: ['Reinstated', 'Transferred by mistake', 'Other'],
 }
 const ACTIONS = {
-  hold:     { label: 'Put on hold',  past: 'Put on hold',   to: 'on_hold',     icon: 'pending', color: B.goldDark, bg: B.goldLight,
+  hold:     { get label() { return tl('Put on hold') },  past: 'Put on hold',   to: 'on_hold',     icon: 'pending', color: B.goldDark, bg: B.goldLight,
               info: 'The family stays in the family list, but its bank account is removed from the bank list and it shows as UNPAID on the payment list until released.' },
-  release:  { label: 'Release hold', past: 'Hold released', to: 'normal',      icon: 'check',   color: B.okText,   bg: B.greenLight,
+  release:  { get label() { return tl('Release hold') }, past: 'Hold released', to: 'normal',      icon: 'check',   color: B.okText,   bg: B.greenLight,
               info: 'The family goes back on the bank list and payments continue.' },
-  transfer: { label: 'Transfer out', past: 'Transferred out', to: 'transferred', icon: 'forward', color: B.red,      bg: B.errBg,
+  transfer: { get label() { return tl('Transfer out') }, past: 'Transferred out', to: 'transferred', icon: 'forward', color: B.red,      bg: B.errBg,
               info: 'The family is removed from the families list, bank list and payment list. It moves to the Transferred page, where only admins can see it and its history.' },
-  restore:  { label: 'Restore to active families', past: 'Restored', to: 'normal', icon: 'refresh', color: B.okText, bg: B.greenLight,
+  restore:  { get label() { return tl('Restore to active families') }, past: 'Restored', to: 'normal', icon: 'refresh', color: B.okText, bg: B.greenLight,
               info: 'The family returns to the families list, bank list and payment list.' },
 }
 const STATE_LABEL = { normal: 'Normal', on_hold: 'On hold', transferred: 'Transferred' }
@@ -42,17 +43,17 @@ function ReasonDialog({ title, info, categories, initial, busy, onCancel, onSave
           {info && <div style={{ fontSize: 12.5, color: B.textMid, background: B.greenLight, border: `1px solid ${B.border}`, borderRadius: 10, padding: '9px 12px', marginBottom: 14, lineHeight: 1.5 }}>{info}</div>}
           {categories && (
             <div style={{ marginBottom: 14 }}>
-              <label style={lbl}>Why? (choose one)</label>
+              <label style={lbl}>{tl('Why? (choose one)')}</label>
               <select value={cat} onChange={e => setCat(e.target.value)} style={field}>{categories.map(c => <option key={c}>{c}</option>)}</select>
             </div>
           )}
           <div style={{ marginBottom: 16 }}>
-            <label style={lbl}>{needNote ? 'Reason / details (required)' : 'Details'}</label>
-            <textarea rows={3} autoFocus value={note} onChange={e => setNote(e.target.value)} placeholder="Explain the reason so it is clear in the history…" style={{ ...field, resize: 'vertical' }} />
+            <label style={lbl}>{needNote ? tl('Reason / details (required)') : tl('Details')}</label>
+            <textarea rows={3} autoFocus value={note} onChange={e => setNote(e.target.value)} placeholder={tl('Explain the reason so it is clear in the history…')} style={{ ...field, resize: 'vertical' }} />
           </div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-            <button disabled={busy} onClick={onCancel} style={btn(B.card, B.text, `1.5px solid ${B.border}`)}>Cancel</button>
-            <button disabled={busy || !ok} onClick={() => onSave({ cat, note: note.trim() })} style={{ ...btn(`linear-gradient(135deg, ${B.green}, ${B.greenMid})`, '#fff'), opacity: busy || !ok ? 0.55 : 1 }}>{busy ? 'Saving…' : confirmLabel}</button>
+            <button disabled={busy} onClick={onCancel} style={btn(B.card, B.text, `1.5px solid ${B.border}`)}>{tl('Cancel')}</button>
+            <button disabled={busy || !ok} onClick={() => onSave({ cat, note: note.trim() })} style={{ ...btn(`linear-gradient(135deg, ${B.green}, ${B.greenMid})`, '#fff'), opacity: busy || !ok ? 0.55 : 1 }}>{busy ? tl('Saving…') : confirmLabel}</button>
           </div>
         </div>
       </div>
@@ -94,7 +95,7 @@ export default function FamilyStatusTab({ family, user, toast, onChanged, isMobi
       if (e2) throw e2
       const verb = { hold: 'put', release: 'released the hold on', transfer: 'transferred out', restore: 'restored' }[action]
       logActivity(user, 'case', `${signer} ${verb} ${family.mother_name}${action === 'hold' ? ' on hold' : ''} — ${reason}`, family.id)
-      toast(`${a.past}: ${family.mother_name}`)
+      toast(tl('{past}: {mother_name}', { "past": a.past, "mother_name": family.mother_name }))
       setDialog(null)
       await onChanged(action)
       load()
@@ -110,7 +111,7 @@ export default function FamilyStatusTab({ family, user, toast, onChanged, isMobi
       if (error) throw error
       // keep the family's current reason in sync when the newest entry is edited
       if (log[0]?.id === entry.id) await supabase.from('families').update({ case_reason: reason }).eq('id', family.id)
-      toast('History entry updated')
+      toast(tl('History entry updated'))
       setDialog(null)
       await onChanged('edit')
       load()
@@ -127,17 +128,17 @@ export default function FamilyStatusTab({ family, user, toast, onChanged, isMobi
     <div>
       <div style={{ background: B.card, border: `1px solid ${B.border}`, borderRadius: 14, padding: isMobile ? 14 : 18, marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Case state</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: B.textLight, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{tl('Case state')}</span>
           <span style={{ background: stateBg, color: stateColor, padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 800 }}>{STATE_LABEL[cs]}</span>
-          <span style={{ fontSize: 11, color: B.textLight, marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}><Icon name="lock" size={12} />Hold / transfer details are hidden from data collectors</span>
+          <span style={{ fontSize: 11, color: B.textLight, marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}><Icon name="lock" size={12} />{tl('Hold / transfer details are hidden from data collectors')}</span>
         </div>
         {cs !== 'normal' && family.case_reason && (
           <div style={{ fontSize: 13, color: B.text, marginBottom: 12 }}>
-            <b>Reason:</b> {family.case_reason}
+            <b>{tl('Reason:')}</b> {family.case_reason}
             {family.case_changed_by_name && <span style={{ color: B.textLight }}> · {family.case_changed_by_name}{family.case_changed_at ? `, ${fdate(family.case_changed_at)}` : ''}</span>}
           </div>
         )}
-        {available.length === 0 && <div style={{ fontSize: 12.5, color: B.textLight }}>{cs === 'transferred' ? 'Only an administrator can restore a transferred family.' : 'You can view this history; changes are made by an administrator or director.'}</div>}
+        {available.length === 0 && <div style={{ fontSize: 12.5, color: B.textLight }}>{cs === 'transferred' ? tl('Only an administrator can restore a transferred family.') : tl('You can view this history; changes are made by an administrator or director.')}</div>}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {available.map(k => (
             <button key={k} onClick={() => setDialog({ kind: 'action', action: k })} style={btn(ACTIONS[k].bg, ACTIONS[k].color, `1.5px solid ${B.border}`)}>
@@ -147,11 +148,11 @@ export default function FamilyStatusTab({ family, user, toast, onChanged, isMobi
         </div>
       </div>
 
-      <div style={{ fontSize: 13, fontWeight: 800, color: B.text, marginBottom: 10 }}>History</div>
+      <div style={{ fontSize: 13, fontWeight: 800, color: B.text, marginBottom: 10 }}>{tl('History')}</div>
       {loading
         ? <div style={{ padding: 28, textAlign: 'center', color: B.textLight }}><Icon name="spinner" size={18} spin /></div>
         : log.length === 0
-          ? <div style={{ background: B.greenLight, borderRadius: 12, padding: 26, textAlign: 'center', color: B.textLight, fontSize: 13 }}>No hold or transfer history for this family.</div>
+          ? <div style={{ background: B.greenLight, borderRadius: 12, padding: 26, textAlign: 'center', color: B.textLight, fontSize: 13 }}>{tl('No hold or transfer history for this family.')}</div>
           : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {log.map(e => {
@@ -161,12 +162,12 @@ export default function FamilyStatusTab({ family, user, toast, onChanged, isMobi
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <span style={{ background: a.bg, color: a.color, padding: '3px 10px', borderRadius: 20, fontSize: 11.5, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 5 }}><Icon name={a.icon} size={12} />{a.past}</span>
                       <span style={{ fontSize: 11.5, color: B.textLight }}>{STATE_LABEL[e.from_state] || '—'} → {STATE_LABEL[e.to_state] || '—'}</span>
-                      {canEditEntries && <button onClick={() => setDialog({ kind: 'edit', entry: e })} style={{ ...btn(B.greenLight, B.green, `1px solid ${B.border}`), marginLeft: 'auto', padding: '5px 12px', minHeight: 32, fontSize: 12 }}><Icon name="edit" size={13} />Edit</button>}
+                      {canEditEntries && <button onClick={() => setDialog({ kind: 'edit', entry: e })} style={{ ...btn(B.greenLight, B.green, `1px solid ${B.border}`), marginLeft: 'auto', padding: '5px 12px', minHeight: 32, fontSize: 12 }}><Icon name="edit" size={13} />{tl('Edit')}</button>}
                     </div>
                     <div style={{ fontSize: 13.5, color: B.text, margin: '8px 0 6px', lineHeight: 1.5 }}>{e.reason}</div>
                     <div style={{ fontSize: 11.5, color: B.textLight }}>
-                      <Icon name="edit" size={11} /> Signed by <b style={{ color: B.textMid }}>{e.by_name || 'Unknown'}</b> · {fdate(e.created_at)}
-                      {e.edited_at && <> · edited by <b style={{ color: B.textMid }}>{e.edited_by_name || 'Unknown'}</b>, {fdate(e.edited_at)}</>}
+                      <Icon name="edit" size={11} />{' '}{tl('Signed by')}{' '}<b style={{ color: B.textMid }}>{e.by_name || tl('Unknown')}</b> · {fdate(e.created_at)}
+                      {e.edited_at && <>{' '}{tl('· edited by')}{' '}<b style={{ color: B.textMid }}>{e.edited_by_name || tl('Unknown')}</b>, {fdate(e.edited_at)}</>}
                     </div>
                   </div>
                 )
@@ -176,7 +177,7 @@ export default function FamilyStatusTab({ family, user, toast, onChanged, isMobi
 
       {dialog?.kind === 'action' && (
         <ReasonDialog
-          title={`${ACTIONS[dialog.action].label} — ${family.mother_name}`}
+          title={tl('{label} — {mother_name}', { "label": ACTIONS[dialog.action].label, "mother_name": family.mother_name })}
           info={ACTIONS[dialog.action].info}
           categories={REASONS[dialog.action]}
           busy={busy} confirmLabel={ACTIONS[dialog.action].label}
@@ -186,7 +187,7 @@ export default function FamilyStatusTab({ family, user, toast, onChanged, isMobi
       )}
       {dialog?.kind === 'edit' && (
         <ReasonDialog
-          title="Edit reason" categories={null}
+          title={tl('Edit reason')} categories={null}
           initial={{ note: dialog.entry.reason }}
           busy={busy} confirmLabel="Save changes"
           onCancel={() => setDialog(null)}
@@ -217,7 +218,7 @@ export function HoldQuickButton({ family, user, toast, onChanged, isMobile }) {
       const { error: e2 } = await supabase.from('family_status_log').insert({ family_id: family.id, action, from_state: cs, to_state: a.to, reason, reason_category: category, by_user: user?.id || null, by_name: signer })
       if (e2) throw e2
       logActivity(user, 'case', `${signer} ${action === 'hold' ? 'put' : 'released the hold on'} ${family.mother_name}${action === 'hold' ? ' on hold' : ''} — ${reason}`, family.id)
-      toast(`${a.past}: ${family.mother_name}`)
+      toast(tl('{past}: {mother_name}', { "past": a.past, "mother_name": family.mother_name }))
       setDialog(null)
       await onChanged(action)
     } catch (e) { toast(e.message + (/case_state|status_log/.test(e.message) ? ' — run migrations 005 and 006' : ''), 'error') }
@@ -243,11 +244,11 @@ export function HoldQuickButton({ family, user, toast, onChanged, isMobile }) {
             ? <svg width="11" height="11" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><rect x="5" y="4" width="5" height="16" rx="1.5" /><rect x="14" y="4" width="5" height="16" rx="1.5" /></svg>
             : <Icon name="check" size={13} />}
         </span>
-        {holding ? 'Put on hold' : 'Release hold'}
+        {holding ? tl('Put on hold') : tl('Release hold')}
       </button>
       {dialog && (
         <ReasonDialog
-          title={`${a.label} — ${family.mother_name}`} info={a.info} categories={REASONS[action]}
+          title={tl('{label} — {mother_name}', { "label": a.label, "mother_name": family.mother_name })} info={a.info} categories={REASONS[action]}
           busy={busy} confirmLabel={a.label} onCancel={() => setDialog(null)} onSave={run}
         />
       )}
@@ -285,7 +286,7 @@ export function BranchHoldButton({ branch, families, user, toast, onChanged, isM
         if (e2) throw e2
       }
       logActivity(user, 'case', `${signer} ${holding ? 'put the whole' : 'released the hold on the whole'} ${branch} branch${holding ? ' on hold' : ''} (${targets.length} families) — ${reason}`, null)
-      toast(`${label}: ${targets.length} famil${targets.length === 1 ? 'y' : 'ies'} ${holding ? 'put on hold' : 'released'}`)
+      toast(tl('{label}: {length} famil{x} {x}', { "label": label, "length": targets.length, "x": [pl(targets.length === 1 ? 'y' : 'ies'), holding ? 'put on hold' : 'released'] }))
       setDialog(false)
       await onChanged(action)
     } catch (e) { toast(e.message + (/case_state|status_log/.test(e.message) ? ' — run migrations 005 and 006' : ''), 'error') }
@@ -309,7 +310,7 @@ export function BranchHoldButton({ branch, families, user, toast, onChanged, isM
       </button>
       {dialog && (
         <ReasonDialog
-          title={`${label} (${targets.length} ${targets.length === 1 ? 'family' : 'families'})`}
+          title={tl('{label} ({length} {x})', { "label": label, "length": targets.length, "x": targets.length === 1 ? tl('Family') : tl('Families') })}
           info={`This applies to every ${holding ? 'active' : 'held'} family in the ${branch} branch (${targets.length}). ${a.info}`}
           categories={REASONS[action]}
           busy={busy} confirmLabel={label} onCancel={() => setDialog(false)} onSave={run}
