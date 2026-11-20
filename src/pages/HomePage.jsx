@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { B } from '../lib/theme'
 import Icon from '../components/Icon'
 import { caseState, joinedDate } from '../lib/settings'
+import { tl, pl } from '../lib/i18n'
 
 const ago = d => {
   const s = Math.max(0, Math.floor((Date.now() - new Date(d)) / 1000))
@@ -85,12 +86,12 @@ export default function HomePage({ user, families, allFamilies = [], children, c
   const first = (user?.full_name || '').split(' ')[0]
 
   const attention = [
-    canApprovals && pendingApprovals > 0 && { icon: 'approve', text: `${pendingApprovals} registration${pendingApprovals > 1 ? 's' : ''} waiting for approval`, go: 'approvals' },
-    canApprovals && returned > 0 && { icon: 'reject', text: `${returned} submission${returned > 1 ? 's' : ''} returned to collectors`, go: 'approvals' },
-    canPayments && payStats && payStats.unpaid > 0 && { icon: 'clock', text: `${payStats.unpaid} beneficiar${payStats.unpaid > 1 ? 'ies' : 'y'} unpaid for ${monthName}`, go: 'payments' },
-    canPayments && payStats && payStats.failed > 0 && { icon: 'alert', text: `${payStats.failed} failed payment${payStats.failed > 1 ? 's' : ''} to follow up`, go: 'payments' },
-    canCase && held.length > 0 && { icon: 'pending', text: `${held.length} famil${held.length > 1 ? 'ies' : 'y'} on hold`, go: 'families' },
-    missingBank > 0 && { icon: 'bank', text: `${missingBank} active beneficiar${missingBank > 1 ? 'ies have' : 'y has'} no bank account on file`, go: 'families' },
+    canApprovals && pendingApprovals > 0 && { icon: 'approve', text: tl('{pendingApprovals} registration{x} waiting for approval', { "pendingApprovals": pendingApprovals, "x": pl(pendingApprovals > 1 ? 's' : '') }), go: 'approvals' },
+    canApprovals && returned > 0 && { icon: 'reject', text: tl('{returned} submission{x} returned to collectors', { "returned": returned, "x": pl(returned > 1 ? 's' : '') }), go: 'approvals' },
+    canPayments && payStats && payStats.unpaid > 0 && { icon: 'clock', text: tl('{unpaid} beneficiar{x} unpaid for {monthName}', { "unpaid": payStats.unpaid, "x": pl(payStats.unpaid > 1 ? 'ies' : 'y'), "monthName": monthName }), go: 'payments' },
+    canPayments && payStats && payStats.failed > 0 && { icon: 'alert', text: tl('{failed} failed payment{x} to follow up', { "failed": payStats.failed, "x": pl(payStats.failed > 1 ? 's' : '') }), go: 'payments' },
+    canCase && held.length > 0 && { icon: 'pending', text: tl('{length} famil{x} on hold', { "length": held.length, "x": pl(held.length > 1 ? 'ies' : 'y') }), go: 'families' },
+    missingBank > 0 && { icon: 'bank', text: tl('{missingBank} active beneficiar{x} no bank account on file', { "missingBank": missingBank, "x": pl(missingBank > 1 ? 'ies have' : 'y has') }), go: 'families' },
   ].filter(Boolean)
 
   const grid = (cols) => ({ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : cols, gap: 14, marginBottom: 14 })
@@ -99,26 +100,26 @@ export default function HomePage({ user, families, allFamilies = [], children, c
     <div style={{ padding: isMobile ? '14px 12px 28px' : '22px 26px', maxWidth: 1140, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
         <div style={{ flex: 1, minWidth: 200 }}>
-          <div style={{ fontSize: isMobile ? 19 : 22, fontWeight: 800, color: B.text }}>{greet}{first ? `, ${first}` : ''}</div>
+          <div style={{ fontSize: isMobile ? 19 : 22, fontWeight: 800, color: B.text }}>{greet}{first ? tl(', {first}', { "first": first }) : ''}</div>
           <div style={{ fontSize: 12.5, color: B.textMid }}>{now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</div>
         </div>
-        {canAdd && <button onClick={onAdd} style={{ background: B.green, color: '#fff', border: 'none', borderRadius: 10, padding: '10px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', gap: 6, alignItems: 'center' }}><Icon name="userPlus" size={15} />Add family</button>}
-        <button onClick={() => onNavigate('families')} style={{ background: B.card, color: B.green, border: `1px solid ${B.border}`, borderRadius: 10, padding: '10px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', gap: 6, alignItems: 'center' }}><Icon name="users" size={15} />All families</button>
+        {canAdd && <button onClick={onAdd} style={{ background: B.green, color: '#fff', border: 'none', borderRadius: 10, padding: '10px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', gap: 6, alignItems: 'center' }}><Icon name="userPlus" size={15} />{tl('Add family')}</button>}
+        <button onClick={() => onNavigate('families')} style={{ background: B.card, color: B.green, border: `1px solid ${B.border}`, borderRadius: 10, padding: '10px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', gap: 6, alignItems: 'center' }}><Icon name="users" size={15} />{tl('All families')}</button>
       </div>
 
       <div style={{ ...grid('repeat(4, 1fr)'), gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)' }}>
-        <Tile icon="users" label="Families" value={families.length} sub={`${active.length} active`} color={B.green} bg={B.greenLight} onClick={() => onNavigate('families')} />
-        <Tile icon="child" label="Children" value={children.length} sub={`${Object.values(childCounts).reduce((a, b) => a + b, 0)} supported`} color={B.infoText} bg="#e3f2fd" />
+        <Tile icon="users" label={tl('Families')} value={families.length} sub={`${active.length} active`} color={B.green} bg={B.greenLight} onClick={() => onNavigate('families')} />
+        <Tile icon="child" label={tl('Children')} value={children.length} sub={`${Object.values(childCounts).reduce((a, b) => a + b, 0)} supported`} color={B.infoText} bg="#e3f2fd" />
         <Tile icon="pending" label={canCase ? 'On hold' : 'Pending'} value={canCase ? held.length : families.filter(f => f.status === 'pending').length} sub={canCase && transferredCount != null ? `${transferredCount} transferred out` : undefined} color={B.orange} bg="#fff3e0" />
         {canApprovals
-          ? <Tile icon="approve" label="Awaiting approval" value={pendingApprovals} sub={pendingApprovals ? 'needs review' : 'all clear'} color={B.goldDark} bg={B.goldLight} onClick={() => onNavigate('approvals')} />
-          : <Tile icon="bank" label="No bank account" value={missingBank} color={B.goldDark} bg={B.goldLight} />}
+          ? <Tile icon="approve" label={tl('Awaiting approval')} value={pendingApprovals} sub={pendingApprovals ? 'needs review' : 'all clear'} color={B.goldDark} bg={B.goldLight} onClick={() => onNavigate('approvals')} />
+          : <Tile icon="bank" label={tl('No bank account')} value={missingBank} color={B.goldDark} bg={B.goldLight} />}
       </div>
 
       <div style={grid(canPayments ? '1.3fr 1fr' : '1fr')}>
         {canPayments && (
-          <Card title={`Payments — ${monthName}`} icon="wallet" action="Open follow-up" onAction={() => onNavigate('payments')}>
-            {!payStats ? <div style={{ color: B.textLight, fontSize: 13 }}>Loading…</div> : (
+          <Card title={tl('Payments — {monthName}', { "monthName": monthName })} icon="wallet" action="Open follow-up" onAction={() => onNavigate('payments')}>
+            {!payStats ? <div style={{ color: B.textLight, fontSize: 13 }}>{tl('Loading…')}</div> : (
               <>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
                   <div style={{ fontSize: 30, fontWeight: 800, color: B.green }}>{payStats.pct}%</div>
@@ -136,9 +137,9 @@ export default function HomePage({ user, families, allFamilies = [], children, c
             )}
           </Card>
         )}
-        <Card title="Needs attention" icon="alert">
+        <Card title={tl('Needs attention')} icon="alert">
           {attention.length === 0
-            ? <div style={{ color: B.textMid, fontSize: 13 }}>Nothing urgent right now. 🎉</div>
+            ? <div style={{ color: B.textMid, fontSize: 13 }}>{tl('Nothing urgent right now. 🎉')}</div>
             : attention.map((a, i) => (
               <button key={i} onClick={() => onNavigate(a.go)} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', background: 'none', border: 'none', borderTop: i ? `1px solid ${B.border}` : 'none', padding: '9px 0', cursor: 'pointer', fontFamily: 'inherit', color: B.text, fontSize: 13 }}>
                 <span style={{ color: B.goldDark, display: 'flex' }}><Icon name={a.icon} size={16} /></span><span style={{ flex: 1 }}>{a.text}</span><Icon name="chevron" size={14} color={B.textLight} />
@@ -148,8 +149,8 @@ export default function HomePage({ user, families, allFamilies = [], children, c
       </div>
 
       <div style={grid('1.3fr 1fr')}>
-        <Card title="Recent activity" icon="clock">
-          {acts.length === 0 ? <div style={{ color: B.textLight, fontSize: 13 }}>No activity yet.</div> : acts.map((a, i) => (
+        <Card title={tl('Recent activity')} icon="clock">
+          {acts.length === 0 ? <div style={{ color: B.textLight, fontSize: 13 }}>{tl('No activity yet.')}</div> : acts.map((a, i) => (
             <div key={a.id} style={{ display: 'flex', gap: 10, padding: '8px 0', borderTop: i ? `1px solid ${B.border}` : 'none', alignItems: 'flex-start' }}>
               <span style={{ color: B.green, display: 'flex', marginTop: 2 }}><Icon name={ACT_ICON[a.category] || 'info'} size={15} /></span>
               <div style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: B.text }}><b>{a.actor_name}</b> {a.message}</div>
@@ -158,18 +159,18 @@ export default function HomePage({ user, families, allFamilies = [], children, c
           ))}
         </Card>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <Card title="By project" icon="folder" action="Projects" onAction={() => onNavigate('projects')}>
+          <Card title={tl('By project')} icon="folder" action="Projects" onAction={() => onNavigate('projects')}>
             <div style={{ display: 'flex', gap: 10, marginBottom: branches.length ? 12 : 0 }}>
               {byProject.map(p => <div key={p.k} style={{ flex: 1, background: B.greenLight, borderRadius: 10, padding: '8px 12px' }}><div style={{ fontSize: 11, fontWeight: 700, color: B.textMid }}>{p.k}</div><div style={{ fontSize: 20, fontWeight: 800, color: B.green }}>{p.n}</div></div>)}
             </div>
             {branches.map(([b, n]) => (
               <div key={b} style={{ marginBottom: 6 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, color: B.textMid, marginBottom: 2 }}><span>HF · {b}</span><b>{n}</b></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, color: B.textMid, marginBottom: 2 }}><span>{tl('HF ·')}{' '}{b}</span><b>{n}</b></div>
                 <div style={{ height: 5, background: B.greenLight, borderRadius: 3 }}><div style={{ width: `${n / maxBranch * 100}%`, height: '100%', background: B.green, borderRadius: 3 }} /></div>
               </div>
             ))}
           </Card>
-          <Card title="Recently registered" icon="userPlus">
+          <Card title={tl('Recently registered')} icon="userPlus">
             {recent.map((f, i) => (
               <button key={f.id} onClick={() => onView(f)} style={{ display: 'flex', alignItems: 'center', width: '100%', gap: 8, background: 'none', border: 'none', borderTop: i ? `1px solid ${B.border}` : 'none', padding: '7px 0', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
                 <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: B.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.mother_name}</span>
