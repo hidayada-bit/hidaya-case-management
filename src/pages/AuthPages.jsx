@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Icon from '../components/Icon'
+import { tl } from '../lib/i18n'
+import LanguageSwitcher from '../components/LanguageSwitcher'
 
 const C = {
   green: '#1e7d22', greenDark: '#145717', greenMid: '#2e9e33', greenLight: '#e8f5e9',
@@ -110,19 +112,19 @@ function Brand() {
         <div className="au-brand-top">
           <div className="au-logo-row">
             <div className="au-logo"><img src="/HDA_LOGO.png" alt="HDA" onError={e => { e.target.style.display = 'none' }} /></div>
-            <div className="au-org">Hidaya Development Association<small>Staff Portal</small></div>
+            <div className="au-org">{tl('Hidaya Development Association')}<small>{tl('Staff Portal')}</small></div>
           </div>
         </div>
         <div className="au-brand-mid">
-          <h1 className="au-h1">Caring for every child,<br /><span>one family at a time.</span></h1>
-          <p className="au-sub">A secure workspace for managing beneficiary families, education support, and monthly payments across all HDA projects.</p>
+          <h1 className="au-h1">{tl('Caring for every child,')}<br /><span>{tl('one family at a time.')}</span></h1>
+          <p className="au-sub">{tl('A secure workspace for managing beneficiary families, education support, and monthly payments across all HDA projects.')}</p>
           <div className="au-feats">
-            <div className="au-feat"><i><Icon name="users" size={18} /></i>Beneficiary families, children and documents</div>
-            <div className="au-feat"><i><Icon name="wallet" size={18} /></i>Monthly payment follow-up and bank lists</div>
-            <div className="au-feat"><i><Icon name="shield" size={18} /></i>Role-based access approved by administrators</div>
+            <div className="au-feat"><i><Icon name="users" size={18} /></i>{tl('Beneficiary families, children and documents')}</div>
+            <div className="au-feat"><i><Icon name="wallet" size={18} /></i>{tl('Monthly payment follow-up and bank lists')}</div>
+            <div className="au-feat"><i><Icon name="shield" size={18} /></i>{tl('Role-based access approved by administrators')}</div>
           </div>
         </div>
-        <div className="au-brand-bot au-foot">&copy; {new Date().getFullYear()} Hidaya Development Association. Authorized staff only.</div>
+        <div className="au-brand-bot au-foot">&copy; {new Date().getFullYear()}{' '}{tl('Hidaya Development Association. Authorized staff only.')}</div>
       </aside>
     </>
   )
@@ -159,8 +161,9 @@ function Shell({ children, shake }) {
         <div className={`au-card${shake ? ' shake' : ''}`} key={shake}>
           <div className="au-mobile-brand">
             <div className="au-logo"><img src="/HDA_LOGO.png" alt="HDA" onError={e => { e.target.style.display = 'none' }} /></div>
-            <div className="au-org">Hidaya Development Association<small>Staff Portal</small></div>
+            <div className="au-org">{tl('Hidaya Development Association')}<small>{tl('Staff Portal')}</small></div>
           </div>
+          <LanguageSwitcher compact style={{ marginBottom: 16 }} />
           {children}
         </div>
       </main>
@@ -209,30 +212,29 @@ export function LoginPage({ onLogin, onSwitchToSignup }) {
 
   return (
     <Shell shake={shake}>
-      <div className="au-badge"><Icon name="lock" size={12} />{mode === 'login' ? 'Secure sign in' : 'Password reset'}</div>
-      <h2 className="au-title">{mode === 'login' ? 'Welcome back' : 'Reset your password'}</h2>
-      <p className="au-desc">{mode === 'login' ? 'Sign in with your HDA staff account to continue.' : 'Enter your email and we will send you a reset link.'}</p>
+      <div className="au-badge"><Icon name="lock" size={12} />{mode === 'login' ? tl('Secure sign in') : tl('Password reset')}</div>
+      <h2 className="au-title">{mode === 'login' ? tl('Welcome back') : tl('Reset your password')}</h2>
+      <p className="au-desc">{mode === 'login' ? tl('Sign in with your HDA staff account to continue.') : tl('Enter your email and we will send you a reset link.')}</p>
 
       {error && <div className="au-err" role="alert"><Icon name="warn" size={17} style={{ marginTop: 1 }} />{error}</div>}
       {info && <div className="au-ok"><Icon name="done" size={17} style={{ marginTop: 1 }} />{info}</div>}
 
-      <Field icon="mail" label="Email address" type="email" value={email} onChange={setEmail} autoComplete="username" onEnter={mode === 'login' ? handleLogin : handleReset} />
-      {mode === 'login' && <Field icon="key" label="Password" type="password" value={pass} onChange={setPass} autoComplete="current-password" onEnter={handleLogin} />}
+      <Field icon="mail" label={tl('Email address')} type="email" value={email} onChange={setEmail} autoComplete="username" onEnter={mode === 'login' ? handleLogin : handleReset} />
+      {mode === 'login' && <Field icon="key" label={tl('Password')} type="password" value={pass} onChange={setPass} autoComplete="current-password" onEnter={handleLogin} />}
 
       <button className="au-btn" onClick={mode === 'login' ? handleLogin : handleReset} disabled={loading}>
-        {loading ? <><Icon name="spinner" size={18} spin />{mode === 'login' ? 'Signing in…' : 'Sending…'}</> : <>{mode === 'login' ? 'Sign in' : 'Send reset link'}<Icon name="forward" size={18} /></>}
+        {loading ? <><Icon name="spinner" size={18} spin />{mode === 'login' ? tl('Signing in…') : tl('Sending…')}</> : <>{mode === 'login' ? tl('Sign in') : tl('Send reset link')}<Icon name="forward" size={18} /></>}
       </button>
 
       <div className="au-row">
         {mode === 'login'
-          ? <button className="au-link muted" onClick={() => { setMode('reset'); setError(''); setInfo('') }}>Forgot password?</button>
-          : <button className="au-link muted" onClick={() => { setMode('login'); setError(''); setInfo('') }}>Back to sign in</button>}
+          ? <button className="au-link muted" onClick={() => { setMode('reset'); setError(''); setInfo('') }}>{tl('Forgot password?')}</button>
+          : <button className="au-link muted" onClick={() => { setMode('login'); setError(''); setInfo('') }}>{tl('Back to sign in')}</button>}
       </div>
 
-      <div className="au-sep">New to HDA?</div>
+      <div className="au-sep">{tl('New to HDA?')}</div>
       <button className="au-btn gold" style={{ height: 46, boxShadow: 'none' }} onClick={onSwitchToSignup}>
-        <Icon name="userPlus" size={17} />Request access
-      </button>
+        <Icon name="userPlus" size={17} />{tl('Request access')}</button>
     </Shell>
   )
 }
@@ -271,15 +273,15 @@ export function SignupPage({ onSwitchToLogin }) {
       <Shell>
         <div style={{ textAlign: 'center' }}>
           <div className="au-status-ico wait"><Icon name="clock" size={32} /></div>
-          <h2 className="au-title">Request sent</h2>
-          <p className="au-desc" style={{ marginBottom: 6 }}>Your access request is waiting for an administrator.</p>
+          <h2 className="au-title">{tl('Request sent')}</h2>
+          <p className="au-desc" style={{ marginBottom: 6 }}>{tl('Your access request is waiting for an administrator.')}</p>
           <div className="au-steps">
-            <div className="au-step done"><b><Icon name="check" size={14} /></b>Request submitted</div>
-            <div className="au-step"><b>2</b>Confirm your email if you receive a message</div>
-            <div className="au-step"><b>3</b>An administrator approves you and assigns your role</div>
-            <div className="au-step"><b>4</b>Sign in and start working</div>
+            <div className="au-step done"><b><Icon name="check" size={14} /></b>{tl('Request submitted')}</div>
+            <div className="au-step"><b>2</b>{tl('Confirm your email if you receive a message')}</div>
+            <div className="au-step"><b>3</b>{tl('An administrator approves you and assigns your role')}</div>
+            <div className="au-step"><b>4</b>{tl('Sign in and start working')}</div>
           </div>
-          <button className="au-btn" onClick={onSwitchToLogin}>Back to sign in</button>
+          <button className="au-btn" onClick={onSwitchToLogin}>{tl('Back to sign in')}</button>
         </div>
       </Shell>
     )
@@ -287,21 +289,21 @@ export function SignupPage({ onSwitchToLogin }) {
 
   return (
     <Shell shake={shake}>
-      <div className="au-badge"><Icon name="userPlus" size={12} />Request access</div>
-      <h2 className="au-title">Join the HDA team</h2>
-      <p className="au-desc">Create your account. An administrator will review your request and assign your role before you can sign in.</p>
+      <div className="au-badge"><Icon name="userPlus" size={12} />{tl('Request access')}</div>
+      <h2 className="au-title">{tl('Join the HDA team')}</h2>
+      <p className="au-desc">{tl('Create your account. An administrator will review your request and assign your role before you can sign in.')}</p>
 
       {error && <div className="au-err" role="alert"><Icon name="warn" size={17} style={{ marginTop: 1 }} />{error}</div>}
 
-      <Field icon="userCog" label="Full name" value={fullName} onChange={setFullName} autoComplete="name" />
-      <Field icon="mail" label="Email address" type="email" value={email} onChange={setEmail} autoComplete="username" />
-      <Field icon="key" label="Password (min. 6 characters)" type="password" value={pass} onChange={setPass} autoComplete="new-password" onEnter={handleSignup} />
+      <Field icon="userCog" label={tl('Full name')} value={fullName} onChange={setFullName} autoComplete="name" />
+      <Field icon="mail" label={tl('Email address')} type="email" value={email} onChange={setEmail} autoComplete="username" />
+      <Field icon="key" label={tl('Password (min. 6 characters)')} type="password" value={pass} onChange={setPass} autoComplete="new-password" onEnter={handleSignup} />
 
       <button className="au-btn" onClick={handleSignup} disabled={loading}>
-        {loading ? <><Icon name="spinner" size={18} spin />Sending request…</> : <>Request access<Icon name="forward" size={18} /></>}
+        {loading ? <><Icon name="spinner" size={18} spin />{tl('Sending request…')}</> : <>{tl('Request access')}<Icon name="forward" size={18} /></>}
       </button>
       <div className="au-row" style={{ justifyContent: 'center' }}>
-        <button className="au-link" onClick={onSwitchToLogin}>Already approved? Sign in</button>
+        <button className="au-link" onClick={onSwitchToLogin}>{tl('Already approved? Sign in')}</button>
       </div>
     </Shell>
   )
@@ -315,30 +317,30 @@ export function AccessGate({ user, rejected, onRefresh, onSignOut, checking, err
         <div className={`au-status-ico ${rejected ? 'deny' : 'wait'}`}>
           <Icon name={rejected ? 'reject' : 'clock'} size={32} />
         </div>
-        <h2 className="au-title">{rejected ? 'Access not granted' : 'Waiting for approval'}</h2>
+        <h2 className="au-title">{rejected ? tl('Access not granted') : tl('Waiting for approval')}</h2>
         <p className="au-desc">
           {rejected
-            ? 'An administrator has declined or removed your access. Please contact the HDA office if you think this is a mistake.'
-            : <>Hello{user?.full_name ? <>, <b>{user.full_name}</b></> : ''}. Your account is created but an administrator still needs to approve it and assign your role. This page updates automatically.</>}
+            ? tl('An administrator has declined or removed your access. Please contact the HDA office if you think this is a mistake.')
+            : <>{tl('Hello')}{user?.full_name ? <>, <b>{user.full_name}</b></> : ''}. Your account is created but an administrator still needs to approve it and assign your role. This page updates automatically.</>}
         </p>
         {!rejected && (error || !user) && (
           <p className="au-desc" style={{ color: '#b91c1c', fontSize: 12.5 }}>
-            {error ? `Could not read your account: ${error}` : 'Your account profile was not found yet. Press "Check again", or ask an administrator to confirm your account exists in Staff.'}
+            {error ? tl('Could not read your account: {error}', { "error": error }) : tl('Your account profile was not found yet. Press "Check again", or ask an administrator to confirm your account exists in Staff.')}
           </p>
         )}
         {!rejected && (
           <div className="au-steps" style={{ margin: '0 0 22px' }}>
-            <div className="au-step done"><b><Icon name="check" size={14} /></b>Account created</div>
-            <div className="au-step"><b>2</b>Administrator reviews your request</div>
-            <div className="au-step"><b>3</b>You get your role and full access</div>
+            <div className="au-step done"><b><Icon name="check" size={14} /></b>{tl('Account created')}</div>
+            <div className="au-step"><b>2</b>{tl('Administrator reviews your request')}</div>
+            <div className="au-step"><b>3</b>{tl('You get your role and full access')}</div>
           </div>
         )}
         {!rejected && (
           <button className="au-btn" onClick={onRefresh} disabled={checking} style={{ marginBottom: 10 }}>
-            <Icon name="refresh" size={17} spin={checking} />{checking ? 'Checking…' : 'Check again'}
+            <Icon name="refresh" size={17} spin={checking} />{checking ? tl('Checking…') : tl('Check again')}
           </button>
         )}
-        <button className="au-link muted" onClick={onSignOut}>Sign out</button>
+        <button className="au-link muted" onClick={onSignOut}>{tl('Sign out')}</button>
       </div>
     </Shell>
   )
