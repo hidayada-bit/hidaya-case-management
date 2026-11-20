@@ -1,3 +1,4 @@
+import { tl } from './i18n'
 // ============================================================
 // ROLES & PERMISSIONS — single source of truth for the UI.
 // To change what a team can do, edit ROLE_PERMISSIONS below.
@@ -7,11 +8,11 @@
 // ============================================================
 
 export const ROLES = {
-  admin:               { label: 'Administrator',       desc: 'Full access, approves staff and data collector submissions, manages roles' },
-  director:            { label: 'Director',            desc: 'Views everything, reports, payments and submissions; can register families, send messages, put families on hold and upload agreements' },
-  finance:             { label: 'Finance',             desc: 'Manages payments and bank lists; views approved beneficiaries' },
-  project_coordinator: { label: 'Project Coordinator', desc: 'Manages beneficiaries, academics and messaging; sees data collector submissions' },
-  data_collector:      { label: 'Data Collector',      desc: 'Registers new families for approval; cannot see stored data. Can edit a submission only until it is approved' },
+  admin:               { get label() { return tl('Administrator') },       get desc() { return tl('Full access, approves staff and data collector submissions, manages roles') } },
+  director:            { get label() { return tl('Director') },            get desc() { return tl('Views everything, reports, payments and submissions; can register families, send messages, put families on hold and upload agreements') } },
+  finance:             { get label() { return tl('Finance') },             get desc() { return tl('Manages payments and bank lists; views approved beneficiaries') } },
+  project_coordinator: { get label() { return tl('Project Coordinator') }, get desc() { return tl('Manages beneficiaries, academics and messaging; sees data collector submissions') } },
+  data_collector:      { get label() { return tl('Data Collector') },      get desc() { return tl('Registers new families for approval; cannot see stored data. Can edit a submission only until it is approved') } },
 }
 
 export const ASSIGNABLE_ROLES = Object.keys(ROLES)
