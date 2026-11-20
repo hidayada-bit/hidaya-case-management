@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { B } from '../lib/theme'
 import Icon from './Icon'
+import { tl } from '../lib/i18n'
 
 const ICON = { submission: 'clipboard', family: 'users', document: 'attach', payment: 'wallet', bank: 'bank', case: 'pending', settings: 'settings', agreement: 'agreement', general: 'info' }
 const COLOR = { submission: B.goldDark, family: B.green, document: B.infoText, payment: B.okText, bank: B.goldDark, case: B.orange, settings: B.textMid, agreement: B.goldDark, general: B.textMid }
@@ -62,7 +63,7 @@ export default function NotificationBell({ user, onOpenFamily, isMobile }) {
 
   return (
     <div ref={box} style={{ position: 'relative' }}>
-      <button onClick={() => setOpen(o => !o)} aria-label={`Notifications${unread ? `, ${unread} new` : ''}`} title="Notifications"
+      <button onClick={() => setOpen(o => !o)} aria-label={tl('Notifications{x}', { "x": unread ? `, ${unread} new` : '' })} title={tl('Notifications')}
         style={{ position: 'relative', background: B.greenLight, border: `1px solid ${B.border}`, borderRadius: 10, width: 36, height: 36, cursor: 'pointer', color: B.greenDark, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
         {unread > 0 && (
@@ -77,12 +78,12 @@ export default function NotificationBell({ user, onOpenFamily, isMobile }) {
           background: B.card, border: `1px solid ${B.border}`, borderRadius: 14, boxShadow: '0 18px 50px rgba(0,0,0,0.35)', zIndex: 200, overflow: 'hidden', animation: 'fadeIn .18s ease',
         }}>
           <div style={{ padding: '12px 16px', borderBottom: `1px solid ${B.border}`, display: 'flex', alignItems: 'center', gap: 8, background: B.greenLight }}>
-            <span style={{ fontWeight: 800, fontSize: 14, color: B.text }}>Notifications</span>
+            <span style={{ fontWeight: 800, fontSize: 14, color: B.text }}>{tl('Notifications')}</span>
             {unread > 0 && <span style={{ background: '#e53935', color: '#fff', borderRadius: 10, padding: '0 7px', fontSize: 11, fontWeight: 800 }}>{unread} new</span>}
-            <button onClick={markAllRead} disabled={!unread} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: unread ? 'pointer' : 'default', color: unread ? B.green : B.textLight, fontSize: 12, fontWeight: 700, fontFamily: 'inherit' }}>Mark all read</button>
+            <button onClick={markAllRead} disabled={!unread} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: unread ? 'pointer' : 'default', color: unread ? B.green : B.textLight, fontSize: 12, fontWeight: 700, fontFamily: 'inherit' }}>{tl('Mark all read')}</button>
           </div>
           <div style={{ overflowY: 'auto' }}>
-            {items.length === 0 && <div style={{ padding: '36px 16px', textAlign: 'center', color: B.textLight, fontSize: 13 }}>No activity yet.</div>}
+            {items.length === 0 && <div style={{ padding: '36px 16px', textAlign: 'center', color: B.textLight, fontSize: 13 }}>{tl('No activity yet.')}</div>}
             {items.map(i => {
               const un = isUnread(i)
               const c = COLOR[i.category] || B.textMid
