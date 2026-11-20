@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import Icon from '../components/Icon'
 import { B } from '../lib/theme'
 import { DEFAULT_RATES, isPayingChild, joinedDate } from '../lib/settings'
+import { tl } from '../lib/i18n'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CSO "project performance information" report (the template HDA reports on):
@@ -188,14 +189,14 @@ export default function CsoReport({ families, children, rates = DEFAULT_RATES, t
   const [result, setResult] = useState(null) // { titleLine, sections }
 
   const scopes = useMemo(() => [
-    { id: 'all', label: 'All HDA (with each project / city shown separately)' },
-    { id: 'OVC', label: 'OVC project' },
-    { id: 'HF', label: 'HF project (all cities)' },
+    { id: 'all', label: tl('All HDA (with each project / city shown separately)') },
+    { id: 'OVC', label: tl('OVC project') },
+    { id: 'HF', label: tl('HF project (all cities)') },
     ...HF_BRANCHES.map(b => ({ id: 'HF:' + b, label: 'HF — ' + b })),
   ], [])
 
   const generate = async () => {
-    if (start > end) { toast('Start month must be before the end month', 'error'); return }
+    if (start > end) { toast(tl('Start month must be before the end month'), 'error'); return }
     setBusy(true)
     try {
       const months = monthsBetween(start, end)
@@ -244,38 +245,32 @@ export default function CsoReport({ families, children, rates = DEFAULT_RATES, t
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(13,59,15,0.55)', zIndex: 9000, display: 'flex', alignItems: isMobile ? 'flex-end' : 'center', justifyContent: 'center', padding: isMobile ? 0 : 16 }}>
       <div onClick={e => e.stopPropagation()} style={{ background: B.card, width: '100%', maxWidth: 980, borderRadius: isMobile ? '20px 20px 0 0' : 18, maxHeight: '94vh', overflow: 'auto', boxShadow: '0 32px 80px rgba(0,0,0,0.3)' }}>
         <div style={{ padding: '14px 20px', borderBottom: `2px solid ${B.greenLight}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, background: B.card, zIndex: 2 }}>
-          <span style={{ fontSize: 16, fontWeight: 800, color: B.text }}>CSO Performance Report</span>
-          <button onClick={onClose} aria-label="Close" style={{ background: B.greenLight, border: `1px solid ${B.border}`, borderRadius: 8, width: 32, height: 32, cursor: 'pointer', color: B.greenDark, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="x" size={16} /></button>
+          <span style={{ fontSize: 16, fontWeight: 800, color: B.text }}>{tl('CSO Performance Report')}</span>
+          <button onClick={onClose} aria-label={tl('Close')} style={{ background: B.greenLight, border: `1px solid ${B.border}`, borderRadius: 8, width: 32, height: 32, cursor: 'pointer', color: B.greenDark, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="x" size={16} /></button>
         </div>
         <div style={{ padding: '16px 20px calc(20px + env(safe-area-inset-bottom))' }}>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr 2fr', gap: 12, marginBottom: 12 }}>
-            <div><label style={lbl}>From month</label><input type="month" value={start} onChange={e => setStart(e.target.value)} style={sel} /></div>
-            <div><label style={lbl}>To month</label><input type="month" value={end} onChange={e => setEnd(e.target.value)} style={sel} /></div>
-            <div style={{ gridColumn: isMobile ? '1 / -1' : 'auto' }}><label style={lbl}>Scope</label>
+            <div><label style={lbl}>{tl('From month')}</label><input type="month" value={start} onChange={e => setStart(e.target.value)} style={sel} /></div>
+            <div><label style={lbl}>{tl('To month')}</label><input type="month" value={end} onChange={e => setEnd(e.target.value)} style={sel} /></div>
+            <div style={{ gridColumn: isMobile ? '1 / -1' : 'auto' }}><label style={lbl}>{tl('Scope')}</label>
               <select value={scope} onChange={e => setScope(e.target.value)} style={sel}>{scopes.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}</select></div>
           </div>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: B.textMid, marginBottom: 8, cursor: 'pointer' }}>
-            <input type="checkbox" checked={withPlan} onChange={e => setWithPlan(e.target.checked)} />
-            Also show the Plan columns and % (off = actual only)
-          </label>
+            <input type="checkbox" checked={withPlan} onChange={e => setWithPlan(e.target.checked)} />{tl('Also show the Plan columns and % (off = actual only)')}</label>
           {withPlan && <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: B.textMid, marginBottom: 14, cursor: 'pointer' }}>
-            <input type="checkbox" checked={onlyEnrolled} onChange={e => setOnlyEnrolled(e.target.checked)} />
-            Plan only counts months from each family's enrollment date
-          </label>}
-          <button onClick={generate} disabled={busy} style={{ ...btn(true), opacity: busy ? 0.6 : 1 }}>{busy ? 'Building…' : 'Generate report'}</button>
+            <input type="checkbox" checked={onlyEnrolled} onChange={e => setOnlyEnrolled(e.target.checked)} />{tl('Plan only counts months from each family\'s enrollment date')}</label>}
+          <button onClick={generate} disabled={busy} style={{ ...btn(true), opacity: busy ? 0.6 : 1 }}>{busy ? tl('Building…') : tl('Generate report')}</button>
 
           {result && (
             <div style={{ marginTop: 18 }}>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
-                <button onClick={copy} style={btn(false)}><Icon name="copy" size={15} /> Copy to paste</button>
-                <button onClick={download} style={btn(true)}><Icon name="download" size={15} /> Download Word (.docx)</button>
+                <button onClick={copy} style={btn(false)}><Icon name="copy" size={15} />{' '}{tl('Copy to paste')}</button>
+                <button onClick={download} style={btn(true)}><Icon name="download" size={15} />{' '}{tl('Download Word (.docx)')}</button>
               </div>
               <div style={{ background: '#fff', color: '#111', border: `1px solid ${B.border}`, borderRadius: 10, padding: 14, overflowX: 'auto' }}>
                 <div id="cso-report-preview" dangerouslySetInnerHTML={{ __html: docHtml(result.titleLine, result.sections, withPlan) }} />
               </div>
-              <div style={{ fontSize: 11.5, color: B.textLight, marginTop: 8, lineHeight: 1.6 }}>
-                Actual = months marked Paid on the Payments page. Mothers are counted as female; children are those 18 and under. Families that were transferred out are not included; families on hold count in the plan but not as paid.
-              </div>
+              <div style={{ fontSize: 11.5, color: B.textLight, marginTop: 8, lineHeight: 1.6 }}>{tl('Actual = months marked Paid on the Payments page. Mothers are counted as female; children are those 18 and under. Families that were transferred out are not included; families on hold count in the plan but not as paid.')}</div>
             </div>
           )}
         </div>
