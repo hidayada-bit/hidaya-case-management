@@ -4,6 +4,7 @@ import { compressImage } from '../lib/imageUtils'
 import { logActivity } from '../lib/activity'
 import { B } from '../lib/theme'
 import Icon from '../components/Icon'
+import { tl } from '../lib/i18n'
 
 // Scanned agreements (MoUs, contracts, partner letters …). Stored in the private "agreements" bucket,
 // opened through short-lived signed links. Everyone with access can view; admin + director upload; admin deletes.
@@ -43,16 +44,16 @@ export default function AgreementsPage({ user, canUpload = false, canDelete = fa
     e.target.value = ''
     const ok = []
     for (const f of list) {
-      if (!(f.type === 'application/pdf' || f.type.startsWith('image/'))) { toast(`${f.name}: only PDF or image scans are accepted`, 'error'); continue }
-      if (f.size > MAX_MB * 1048576) { toast(`${f.name} is larger than ${MAX_MB} MB`, 'error'); continue }
+      if (!(f.type === 'application/pdf' || f.type.startsWith('image/'))) { toast(tl('{name}: only PDF or image scans are accepted', { "name": f.name }), 'error'); continue }
+      if (f.size > MAX_MB * 1048576) { toast(tl('{name} is larger than {MAX_MB} MB', { "name": f.name, "MAX_MB": MAX_MB }), 'error'); continue }
       ok.push(f)
     }
     setFiles(x => [...x, ...ok])
   }
 
   const save = async () => {
-    if (!form.title.trim()) { toast('Give the agreement a title', 'error'); return }
-    if (!files.length) { toast('Attach the scanned file (PDF or photo)', 'error'); return }
+    if (!form.title.trim()) { toast(tl('Give the agreement a title'), 'error'); return }
+    if (!files.length) { toast(tl('Attach the scanned file (PDF or photo)'), 'error'); return }
     setSaving(true)
     const uploaded = []
     try {
@@ -71,7 +72,7 @@ export default function AgreementsPage({ user, canUpload = false, canDelete = fa
       })
       if (error) throw error
       logActivity(user, 'agreement', `${user?.full_name || 'Someone'} uploaded the agreement "${form.title.trim()}"${form.party.trim() ? ` (${form.party.trim()})` : ''}`)
-      toast('Agreement uploaded')
+      toast(tl('Agreement uploaded'))
       setForm({ title: '', party: '', signed_on: '', notes: '' }); setFiles([]); setShowForm(false)
       await load()
     } catch (e) {
@@ -89,13 +90,13 @@ export default function AgreementsPage({ user, canUpload = false, canDelete = fa
   }
 
   const remove = async row => {
-    if (!window.confirm(`Delete "${row.title}" and its scanned file(s)? This cannot be undone.`)) return
+    if (!window.confirm(tl('Delete "{title}" and its scanned file(s)? This cannot be undone.', { "title": row.title }))) return
     const paths = (row.files || []).map(f => f.path)
     if (paths.length) await supabase.storage.from(BUCKET).remove(paths)
     const { error } = await supabase.from('agreements').delete().eq('id', row.id)
     if (error) { toast(error.message, 'error'); return }
     logActivity(user, 'agreement', `${user?.full_name || 'Admin'} deleted the agreement "${row.title}"`)
-    toast('Agreement deleted'); load()
+    toast(tl('Agreement deleted')); load()
   }
 
   const s = q.trim().toLowerCase()
@@ -107,35 +108,34 @@ export default function AgreementsPage({ user, canUpload = false, canDelete = fa
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, ${B.gold}, ${B.green})` }} />
         <Icon name="agreement" size={28} color={B.gold} />
         <div style={{ flex: 1, minWidth: 180 }}>
-          <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>Agreements</div>
-          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>Scanned, signed agreements — kept private to staff</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: B.gold }}>{tl('Agreements')}</div>
+          <div className="pb-sub" style={{ fontSize: 12, color: '#a5d6a7' }}>{tl('Scanned, signed agreements — kept private to staff')}</div>
         </div>
         {canUpload && !missing && (
           <button onClick={() => setShowForm(v => !v)} style={btn(B.gold, '#fff')}>
-            <Icon name={showForm ? 'x' : 'upload'} size={15} />{showForm ? 'Cancel' : 'Upload agreement'}
+            <Icon name={showForm ? 'x' : 'upload'} size={15} />{showForm ? tl('Cancel') : tl('Upload agreement')}
           </button>
         )}
       </div>
 
       {missing && (
         <div style={{ background: B.goldLight, border: `1px solid ${B.goldBorder}`, color: B.warnText, borderRadius: 12, padding: 16, fontSize: 13, lineHeight: 1.6 }}>
-          <b>One-time setup needed.</b> Run <code>010_agreements_letters_director.sql</code> in Supabase → SQL Editor, then reload this page.
+          <b>{tl('One-time setup needed.')}</b> Run <code>010_agreements_letters_director.sql</code> in Supabase → SQL Editor, then reload this page.
         </div>
       )}
 
       {canUpload && showForm && (
         <div style={{ background: B.card, border: `1.5px solid ${B.gold}`, borderRadius: 14, padding: isMobile ? 14 : 20, marginBottom: 16 }}>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '0 16px' }}>
-            <div style={{ marginBottom: 14 }}><label style={lbl}>Title <span style={{ color: '#ef4444' }}>*</span></label><input style={field} value={form.title} onChange={e => setForm(x => ({ ...x, title: e.target.value }))} placeholder="e.g. MoU with Oromia Bank" maxLength={120} /></div>
-            <div style={{ marginBottom: 14 }}><label style={lbl}>Signed with (organization / person)</label><input style={field} value={form.party} onChange={e => setForm(x => ({ ...x, party: e.target.value }))} placeholder="e.g. Oromia Bank" maxLength={120} /></div>
-            <div style={{ marginBottom: 14 }}><label style={lbl}>Date signed</label><input type="date" style={field} value={form.signed_on} onChange={e => setForm(x => ({ ...x, signed_on: e.target.value }))} /></div>
-            <div style={{ marginBottom: 14 }}><label style={lbl}>Notes</label><input style={field} value={form.notes} onChange={e => setForm(x => ({ ...x, notes: e.target.value }))} placeholder="Optional" maxLength={300} /></div>
+            <div style={{ marginBottom: 14 }}><label style={lbl}>{tl('Title')}{' '}<span style={{ color: '#ef4444' }}>*</span></label><input style={field} value={form.title} onChange={e => setForm(x => ({ ...x, title: e.target.value }))} placeholder={tl('e.g. MoU with Oromia Bank')} maxLength={120} /></div>
+            <div style={{ marginBottom: 14 }}><label style={lbl}>{tl('Signed with (organization / person)')}</label><input style={field} value={form.party} onChange={e => setForm(x => ({ ...x, party: e.target.value }))} placeholder={tl('e.g. Oromia Bank')} maxLength={120} /></div>
+            <div style={{ marginBottom: 14 }}><label style={lbl}>{tl('Date signed')}</label><input type="date" style={field} value={form.signed_on} onChange={e => setForm(x => ({ ...x, signed_on: e.target.value }))} /></div>
+            <div style={{ marginBottom: 14 }}><label style={lbl}>{tl('Notes')}</label><input style={field} value={form.notes} onChange={e => setForm(x => ({ ...x, notes: e.target.value }))} placeholder={tl('Optional')} maxLength={300} /></div>
           </div>
-          <label style={lbl}>Scanned file(s) — PDF or photo, up to {MAX_MB} MB each <span style={{ color: '#ef4444' }}>*</span></label>
+          <label style={lbl}>{tl('Scanned file(s) — PDF or photo, up to')}{' '}{MAX_MB}{' '}{tl('MB each')}{' '}<span style={{ color: '#ef4444' }}>*</span></label>
           <input ref={inputRef} type="file" accept="application/pdf,image/*" multiple onChange={pick} style={{ display: 'none' }} />
           <button type="button" onClick={() => inputRef.current?.click()} style={{ ...btn(B.greenLight, B.green), border: `1.5px dashed ${B.green}`, width: '100%', justifyContent: 'center', padding: '16px' }}>
-            <Icon name="attach" size={16} /> Choose file(s) to attach
-          </button>
+            <Icon name="attach" size={16} />{' '}{tl('Choose file(s) to attach')}</button>
           {files.length > 0 && (
             <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
               {files.map((f, i) => (
@@ -143,14 +143,14 @@ export default function AgreementsPage({ user, canUpload = false, canDelete = fa
                   <Icon name={f.type === 'application/pdf' ? 'file' : 'image'} size={16} color={B.green} />
                   <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
                   <span style={{ color: B.textLight, fontSize: 11 }}>{fsize(f.size)}</span>
-                  <button type="button" aria-label={`Remove ${f.name}`} onClick={() => setFiles(x => x.filter((_, j) => j !== i))} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: B.red, display: 'flex' }}><Icon name="x" size={15} /></button>
+                  <button type="button" aria-label={tl('Remove {name}', { "name": f.name })} onClick={() => setFiles(x => x.filter((_, j) => j !== i))} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: B.red, display: 'flex' }}><Icon name="x" size={15} /></button>
                 </div>
               ))}
             </div>
           )}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
             <button onClick={save} disabled={saving} style={{ ...btn(`linear-gradient(135deg, ${B.green}, ${B.greenMid})`), opacity: saving ? 0.6 : 1 }}>
-              <Icon name="save" size={15} />{saving ? 'Uploading…' : 'Save agreement'}
+              <Icon name="save" size={15} />{saving ? tl('Uploading…') : tl('Save agreement')}
             </button>
           </div>
         </div>
@@ -158,14 +158,14 @@ export default function AgreementsPage({ user, canUpload = false, canDelete = fa
 
       {!missing && (
         <>
-          <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search agreements…" style={{ ...field, marginBottom: 14 }} aria-label="Search agreements" />
+          <input value={q} onChange={e => setQ(e.target.value)} placeholder={tl('Search agreements…')} style={{ ...field, marginBottom: 14 }} aria-label={tl('Search agreements')} />
           {loading ? (
-            <div style={{ textAlign: 'center', color: B.textLight, padding: 40 }}>Loading…</div>
+            <div style={{ textAlign: 'center', color: B.textLight, padding: 40 }}>{tl('Loading…')}</div>
           ) : list.length === 0 ? (
             <div style={{ textAlign: 'center', color: B.textMid, padding: '50px 20px', background: B.card, border: `1px solid ${B.border}`, borderRadius: 14 }}>
               <div style={{ color: B.textLight, marginBottom: 10 }}><Icon name="agreement" size={42} /></div>
-              <div style={{ fontWeight: 800, color: B.text, marginBottom: 4 }}>{rows.length ? 'No agreement matches your search' : 'No agreements uploaded yet'}</div>
-              {canUpload && !rows.length && <div style={{ fontSize: 13 }}>Use “Upload agreement” to add the first scanned copy.</div>}
+              <div style={{ fontWeight: 800, color: B.text, marginBottom: 4 }}>{rows.length ? tl('No agreement matches your search') : tl('No agreements uploaded yet')}</div>
+              {canUpload && !rows.length && <div style={{ fontSize: 13 }}>{tl('Use “Upload agreement” to add the first scanned copy.')}</div>}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -175,17 +175,17 @@ export default function AgreementsPage({ user, canUpload = false, canDelete = fa
                     <div style={{ flex: 1, minWidth: 200 }}>
                       <div style={{ fontSize: 15, fontWeight: 800, color: B.text }}>{r.title}</div>
                       <div style={{ fontSize: 12, color: B.textMid, marginTop: 3 }}>
-                        {r.party ? <>With <b>{r.party}</b> · </> : null}{r.signed_on ? <>Signed {fdate(r.signed_on)} · </> : null}Uploaded {fdate(r.created_at)}{r.uploaded_by_name ? <> by {r.uploaded_by_name}</> : null}
+                        {r.party ? <>{tl('With')}{' '}<b>{r.party}</b> · </> : null}{r.signed_on ? <>{tl('Signed')}{' '}{fdate(r.signed_on)} · </> : null}{tl('Uploaded')}{' '}{fdate(r.created_at)}{r.uploaded_by_name ? <> by {r.uploaded_by_name}</> : null}
                       </div>
                       {r.notes && <div style={{ fontSize: 12.5, color: B.textMid, marginTop: 6 }}>{r.notes}</div>}
                     </div>
-                    {canDelete && <button onClick={() => remove(r)} aria-label={`Delete ${r.title}`} title="Delete" style={{ ...btn(B.errBg, B.errText), border: `1px solid ${B.errBorder}`, padding: '8px 12px' }}><Icon name="trash" size={14} /></button>}
+                    {canDelete && <button onClick={() => remove(r)} aria-label={tl('Delete {title}', { "title": r.title })} title={tl('Delete')} style={{ ...btn(B.errBg, B.errText), border: `1px solid ${B.errBorder}`, padding: '8px 12px' }}><Icon name="trash" size={14} /></button>}
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
                     {(r.files || []).map((f, i) => (
                       <button key={i} onClick={() => open(f, `${r.id}-${i}`)} disabled={opening === `${r.id}-${i}`} style={{ ...btn(B.greenLight, B.green), border: `1px solid ${B.border}`, maxWidth: '100%' }}>
                         <Icon name={f.type === 'application/pdf' ? 'file' : 'image'} size={15} />
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 220 }}>{opening === `${r.id}-${i}` ? 'Opening…' : f.name}</span>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 220 }}>{opening === `${r.id}-${i}` ? tl('Opening…') : f.name}</span>
                         <span style={{ color: B.textLight, fontWeight: 600, fontSize: 11 }}>{fsize(f.size || 0)}</span>
                       </button>
                     ))}
